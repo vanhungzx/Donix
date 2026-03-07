@@ -1,0 +1,124 @@
+{
+    "allquestion": [
+        {
+            "question": "Ông Lê Ngọc là tác giả đã tạo nên bức tranh về Bác Hồ bằng cách thức nào?",
+            "a": "Sử dụng máy đánh chữ",
+            "b": "Ghép bằng đá quý",
+            "c": "Vẽ tranh bằng máu",
+            "d": "Vẽ trên lụa",
+            "dapan": "A",
+            "helpone": ["A", "D"],
+            "helptwo": [45, 5, 15, 20],
+            "helpthree": ["A"],
+            "giaithich": "Ông Lê Ngọc đã sáng tạo bức tranh chân dung Bác Hồ bằng cách sử dụng máy đánh chữ, một phương pháp độc đáo và sáng tạo."
+        },
+        {
+            "question": "Đồ vật nào đã được tạp chí Time bình chọn là 'nhân vật của năm' vào năm 1982?",
+            "a": "Ti vi",
+            "b": "Máy tính cá nhân",
+            "c": "La bàn",
+            "d": "Điện thoại",
+            "dapan": "B",
+            "helpone": ["A", "B"],
+            "helptwo": [35, 60, 15, 20],
+            "helpthree": ["B"],
+            "giaithich": "Năm 1982, tạp chí Time đã chọn máy tính cá nhân làm 'Nhân vật của năm', đánh dấu sự phát triển và ảnh hưởng to lớn của máy tính đối với xã hội."
+        },
+        {
+            "question": "Phi hành gia nào là người Trái Đất đầu tiên chơi golf trên Mặt Trăng?",
+            "a": "Alan Shepard",
+            "b": "Neil Armstrong",
+            "c": "David Scott",
+            "d": "Buzz Aldrin",
+            "dapan": "A",
+            "helpone": ["A", "B"],
+            "helptwo": [60, 30, 15, 20],
+            "helpthree": ["A"],
+            "giaithich": "Alan Shepard là người đầu tiên chơi golf trên Mặt Trăng trong sứ mệnh Apollo 14 vào năm 1971. Ông đã sử dụng một gậy golf được thiết kế đặc biệt để đánh hai quả bóng."
+        },
+        {
+            "question": "Ngày 10/3 âm lịch hàng năm được chính thức quy định là ngày Quốc lễ Giỗ Tổ Hùng Vương vào triều đại nào trong lịch sử nước ta?",
+            "a": "Nhà Lý",
+            "b": "Nhà Hậu Lê",
+            "c": "Nhà Nguyễn",
+            "d": "Nhà Trần",
+            "dapan": "C",
+            "helpone": ["A", "C"],
+            "helptwo": [30, 10, 60, 20],
+            "helpthree": ["C"],
+            "giaithich": "Dưới triều Nguyễn, ngày 10/3 âm lịch được chính thức quy định là ngày Quốc lễ Giỗ Tổ Hùng Vương, thể hiện sự tôn kính với nguồn cội dân tộc."
+        },
+        {
+            "question": "Những vần thơ 'Trường Sơn chí lớn ông cha / Cửu Long lòng mẹ bao la sóng trào' nằm trong tác phẩm nào của nhà thơ Lê Anh Xuân?",
+            "a": "Dáng đứng Việt Nam",
+            "b": "Nguyễn Văn Trỗi",
+            "c": "Gửi Miền Bắc",
+            "d": "Hành quân giữa rừng xuân",
+            "dapan": "B",
+            "helpone": ["A", "B"],
+            "helptwo": [30, 60, 5, 15],
+            "helpthree": ["B"],
+            "giaithich": "Những câu thơ này nằm trong tác phẩm 'Nguyễn Văn Trỗi' của nhà thơ Lê Anh Xuân, thể hiện tinh thần yêu nước và lòng tự hào dân tộc."
+        },
+        {
+            "question": "Ngày nào trong năm hiện được Liên Hợp Quốc chọn là Ngày Thế giới tôn vinh người hiến máu tình nguyện?",
+            "a": "Ngày 22/4",
+            "b": "Ngày 12/5",
+            "c": "Ngày 14/6",
+            "d": "Ngày 20/7",
+            "dapan": "C",
+            "helpone": ["A", "C"],
+            "helptwo": [30, 10, 65, 15],
+            "helpthree": ["C"],
+            "giaithich": "Ngày 14/6 hàng năm được Liên Hợp Quốc chọn là Ngày Thế giới tôn vinh người hiến máu tình nguyện, nhằm nâng cao nhận thức về tầm quan trọng của việc hiến máu tình nguyện."
+        },
+        {
+            "question": "Đâu là tên của vị thần trí tuệ trong văn hoá Ai Cập?",
+            "a": "Maahes",
+            "b": "Anuket",
+            "c": "Labet",
+            "d": "Thoth",
+            "dapan": "D",
+            "helpone": ["C", "D"],
+            "helptwo": [10, 5, 35, 75],
+            "helpthree": ["D"],
+            "giaithich": "Thoth là vị thần trí tuệ trong văn hóa Ai Cập cổ đại, được xem là người sáng tạo ra chữ viết và là thần bảo hộ của các nhà hiền triết."
+        },
+        {
+            "question": "Bản thảo của tác phẩm văn học nào mang tiêu đề: 'Những lần gặp gỡ cuối cùng' trước khi được xuất bản chính thức?",
+            "a": "Một truyện chép ở bệnh viện",
+            "b": "Người mẹ cầm súng",
+            "c": "Sống như anh",
+            "d": "Sống mãi với thủ đô",
+            "dapan": "C",
+            "helpone": ["C", "D"],
+            "helptwo": [10, 5, 55, 35],
+            "helpthree": ["C"],
+            "giaithich": "Tác phẩm 'Sống như anh' ban đầu có tên là 'Những lần gặp gỡ cuối cùng' trước khi được xuất bản chính thức."
+        },
+        {
+            "question": "Mùng 10/10 dương lịch hàng năm là ngày kỉ niệm chiến thắng nào trong lịch sử chống ngoại xâm của dân tộc ta?",
+            "a": "Chiến thắng Bạch Đằng",
+            "b": "Chiến thắng Chi Lăng",
+            "c": "Chiến thắng Như Nguyệt",
+            "d": "Chiến thắng Rạch Gầm - Xoài Mút",
+            "dapan": "B",
+            "helpone": ["B", "D"],
+            "helptwo": [10, 60, 5, 35],
+            "helpthree": ["B"],
+            "giaithich": "Ngày 10/10 là ngày kỷ niệm chiến thắng Chi Lăng năm 1427, trong đó quân dân ta dưới sự chỉ huy của Lê Lợi đã đánh bại quân Minh."
+        },
+        {
+            "question": "Danh hoạ nào có 2 tác phẩm được Nhà nước Việt Nam công nhận là Bảo vật quốc gia?",
+            "a": "Nguyễn Tư Nghiêm",
+            "b": "Dương Bích Liên",
+            "c": "Nguyễn Sáng",
+            "d": "Bùi Xuân Phái",
+            "dapan": "C",
+            "helpone": ["B", "C"],
+            "helptwo": [10, 30, 65, 15],
+            "helpthree": ["C"],
+            "giaithich": "Danh họa Nguyễn Sáng có hai tác phẩm được công nhận là Bảo vật quốc gia: 'Giặc đốt làng' và 'Nhớ một chiều Tây Bắc'."
+        }
+    ]
+}

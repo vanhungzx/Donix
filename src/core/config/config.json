@@ -1,0 +1,104 @@
+{
+  "PREFIX": "/",
+  "BOTNAME": "Obito",
+  "DevMode": false,
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+  "cookie": "datr=WveraXyIKgKIDgGhr3NQFuap; fr=0J4dJ3S68J8XSsdQk.AWfTb1sa0g4K-E6DJ0oiSIkyNZTtotUO0drZuhFVm2ZqZfpVbKg.Bpq_da..AAA.0.0.Bpq_dk.AWe0736oC1eQNT6lxvR9S3f-Qj0; ps_l=1; ps_n=1; sb=Wverafzt3S-ReYYeY-sZA3Mp; c_user=61574857936692; xs=28%3AccINryp8JiN_2Q%3A2%3A1772877669%3A-1%3A-1",
+  "OWNER": "61574857936692",
+  "ADMIN": [
+    "100001781687480"
+  ],
+  "token": {
+    "EAAAAU": "",
+    "EAAD6V7": "",
+    "EAAD": ""
+  },
+  "OWNER_NOPREFIX": {
+    "all": false,
+    "list": [
+      "load"
+    ]
+  },
+  "antiINBOX": true,
+  "adminOnly": false,
+  "adminbox": {
+    "722146370916700": false,
+    "1838598186737845": true,
+    "9072589019476939": true
+  },
+  "BOX_ADMIN": "",
+  "loadSrcips": {
+    "enable": true,
+    "cmdDis": [],
+    "eventDis": []
+  },
+  "mqttAutoReconnect": {
+    "enable": true,
+    "interval": 3600000
+  },
+  "fbAccounts": [
+    {
+      "email": "61574857936692",
+      "password": "Longzzz123@",
+      "twofactor": "7Z7P 6TZD 5XHL KSOF NYZJ ZIG5 5IJO QMCZ",
+      "cookie": "",
+      "disabled": false
+    },
+    {
+      "email": "kieulamthu@gmail.com",
+      "password": "kieuiu209",
+      "twofactor": "N3W6 7I3F 5O4R GI3F LCM5 LACM GLXE K4OP",
+      "cookie": "",
+      "disabled": false
+    }
+  ],
+  "configModule": {},
+  "configValue": {},
+  "sendTopMessagesEnabled": true,
+  "scheduler": {
+    "enabled": true,
+    "tasks": {
+      "tokenCheck": {
+        "enabled": true,
+        "type": "everyH",
+        "hours": 2,
+        "ensureAll": false,
+        "strict": false
+      },
+      "updNick": {
+        "enabled": true,
+        "type": "at",
+        "time": "00:22"
+      },
+      "notifyExp": {
+        "enabled": true,
+        "type": "at",
+        "time": "16:00"
+      },
+      "sendTop": {
+        "enabled": true,
+        "type": "at",
+        "time": "00:00",
+        "send": {
+          "enabled": true
+        }
+      },
+      "resetGeminiQuota": {
+        "enabled": true,
+        "type": "at",
+        "time": "00:01"
+      },
+      "autoInteractFeed": {
+        "enabled": false,
+        "type": "everyMin",
+        "chunk": 30,
+        "maxPerRun": 3,
+        "fetchLimit": 8,
+        "reaction": "LIKE",
+        "minDelayMs": 2500,
+        "maxDelayMs": 6000,
+        "commentTemplates": []
+      }
+    }
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": [
+      "ES2020"
+    ],
+    "rootDir": "./",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "baseUrl": ".",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "sourceMap": false,
+    "inlineSources": false,
+    "removeComments": true,
+    "paths": {
+      "@core/*": [
+        "src/*"
+      ],
+      "@core": [
+        "src/core/index.ts"
+      ],
+      "@core/types": [
+        "src/types/index.ts"
+      ],
+      "@types": [
+        "src/types/index.ts"
+      ],
+      "@utils/*": [
+        "src/utils/*"
+      ],
+      "@log": [
+        "src/utils/log.ts"
+      ],
+      "@plugins/*": [
+        "src/plugins/*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.d.ts",
+    "a.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ],
+  "ts-node": {
+    "transpileOnly": true,
+    "files": true
+  }
+}

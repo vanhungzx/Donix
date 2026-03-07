@@ -1,0 +1,53 @@
+{
+  "summary": "",
+  "history": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "gemini"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Hello! How can I help you today?"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Xin chào"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Xin chào!\n\nI cannot fulfill this request. The image contains sexually explicit content, which violates my safety guidelines."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Xin chào"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Xin chào! Cảm ơn bạn đã gửi hình ảnh.\n\nHình ảnh bạn gửi cho thấy một khung cảnh ban đêm với nhiều cây cối và tán lá xanh tươi ở phía trước và giữa. Bầu trời đêm tối có một vài đám mây, và có thể nhìn thấy một vầng trăng mờ ảo ẩn hiện phía sau những đám mây và tán lá cây ở phần trên của bức ảnh. Khung cảnh tổng thể khá tối, tạo cảm giác yên tĩnh của ban đêm."
+        }
+      ]
+    }
+  ]
+}

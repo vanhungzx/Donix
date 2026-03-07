@@ -1,0 +1,57 @@
+{
+  "name": "Nguyễn Trương Khang",
+  "ID": "100082897621667",
+  "mainROD": "Light Iron Harpoon",
+  "accessory": null,
+  "GPS": {
+    "locate": "Sector Zero",
+    "area": "Lilypad Islands"
+  },
+  "fishBag": [
+    {
+      "ID": 0,
+      "name": "Đừng bán con cá này ko là lỗi tao đéo chịu trách nhiệm đâu",
+      "category": "Unnamed",
+      "size": 999999,
+      "sell": 0
+    },
+    {
+      "ID": 1,
+      "name": "Hoopfish",
+      "category": "Common",
+      "size": 27,
+      "sell": 190,
+      "image": "https://i.imgur.com/1I7IeiH.png"
+    }
+  ],
+  "item": [
+    {
+      "name": "Light Iron Harpoon",
+      "price": 500,
+      "durability": 40,
+      "countdown": 200,
+      "luck": 0,
+      "countdownData": 1738821279415,
+      "image": "https://i.imgur.com/gQuka5L.jpg"
+    }
+  ],
+  "equipments": [],
+  "point": [
+    {
+      "ID": 0,
+      "name": "Đừng bán con cá này ko là lỗi tao đéo chịu trách nhiệm đâu",
+      "category": "Unnamed",
+      "size": 999999,
+      "sell": 0
+    },
+    {
+      "ID": 1,
+      "name": "Hoopfish",
+      "category": "Common",
+      "size": 27,
+      "sell": 190,
+      "image": "https://i.imgur.com/1I7IeiH.png"
+    }
+  ],
+  "timeRegister": "12:52:16 6/2/2025"
+}

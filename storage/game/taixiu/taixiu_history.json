@@ -1,0 +1,5764 @@
+{
+  "502275138": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "20000",
+      "jackpotWin": false,
+      "timestamp": 1750856078841
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "20000",
+      "jackpotWin": false,
+      "timestamp": 1750856355110
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "97581",
+      "jackpotWin": false,
+      "timestamp": 1752864621998
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "20000",
+      "jackpotWin": false,
+      "timestamp": 1757070006824
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "8222",
+      "jackpotWin": false,
+      "timestamp": 1757950045952
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "40000",
+      "jackpotWin": false,
+      "timestamp": 1759926185406
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "5906732",
+      "jackpotWin": false,
+      "timestamp": 1760206980431
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "60000",
+      "jackpotWin": false,
+      "timestamp": 1764538350569
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "30000",
+      "jackpotWin": false,
+      "timestamp": 1764538468884
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "7153569",
+      "jackpotWin": false,
+      "timestamp": 1764612691840
+    }
+  ],
+  "100016757713599": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "1800000",
+      "jackpotWin": false,
+      "timestamp": 1750861729979
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "2000",
+      "jackpotWin": false,
+      "timestamp": 1750861759032
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "200000",
+      "jackpotWin": false,
+      "timestamp": 1750861778080
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "2300000",
+      "jackpotWin": false,
+      "timestamp": 1750861822119
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1500000",
+      "jackpotWin": false,
+      "timestamp": 1750861867147
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "2862247",
+      "jackpotWin": false,
+      "timestamp": 1750861944229
+    }
+  ],
+  "100051452504045": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "38694",
+      "jackpotWin": false,
+      "timestamp": 1750954467943
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "348248",
+      "jackpotWin": false,
+      "timestamp": 1750954478699
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "61329",
+      "jackpotWin": false,
+      "timestamp": 1750954717168
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "91994",
+      "jackpotWin": false,
+      "timestamp": 1750954726381
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "114992",
+      "jackpotWin": false,
+      "timestamp": 1750954734738
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "143740",
+      "jackpotWin": false,
+      "timestamp": 1750954761117
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "565979",
+      "jackpotWin": false,
+      "timestamp": 1750954774685
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "208873",
+      "jackpotWin": false,
+      "timestamp": 1750954786908
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "626620",
+      "jackpotWin": false,
+      "timestamp": 1750954805779
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "18783",
+      "jackpotWin": false,
+      "timestamp": 1750955128687
+    }
+  ],
+  "100075036634225": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "4568155560",
+      "jackpotWin": false,
+      "timestamp": 1757375195104
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "11497183120",
+      "jackpotWin": false,
+      "timestamp": 1757424300234
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "31265575038",
+      "jackpotWin": false,
+      "timestamp": 1757424319917
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "9064692285",
+      "jackpotWin": false,
+      "timestamp": 1757425224230
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "9501930383",
+      "jackpotWin": false,
+      "timestamp": 1757425246329
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "16188473988",
+      "jackpotWin": false,
+      "timestamp": 1757425268928
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "32376947976",
+      "jackpotWin": false,
+      "timestamp": 1757425289259
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "11008162311",
+      "jackpotWin": false,
+      "timestamp": 1757425311840
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "42737571330",
+      "jackpotWin": false,
+      "timestamp": 1757425327197
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "6547514266",
+      "jackpotWin": false,
+      "timestamp": 1757425726855
+    }
+  ],
+  "100092560688215": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "20000",
+      "jackpotWin": false,
+      "timestamp": 1751126291939
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "2000",
+      "jackpotWin": false,
+      "timestamp": 1752929625022
+    }
+  ],
+  "100034549420134": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "200000",
+      "jackpotWin": false,
+      "timestamp": 1752852565617
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "200000",
+      "jackpotWin": false,
+      "timestamp": 1752852618579
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "90000",
+      "jackpotWin": false,
+      "timestamp": 1752852967604
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "183684",
+      "jackpotWin": false,
+      "timestamp": 1753009927103
+    }
+  ],
+  "100093660381660": [
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "3150000",
+      "jackpotWin": false,
+      "timestamp": 1752852880837
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "450000",
+      "jackpotWin": false,
+      "timestamp": 1752852919998
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1500000",
+      "jackpotWin": false,
+      "timestamp": 1752853009054
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1500000",
+      "jackpotWin": false,
+      "timestamp": 1752853041105
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "1695240",
+      "jackpotWin": false,
+      "timestamp": 1752853063458
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "3390480",
+      "jackpotWin": false,
+      "timestamp": 1752853085137
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "20342880",
+      "jackpotWin": false,
+      "timestamp": 1752853102818
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "20342880",
+      "jackpotWin": false,
+      "timestamp": 1752853122000
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "169327",
+      "jackpotWin": false,
+      "timestamp": 1752926027499
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "20842",
+      "jackpotWin": false,
+      "timestamp": 1753009950411
+    }
+  ],
+  "61566030510980": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "1222488",
+      "jackpotWin": false,
+      "timestamp": 1753799062193
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1222488",
+      "jackpotWin": false,
+      "timestamp": 1753799081024
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "44236",
+      "jackpotWin": false,
+      "timestamp": 1753805697821
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "33566",
+      "jackpotWin": false,
+      "timestamp": 1753805800469
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "67132",
+      "jackpotWin": false,
+      "timestamp": 1753805818689
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "67132",
+      "jackpotWin": false,
+      "timestamp": 1753805842624
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "147662",
+      "jackpotWin": false,
+      "timestamp": 1754069151162
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "389666",
+      "jackpotWin": false,
+      "timestamp": 1754069644837
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "389666",
+      "jackpotWin": false,
+      "timestamp": 1754069666041
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "45002",
+      "jackpotWin": false,
+      "timestamp": 1754070344527
+    }
+  ],
+  "100073583566092": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "2000",
+      "jackpotWin": false,
+      "timestamp": 1753009900401
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "82000",
+      "jackpotWin": false,
+      "timestamp": 1753009919621
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "162000",
+      "jackpotWin": false,
+      "timestamp": 1753009940604
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "372600",
+      "jackpotWin": false,
+      "timestamp": 1753009981666
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "892800",
+      "jackpotWin": false,
+      "timestamp": 1753010010849
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "820000",
+      "jackpotWin": false,
+      "timestamp": 1753010075384
+    }
+  ],
+  "100095256943585": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "20000",
+      "jackpotWin": false,
+      "timestamp": 1753009944394
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "50000",
+      "jackpotWin": false,
+      "timestamp": 1753009986177
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "10000",
+      "jackpotWin": false,
+      "timestamp": 1753010065388
+    }
+  ],
+  "61570551944971": [
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "100000",
+      "jackpotWin": false,
+      "timestamp": 1753009961799
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "600000",
+      "jackpotWin": false,
+      "timestamp": 1753010060305
+    }
+  ],
+  "61550660015963": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "40000",
+      "jackpotWin": false,
+      "timestamp": 1753009963556
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "30000",
+      "jackpotWin": false,
+      "timestamp": 1753009980265
+    }
+  ],
+  "100080887650637": [
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "100000",
+      "jackpotWin": false,
+      "timestamp": 1753009979276
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "600000",
+      "jackpotWin": false,
+      "timestamp": 1753010000767
+    }
+  ],
+  "100041304696672": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "93595",
+      "jackpotWin": false,
+      "timestamp": 1753024483116
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "455969",
+      "jackpotWin": false,
+      "timestamp": 1753024536534
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "12522",
+      "jackpotWin": false,
+      "timestamp": 1753024795109
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "12522",
+      "jackpotWin": false,
+      "timestamp": 1753024811687
+    }
+  ],
+  "100054552204323": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "506632",
+      "jackpotWin": false,
+      "timestamp": 1753024503989
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "775375",
+      "jackpotWin": false,
+      "timestamp": 1753024532500
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "3272494",
+      "jackpotWin": false,
+      "timestamp": 1753024553258
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "66112",
+      "jackpotWin": false,
+      "timestamp": 1753024572948
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "132224",
+      "jackpotWin": false,
+      "timestamp": 1753024605726
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "264448",
+      "jackpotWin": false,
+      "timestamp": 1753024725681
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "291730",
+      "jackpotWin": false,
+      "timestamp": 1753027577091
+    }
+  ],
+  "100074690716989": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "118080",
+      "jackpotWin": false,
+      "timestamp": 1753024700825
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "118080",
+      "jackpotWin": false,
+      "timestamp": 1753027662105
+    }
+  ],
+  "100091785243554": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "200000",
+      "jackpotWin": false,
+      "timestamp": 1753088446413
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "52640",
+      "jackpotWin": false,
+      "timestamp": 1753088492205
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "400000",
+      "jackpotWin": false,
+      "timestamp": 1753088538891
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "100000",
+      "jackpotWin": false,
+      "timestamp": 1753088695438
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "300000",
+      "jackpotWin": false,
+      "timestamp": 1753088738300
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "134280",
+      "jackpotWin": false,
+      "timestamp": 1753088777803
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "500000",
+      "jackpotWin": false,
+      "timestamp": 1753088846799
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "26895",
+      "jackpotWin": false,
+      "timestamp": 1753105015816
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "200000",
+      "jackpotWin": false,
+      "timestamp": 1753105051539
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "20000",
+      "jackpotWin": false,
+      "timestamp": 1753105092770
+    }
+  ],
+  "100054884351496": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "10000100298",
+      "jackpotWin": false,
+      "timestamp": 1753088816254
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "199999999338",
+      "jackpotWin": false,
+      "timestamp": 1753154848605
+    }
+  ],
+  "100043703840887": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "15654",
+      "jackpotWin": false,
+      "timestamp": 1753091344143
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "30677",
+      "jackpotWin": false,
+      "timestamp": 1753128088175
+    }
+  ],
+  "61563313246201": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "20000",
+      "jackpotWin": false,
+      "timestamp": 1753105066487
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "40000",
+      "jackpotWin": false,
+      "timestamp": 1753105106100
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "2000",
+      "jackpotWin": false,
+      "timestamp": 1753105131903
+    }
+  ],
+  "100090978160905": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "5529",
+      "jackpotWin": false,
+      "timestamp": 1753154828706
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "40000",
+      "jackpotWin": false,
+      "timestamp": 1753154842717
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "40000",
+      "jackpotWin": false,
+      "timestamp": 1753154868031
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "19998",
+      "jackpotWin": false,
+      "timestamp": 1753154993939
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "19996",
+      "jackpotWin": false,
+      "timestamp": 1753155302032
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "200000",
+      "jackpotWin": false,
+      "timestamp": 1753155317007
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "505990",
+      "jackpotWin": false,
+      "timestamp": 1753155333713
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "305990",
+      "jackpotWin": false,
+      "timestamp": 1753155430568
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "200000",
+      "jackpotWin": false,
+      "timestamp": 1753155445338
+    }
+  ],
+  "61567290336974": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "40000",
+      "jackpotWin": false,
+      "timestamp": 1753805018170
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "30000",
+      "jackpotWin": false,
+      "timestamp": 1753805054473
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "25000",
+      "jackpotWin": false,
+      "timestamp": 1753805068373
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "50000",
+      "jackpotWin": false,
+      "timestamp": 1753805089367
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "100000",
+      "jackpotWin": false,
+      "timestamp": 1753805108712
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "151191",
+      "jackpotWin": false,
+      "timestamp": 1753805133034
+    }
+  ],
+  "100056075963013": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "88000",
+      "jackpotWin": false,
+      "timestamp": 1753805861475
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "176000",
+      "jackpotWin": false,
+      "timestamp": 1753805879210
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "352000",
+      "jackpotWin": false,
+      "timestamp": 1753805893502
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "351000",
+      "jackpotWin": false,
+      "timestamp": 1753805910551
+    }
+  ],
+  "100086626969056": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "6000",
+      "jackpotWin": false,
+      "timestamp": 1753887725403
+    }
+  ],
+  "100073756610006": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "8200000",
+      "jackpotWin": false,
+      "timestamp": 1757825282136
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "50000000",
+      "jackpotWin": false,
+      "timestamp": 1757825294149
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "164000000",
+      "jackpotWin": false,
+      "timestamp": 1757825388142
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "82000000",
+      "jackpotWin": false,
+      "timestamp": 1757825408460
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "164000000",
+      "jackpotWin": false,
+      "timestamp": 1757825433783
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "400000000",
+      "jackpotWin": false,
+      "timestamp": 1757825445019
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "782557028",
+      "jackpotWin": false,
+      "timestamp": 1757825466108
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "32817433",
+      "jackpotWin": false,
+      "timestamp": 1757825722304
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "44795794",
+      "jackpotWin": false,
+      "timestamp": 1757825737296
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "96460279",
+      "jackpotWin": false,
+      "timestamp": 1757825814342
+    }
+  ],
+  "61562389670130": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "500000000",
+      "jackpotWin": false,
+      "timestamp": 1757525133482
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000000000",
+      "jackpotWin": false,
+      "timestamp": 1757525350677
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "447911316",
+      "jackpotWin": false,
+      "timestamp": 1757525466937
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "2000000",
+      "jackpotWin": false,
+      "timestamp": 1757526194120
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "820000",
+      "jackpotWin": false,
+      "timestamp": 1757526259356
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000000",
+      "jackpotWin": false,
+      "timestamp": 1757526303616
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "672400",
+      "jackpotWin": false,
+      "timestamp": 1757526335050
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000000",
+      "jackpotWin": false,
+      "timestamp": 1757526390705
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "605652",
+      "jackpotWin": false,
+      "timestamp": 1757526415996
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1098052",
+      "jackpotWin": false,
+      "timestamp": 1757526439167
+    }
+  ],
+  "100081302510195": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "4100000",
+      "jackpotWin": false,
+      "timestamp": 1757570663687
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "4100000",
+      "jackpotWin": false,
+      "timestamp": 1757570681134
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "6150000",
+      "jackpotWin": false,
+      "timestamp": 1757570723317
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "4100000",
+      "jackpotWin": false,
+      "timestamp": 1757570759110
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "6150000",
+      "jackpotWin": false,
+      "timestamp": 1757570814354
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "8446000",
+      "jackpotWin": false,
+      "timestamp": 1757570987971
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "25923000",
+      "jackpotWin": false,
+      "timestamp": 1757571044351
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "723000",
+      "jackpotWin": false,
+      "timestamp": 1757581613445
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "5000000",
+      "jackpotWin": false,
+      "timestamp": 1757692936635
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "2500000",
+      "jackpotWin": false,
+      "timestamp": 1757692992436
+    }
+  ],
+  "61560211479497": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "820000",
+      "jackpotWin": false,
+      "timestamp": 1757531053268
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "3280000",
+      "jackpotWin": false,
+      "timestamp": 1757531253773
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "420947000",
+      "jackpotWin": false,
+      "timestamp": 1757532816123
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "82000000",
+      "jackpotWin": false,
+      "timestamp": 1757532994890
+    }
+  ],
+  "61556109764805": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "197617556",
+      "jackpotWin": false,
+      "timestamp": 1757784624330
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "81023197",
+      "jackpotWin": false,
+      "timestamp": 1757784659205
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "171364062",
+      "jackpotWin": false,
+      "timestamp": 1757784697040
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "36900394",
+      "jackpotWin": false,
+      "timestamp": 1757784779848
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "52029555",
+      "jackpotWin": false,
+      "timestamp": 1757784795815
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "89465456",
+      "jackpotWin": false,
+      "timestamp": 1757784817424
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "110042508",
+      "jackpotWin": false,
+      "timestamp": 1757784899138
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "99753982",
+      "jackpotWin": false,
+      "timestamp": 1757784988588
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "82000000",
+      "jackpotWin": false,
+      "timestamp": 1757825791382
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "90647058",
+      "jackpotWin": false,
+      "timestamp": 1758452553398
+    }
+  ],
+  "100009681303678": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "8200",
+      "jackpotWin": false,
+      "timestamp": 1757733978414
+    }
+  ],
+  "100077360444003": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "72041",
+      "jackpotWin": false,
+      "timestamp": 1757824770955
+    }
+  ],
+  "100051043260073": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000",
+      "jackpotWin": false,
+      "timestamp": 1757825181393
+    }
+  ],
+  "100070875971941": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "480200002",
+      "jackpotWin": false,
+      "timestamp": 1758734529022
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "1040125164",
+      "jackpotWin": false,
+      "timestamp": 1758734552519
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "1124660528",
+      "jackpotWin": false,
+      "timestamp": 1758776143906
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "41000",
+      "jackpotWin": false,
+      "timestamp": 1759750897792
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "74620",
+      "jackpotWin": false,
+      "timestamp": 1759750985143
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "200331240",
+      "jackpotWin": false,
+      "timestamp": 1759986126756
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "42500000",
+      "jackpotWin": false,
+      "timestamp": 1760010147563
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "40000",
+      "jackpotWin": false,
+      "timestamp": 1760010998333
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "167456460526",
+      "jackpotWin": false,
+      "timestamp": 1760857255244
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "50000001000",
+      "jackpotWin": false,
+      "timestamp": 1760860920184
+    }
+  ],
+  "100015310365070": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "50000000000",
+      "jackpotWin": false,
+      "timestamp": 1760847723076
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "140000000000",
+      "jackpotWin": false,
+      "timestamp": 1760847767696
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "140000000000",
+      "jackpotWin": false,
+      "timestamp": 1760847795217
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "30000000000",
+      "jackpotWin": false,
+      "timestamp": 1760847931242
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "140000000000",
+      "jackpotWin": false,
+      "timestamp": 1760847950426
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "70000000000",
+      "jackpotWin": false,
+      "timestamp": 1760847980830
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "200000000000",
+      "jackpotWin": false,
+      "timestamp": 1760847996359
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "500000000",
+      "jackpotWin": false,
+      "timestamp": 1760857245259
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "60000000000",
+      "jackpotWin": false,
+      "timestamp": 1760857309798
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "50000000000",
+      "jackpotWin": false,
+      "timestamp": 1760857510512
+    }
+  ],
+  "61570352423676": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "12487",
+      "jackpotWin": false,
+      "timestamp": 1758016886569
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "54138",
+      "jackpotWin": false,
+      "timestamp": 1758017040709
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "500000000",
+      "jackpotWin": false,
+      "timestamp": 1758017161662
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "200000",
+      "jackpotWin": false,
+      "timestamp": 1758027293178
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "142646",
+      "jackpotWin": false,
+      "timestamp": 1758027810100
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000",
+      "jackpotWin": false,
+      "timestamp": 1758031223147
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "245336",
+      "jackpotWin": false,
+      "timestamp": 1758031396553
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "512597",
+      "jackpotWin": false,
+      "timestamp": 1758192129711
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "52940",
+      "jackpotWin": false,
+      "timestamp": 1758196127072
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "169300",
+      "jackpotWin": false,
+      "timestamp": 1758373157921
+    }
+  ],
+  "61552617271933": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "15698400203274",
+      "jackpotWin": false,
+      "timestamp": 1760942879220
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "200000000000",
+      "jackpotWin": false,
+      "timestamp": 1760942978263
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "300000000000",
+      "jackpotWin": false,
+      "timestamp": 1760942990960
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "10000000000000",
+      "jackpotWin": false,
+      "timestamp": 1760943102488
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "90000000000000",
+      "jackpotWin": false,
+      "timestamp": 1760943118478
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "210000000000000",
+      "jackpotWin": false,
+      "timestamp": 1760943164203
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "913500000000000",
+      "jackpotWin": false,
+      "timestamp": 1760943220377
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "150000000000000",
+      "jackpotWin": false,
+      "timestamp": 1760943265710
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "1030000000000000",
+      "jackpotWin": false,
+      "timestamp": 1760943302806
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1873000000000000",
+      "jackpotWin": false,
+      "timestamp": 1760970391352
+    }
+  ],
+  "61567284435813": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "410000",
+      "jackpotWin": false,
+      "timestamp": 1758029572881
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "700000",
+      "jackpotWin": false,
+      "timestamp": 1758029630350
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "627231",
+      "jackpotWin": false,
+      "timestamp": 1758029652616
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "13621",
+      "jackpotWin": false,
+      "timestamp": 1758036422816
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "6000000",
+      "jackpotWin": false,
+      "timestamp": 1758037166786
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "73810",
+      "jackpotWin": false,
+      "timestamp": 1758037972425
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "46303",
+      "jackpotWin": false,
+      "timestamp": 1758085168662
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "102771",
+      "jackpotWin": false,
+      "timestamp": 1758085189224
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "28459",
+      "jackpotWin": false,
+      "timestamp": 1758108981421
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "820000",
+      "jackpotWin": false,
+      "timestamp": 1758122312558
+    }
+  ],
+  "61578200786655": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "77153",
+      "jackpotWin": false,
+      "timestamp": 1758807000761
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "100000",
+      "jackpotWin": false,
+      "timestamp": 1758823254960
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "60000",
+      "jackpotWin": false,
+      "timestamp": 1758823277492
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "164652",
+      "jackpotWin": false,
+      "timestamp": 1758823297804
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "11775",
+      "jackpotWin": false,
+      "timestamp": 1758823645257
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "41598",
+      "jackpotWin": false,
+      "timestamp": 1758823993071
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "30000",
+      "jackpotWin": false,
+      "timestamp": 1758824075399
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "21297",
+      "jackpotWin": false,
+      "timestamp": 1758825536836
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "38760",
+      "jackpotWin": false,
+      "timestamp": 1758825583415
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "86029",
+      "jackpotWin": false,
+      "timestamp": 1758825638665
+    }
+  ],
+  "61572282816155": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "167106",
+      "jackpotWin": false,
+      "timestamp": 1758288237625
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "8200000",
+      "jackpotWin": false,
+      "timestamp": 1758376596096
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "18200000",
+      "jackpotWin": false,
+      "timestamp": 1758376610874
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "172061",
+      "jackpotWin": false,
+      "timestamp": 1758376796765
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "1077151",
+      "jackpotWin": false,
+      "timestamp": 1758625311148
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "2390750",
+      "jackpotWin": false,
+      "timestamp": 1758625329834
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "65312",
+      "jackpotWin": false,
+      "timestamp": 1760010208196
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "50000000",
+      "jackpotWin": false,
+      "timestamp": 1760010324535
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "150000000",
+      "jackpotWin": false,
+      "timestamp": 1760010340642
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "225000000",
+      "jackpotWin": false,
+      "timestamp": 1760010351184
+    }
+  ],
+  "61554748049733": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "966662152",
+      "jackpotWin": false,
+      "timestamp": 1758198496796
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "55198",
+      "jackpotWin": false,
+      "timestamp": 1758209965909
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "38920",
+      "jackpotWin": false,
+      "timestamp": 1758210030751
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "83091",
+      "jackpotWin": false,
+      "timestamp": 1758553745715
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "55487",
+      "jackpotWin": false,
+      "timestamp": 1758671477339
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "100987",
+      "jackpotWin": false,
+      "timestamp": 1758671501034
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "183796",
+      "jackpotWin": false,
+      "timestamp": 1758671530457
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "334509",
+      "jackpotWin": false,
+      "timestamp": 1758676334516
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "608806",
+      "jackpotWin": false,
+      "timestamp": 1758676358734
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1351253",
+      "jackpotWin": false,
+      "timestamp": 1758676374214
+    }
+  ],
+  "100081454577912": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "2755243",
+      "jackpotWin": false,
+      "timestamp": 1758100189385
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "2755243",
+      "jackpotWin": false,
+      "timestamp": 1758100224651
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "24600000",
+      "jackpotWin": false,
+      "timestamp": 1758108649531
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "200000000",
+      "jackpotWin": false,
+      "timestamp": 1758108688735
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "167600000",
+      "jackpotWin": false,
+      "timestamp": 1758108724734
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000",
+      "jackpotWin": false,
+      "timestamp": 1758376837341
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "820",
+      "jackpotWin": false,
+      "timestamp": 1758376907165
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "105345",
+      "jackpotWin": false,
+      "timestamp": 1758376924511
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "15292580",
+      "jackpotWin": false,
+      "timestamp": 1758378463972
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "33942068",
+      "jackpotWin": false,
+      "timestamp": 1758378515225
+    }
+  ],
+  "100085538859497": [
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "67650000",
+      "jackpotWin": false,
+      "timestamp": 1758046341236
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "117034500",
+      "jackpotWin": false,
+      "timestamp": 1758046367955
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "3902543",
+      "jackpotWin": false,
+      "timestamp": 1758046506596
+    }
+  ],
+  "100089212691055": [
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "820",
+      "jackpotWin": false,
+      "timestamp": 1758087658496
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "2000",
+      "jackpotWin": false,
+      "timestamp": 1758087704293
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "2000",
+      "jackpotWin": false,
+      "timestamp": 1758087868683
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "820",
+      "jackpotWin": false,
+      "timestamp": 1758119141856
+    }
+  ],
+  "100089624437037": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "185056654",
+      "jackpotWin": false,
+      "timestamp": 1758108078172
+    }
+  ],
+  "61560465892691": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "300000",
+      "jackpotWin": false,
+      "timestamp": 1758108456282
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "300000",
+      "jackpotWin": false,
+      "timestamp": 1758108482218
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1700000",
+      "jackpotWin": false,
+      "timestamp": 1758108499390
+    }
+  ],
+  "100073353203883": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "615000000",
+      "jackpotWin": false,
+      "timestamp": 1758191999336
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "399200000",
+      "jackpotWin": false,
+      "timestamp": 1758192099477
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "500000000",
+      "jackpotWin": false,
+      "timestamp": 1758254503825
+    }
+  ],
+  "100093245094283": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "50000000",
+      "jackpotWin": false,
+      "timestamp": 1758198409561
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "69945723",
+      "jackpotWin": false,
+      "timestamp": 1758198486468
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "50099538",
+      "jackpotWin": false,
+      "timestamp": 1758198552156
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "956125",
+      "jackpotWin": false,
+      "timestamp": 1758209271970
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "820000",
+      "jackpotWin": false,
+      "timestamp": 1758209716486
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "1640000",
+      "jackpotWin": false,
+      "timestamp": 1758209761156
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000000",
+      "jackpotWin": false,
+      "timestamp": 1758209783287
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "3460000",
+      "jackpotWin": false,
+      "timestamp": 1758209801602
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "122132",
+      "jackpotWin": false,
+      "timestamp": 1758209830441
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "11662",
+      "jackpotWin": false,
+      "timestamp": 1758209942234
+    }
+  ],
+  "61559968897095": [
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "25260",
+      "jackpotWin": false,
+      "timestamp": 1758370363456
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "56066",
+      "jackpotWin": false,
+      "timestamp": 1758370412316
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "414976",
+      "jackpotWin": false,
+      "timestamp": 1758382494730
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "755256",
+      "jackpotWin": false,
+      "timestamp": 1758382552395
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1676301",
+      "jackpotWin": false,
+      "timestamp": 1758382584159
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "12065",
+      "jackpotWin": false,
+      "timestamp": 1758382782780
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "115986",
+      "jackpotWin": false,
+      "timestamp": 1758382949023
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "66394",
+      "jackpotWin": false,
+      "timestamp": 1758624802758
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "147363",
+      "jackpotWin": false,
+      "timestamp": 1758624843664
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "47120",
+      "jackpotWin": false,
+      "timestamp": 1759759513058
+    }
+  ],
+  "61555468983131": [
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "820000",
+      "jackpotWin": false,
+      "timestamp": 1758303825120
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "820000",
+      "jackpotWin": false,
+      "timestamp": 1758303869021
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000000",
+      "jackpotWin": false,
+      "timestamp": 1758313548224
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000000",
+      "jackpotWin": false,
+      "timestamp": 1758992343762
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000000",
+      "jackpotWin": false,
+      "timestamp": 1758992357388
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "820000",
+      "jackpotWin": false,
+      "timestamp": 1758992371810
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "820000",
+      "jackpotWin": false,
+      "timestamp": 1758992387169
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "2000000",
+      "jackpotWin": false,
+      "timestamp": 1759859996342
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000000",
+      "jackpotWin": false,
+      "timestamp": 1759860077873
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000000",
+      "jackpotWin": false,
+      "timestamp": 1761236662583
+    }
+  ],
+  "100053468929298": [
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "2460000",
+      "jackpotWin": false,
+      "timestamp": 1758303358594
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000000",
+      "jackpotWin": false,
+      "timestamp": 1758303379544
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000000",
+      "jackpotWin": false,
+      "timestamp": 1758303391719
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "820000",
+      "jackpotWin": false,
+      "timestamp": 1758303429052
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000000",
+      "jackpotWin": false,
+      "timestamp": 1758303807853
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "1230000",
+      "jackpotWin": false,
+      "timestamp": 1758303823920
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "820000",
+      "jackpotWin": false,
+      "timestamp": 1758303850773
+    }
+  ],
+  "61579097135163": [
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "800000000000",
+      "jackpotWin": false,
+      "timestamp": 1760916162385
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "400000000000",
+      "jackpotWin": false,
+      "timestamp": 1760916193634
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "1200000000000",
+      "jackpotWin": false,
+      "timestamp": 1760916277309
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "400000000000",
+      "jackpotWin": false,
+      "timestamp": 1760916309103
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "400000000000",
+      "jackpotWin": false,
+      "timestamp": 1760916338754
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "1236000000000",
+      "jackpotWin": false,
+      "timestamp": 1760916366755
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "836000000000",
+      "jackpotWin": false,
+      "timestamp": 1760916410069
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "36427",
+      "jackpotWin": false,
+      "timestamp": 1760916452317
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "2000000000",
+      "jackpotWin": false,
+      "timestamp": 1760929067517
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "2002000000000",
+      "jackpotWin": false,
+      "timestamp": 1760929084448
+    }
+  ],
+  "100080796725899": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "60000000000000",
+      "jackpotWin": false,
+      "timestamp": 1760942902123
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "100000000000",
+      "jackpotWin": false,
+      "timestamp": 1760943241918
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "138750000000000",
+      "jackpotWin": false,
+      "timestamp": 1760943266954
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "110000000000",
+      "jackpotWin": false,
+      "timestamp": 1761020905818
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "29780000000000",
+      "jackpotWin": false,
+      "timestamp": 1761020932736
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "44670000000000",
+      "jackpotWin": false,
+      "timestamp": 1761020980879
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "20000000000",
+      "jackpotWin": false,
+      "timestamp": 1761021443235
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "100000000000",
+      "jackpotWin": false,
+      "timestamp": 1761021462679
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "47499047619047",
+      "jackpotWin": false,
+      "timestamp": 1761021483809
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "190476190476190",
+      "jackpotWin": false,
+      "timestamp": 1761026260088
+    }
+  ],
+  "100081891804462": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "30000000",
+      "jackpotWin": false,
+      "timestamp": 1758378247695
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "53718528",
+      "jackpotWin": false,
+      "timestamp": 1758378284924
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "41000000",
+      "jackpotWin": false,
+      "timestamp": 1758378339619
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "41000000",
+      "jackpotWin": false,
+      "timestamp": 1758378446042
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "64780000",
+      "jackpotWin": false,
+      "timestamp": 1758378536035
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "82000000",
+      "jackpotWin": false,
+      "timestamp": 1758378631554
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "275484978",
+      "jackpotWin": false,
+      "timestamp": 1758378718031
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "345000000",
+      "jackpotWin": false,
+      "timestamp": 1758378797809
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "210458826",
+      "jackpotWin": false,
+      "timestamp": 1758378851482
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "467115932",
+      "jackpotWin": false,
+      "timestamp": 1758378935247
+    }
+  ],
+  "61573453062384": [
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "97662",
+      "jackpotWin": false,
+      "timestamp": 1758724804317
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "72143",
+      "jackpotWin": false,
+      "timestamp": 1758892702934
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "21906",
+      "jackpotWin": false,
+      "timestamp": 1758908081538
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "39869",
+      "jackpotWin": false,
+      "timestamp": 1758908099881
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "88490",
+      "jackpotWin": false,
+      "timestamp": 1758908121025
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "15285",
+      "jackpotWin": false,
+      "timestamp": 1759338867669
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "22724",
+      "jackpotWin": false,
+      "timestamp": 1759338878122
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "41358",
+      "jackpotWin": false,
+      "timestamp": 1759338901935
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "75271",
+      "jackpotWin": false,
+      "timestamp": 1759338922060
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "167066",
+      "jackpotWin": false,
+      "timestamp": 1759338935045
+    }
+  ],
+  "61554338769317": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "8200000",
+      "jackpotWin": false,
+      "timestamp": 1758387323118
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "8200000",
+      "jackpotWin": false,
+      "timestamp": 1758388087235
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "20000000",
+      "jackpotWin": false,
+      "timestamp": 1758388367630
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "49200000",
+      "jackpotWin": false,
+      "timestamp": 1758388422333
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "30000000",
+      "jackpotWin": false,
+      "timestamp": 1758388755390
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "20000000",
+      "jackpotWin": false,
+      "timestamp": 1758388899568
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "5747063",
+      "jackpotWin": false,
+      "timestamp": 1758388937212
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "49589",
+      "jackpotWin": false,
+      "timestamp": 1758389244972
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "40376",
+      "jackpotWin": false,
+      "timestamp": 1758389717623
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "6428",
+      "jackpotWin": false,
+      "timestamp": 1758457018294
+    }
+  ],
+  "100056057965189": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "500000000",
+      "jackpotWin": false,
+      "timestamp": 1758390060892
+    }
+  ],
+  "61555761140176": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "65600",
+      "jackpotWin": false,
+      "timestamp": 1758419093507
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "73800",
+      "jackpotWin": false,
+      "timestamp": 1758419689765
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "160000",
+      "jackpotWin": false,
+      "timestamp": 1758419731451
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "50000",
+      "jackpotWin": false,
+      "timestamp": 1758419849802
+    }
+  ],
+  "100087460263058": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "500000000",
+      "jackpotWin": false,
+      "timestamp": 1758429795705
+    }
+  ],
+  "100083323643156": [
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "410000000",
+      "jackpotWin": false,
+      "timestamp": 1758429960249
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "400000000",
+      "jackpotWin": false,
+      "timestamp": 1758445492654
+    }
+  ],
+  "61579775621387": [
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "33825000",
+      "jackpotWin": false,
+      "timestamp": 1758459355800
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "7175",
+      "jackpotWin": false,
+      "timestamp": 1758527817864
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "15925",
+      "jackpotWin": false,
+      "timestamp": 1758527832566
+    }
+  ],
+  "61580205140459": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "27500000",
+      "jackpotWin": false,
+      "timestamp": 1758482417426
+    }
+  ],
+  "61581044321872": [
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "16400000",
+      "jackpotWin": false,
+      "timestamp": 1758560624489
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "27387776",
+      "jackpotWin": false,
+      "timestamp": 1758560918913
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "20000000",
+      "jackpotWin": false,
+      "timestamp": 1758560987855
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "40787503",
+      "jackpotWin": false,
+      "timestamp": 1758561111465
+    }
+  ],
+  "61566890064255": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "137056",
+      "jackpotWin": false,
+      "timestamp": 1758784048134
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "46503",
+      "jackpotWin": false,
+      "timestamp": 1758785587977
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "84635",
+      "jackpotWin": false,
+      "timestamp": 1758785652180
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "154036",
+      "jackpotWin": false,
+      "timestamp": 1758785672461
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "280345",
+      "jackpotWin": false,
+      "timestamp": 1758785690211
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "510228",
+      "jackpotWin": false,
+      "timestamp": 1758785712398
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1132458",
+      "jackpotWin": false,
+      "timestamp": 1758785754742
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "76100",
+      "jackpotWin": false,
+      "timestamp": 1758799979770
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "58930",
+      "jackpotWin": false,
+      "timestamp": 1759759432741
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "61074",
+      "jackpotWin": false,
+      "timestamp": 1760017997089
+    }
+  ],
+  "100089505034352": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "8200",
+      "jackpotWin": false,
+      "timestamp": 1758990784762
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "8200",
+      "jackpotWin": false,
+      "timestamp": 1758990809309
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "8200",
+      "jackpotWin": false,
+      "timestamp": 1758990824310
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "91616",
+      "jackpotWin": false,
+      "timestamp": 1758990841638
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "82000",
+      "jackpotWin": false,
+      "timestamp": 1758991203732
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "100000",
+      "jackpotWin": false,
+      "timestamp": 1758991222331
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "8200",
+      "jackpotWin": false,
+      "timestamp": 1758991240138
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "82000",
+      "jackpotWin": false,
+      "timestamp": 1758991262326
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "620029",
+      "jackpotWin": false,
+      "timestamp": 1758991288465
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "59116",
+      "jackpotWin": false,
+      "timestamp": 1758991537872
+    }
+  ],
+  "100086095865723": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "73303",
+      "jackpotWin": false,
+      "timestamp": 1758990845029
+    }
+  ],
+  "61577048846030": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "820000",
+      "jackpotWin": false,
+      "timestamp": 1758990895841
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "1492400",
+      "jackpotWin": false,
+      "timestamp": 1758990918621
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "2716168",
+      "jackpotWin": false,
+      "timestamp": 1758990990669
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "820000",
+      "jackpotWin": false,
+      "timestamp": 1758991043966
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "2500000",
+      "jackpotWin": false,
+      "timestamp": 1758991069154
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000000",
+      "jackpotWin": false,
+      "timestamp": 1758991092013
+    }
+  ],
+  "100060766740064": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "5092433",
+      "jackpotWin": false,
+      "timestamp": 1758991625652
+    }
+  ],
+  "100044968881555": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "1640000",
+      "jackpotWin": false,
+      "timestamp": 1758991743372
+    }
+  ],
+  "100068437002675": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "1640",
+      "jackpotWin": false,
+      "timestamp": 1759384076108
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "918152",
+      "jackpotWin": false,
+      "timestamp": 1760019362322
+    }
+  ],
+  "100041772041942": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "8200",
+      "jackpotWin": false,
+      "timestamp": 1759384187180
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "8200",
+      "jackpotWin": false,
+      "timestamp": 1759384229045
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "2000",
+      "jackpotWin": false,
+      "timestamp": 1759384254313
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "1169080",
+      "jackpotWin": false,
+      "timestamp": 1760019381003
+    }
+  ],
+  "100031166643271": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "2000",
+      "jackpotWin": false,
+      "timestamp": 1759384203295
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "138902",
+      "jackpotWin": false,
+      "timestamp": 1760019540767
+    }
+  ],
+  "61555246736704": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "50214",
+      "jackpotWin": false,
+      "timestamp": 1759632909311
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "82000",
+      "jackpotWin": false,
+      "timestamp": 1759651578629
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "55482",
+      "jackpotWin": false,
+      "timestamp": 1759651658422
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "15658",
+      "jackpotWin": false,
+      "timestamp": 1759680551637
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "15000",
+      "jackpotWin": false,
+      "timestamp": 1759681155573
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "12300",
+      "jackpotWin": false,
+      "timestamp": 1759681341974
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "263994",
+      "jackpotWin": false,
+      "timestamp": 1759766193530
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "70632",
+      "jackpotWin": false,
+      "timestamp": 1759807113093
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "115670",
+      "jackpotWin": false,
+      "timestamp": 1759812820390
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "274375",
+      "jackpotWin": false,
+      "timestamp": 1759853754154
+    }
+  ],
+  "100023000109619": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "10000",
+      "jackpotWin": false,
+      "timestamp": 1759586563765
+    }
+  ],
+  "100064932470467": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "16400",
+      "jackpotWin": false,
+      "timestamp": 1759586707378
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "24600",
+      "jackpotWin": false,
+      "timestamp": 1759586779382
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "70000",
+      "jackpotWin": false,
+      "timestamp": 1759586841029
+    }
+  ],
+  "100011589973884": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "26660",
+      "jackpotWin": false,
+      "timestamp": 1759662705778
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "10000",
+      "jackpotWin": false,
+      "timestamp": 1759662997914
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "63080",
+      "jackpotWin": false,
+      "timestamp": 1759663084883
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "210196",
+      "jackpotWin": false,
+      "timestamp": 1759708845153
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "75061",
+      "jackpotWin": false,
+      "timestamp": 1759715340855
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "204918",
+      "jackpotWin": false,
+      "timestamp": 1759715372054
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "100000",
+      "jackpotWin": false,
+      "timestamp": 1759715417453
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "362220",
+      "jackpotWin": false,
+      "timestamp": 1759723803488
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "100000",
+      "jackpotWin": false,
+      "timestamp": 1759723877655
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "74692",
+      "jackpotWin": false,
+      "timestamp": 1759761203944
+    }
+  ],
+  "100062905860034": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "8200",
+      "jackpotWin": false,
+      "timestamp": 1759662883709
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "16400",
+      "jackpotWin": false,
+      "timestamp": 1759662922741
+    }
+  ],
+  "100058629184741": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "29010",
+      "jackpotWin": false,
+      "timestamp": 1759708885814
+    }
+  ],
+  "100079708125398": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "46000000",
+      "jackpotWin": false,
+      "timestamp": 1759936254555
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "80000000",
+      "jackpotWin": false,
+      "timestamp": 1759936350898
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "20000000",
+      "jackpotWin": false,
+      "timestamp": 1759936465373
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "40000000",
+      "jackpotWin": false,
+      "timestamp": 1759936490791
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "489749570",
+      "jackpotWin": false,
+      "timestamp": 1759936513841
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "414132",
+      "jackpotWin": false,
+      "timestamp": 1759936813713
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "569424",
+      "jackpotWin": false,
+      "timestamp": 1759944751255
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "46110",
+      "jackpotWin": false,
+      "timestamp": 1759944811648
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "100000",
+      "jackpotWin": false,
+      "timestamp": 1759945583422
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "237916",
+      "jackpotWin": false,
+      "timestamp": 1759945851752
+    }
+  ],
+  "61558494473594": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000000",
+      "jackpotWin": false,
+      "timestamp": 1759959020186
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "1000000",
+      "jackpotWin": false,
+      "timestamp": 1759959141534
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "500000",
+      "jackpotWin": false,
+      "timestamp": 1759959200249
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "500000",
+      "jackpotWin": false,
+      "timestamp": 1759959245488
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "500000",
+      "jackpotWin": false,
+      "timestamp": 1759959270811
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "4000000",
+      "jackpotWin": false,
+      "timestamp": 1759959297737
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "2000000",
+      "jackpotWin": false,
+      "timestamp": 1759959359171
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000000",
+      "jackpotWin": false,
+      "timestamp": 1759959438772
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "1000000",
+      "jackpotWin": false,
+      "timestamp": 1759959507528
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "500000",
+      "jackpotWin": false,
+      "timestamp": 1759959534351
+    }
+  ],
+  "61571682270995": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "200000",
+      "jackpotWin": false,
+      "timestamp": 1759714806382
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "59000",
+      "jackpotWin": false,
+      "timestamp": 1759753456377
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "123473",
+      "jackpotWin": false,
+      "timestamp": 1759854088730
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "95284",
+      "jackpotWin": false,
+      "timestamp": 1759887360462
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "27386",
+      "jackpotWin": false,
+      "timestamp": 1759899242159
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "138438",
+      "jackpotWin": false,
+      "timestamp": 1759936704564
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "76707",
+      "jackpotWin": false,
+      "timestamp": 1759944780865
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "35086",
+      "jackpotWin": false,
+      "timestamp": 1759946010526
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "172148",
+      "jackpotWin": false,
+      "timestamp": 1759980108568
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "516444",
+      "jackpotWin": false,
+      "timestamp": 1759980132723
+    }
+  ],
+  "61579084391991": [
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "16400",
+      "jackpotWin": false,
+      "timestamp": 1759714648919
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "32800",
+      "jackpotWin": false,
+      "timestamp": 1759714673536
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "60000",
+      "jackpotWin": false,
+      "timestamp": 1759714699535
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "20000",
+      "jackpotWin": false,
+      "timestamp": 1759714722253
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "11926",
+      "jackpotWin": false,
+      "timestamp": 1759714765458
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "100000",
+      "jackpotWin": false,
+      "timestamp": 1759714867856
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "73800",
+      "jackpotWin": false,
+      "timestamp": 1759714897031
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "142516",
+      "jackpotWin": false,
+      "timestamp": 1759714945456
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "200000",
+      "jackpotWin": false,
+      "timestamp": 1759714970835
+    }
+  ],
+  "61578722487118": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "50000",
+      "jackpotWin": false,
+      "timestamp": 1759751035149
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "100000000",
+      "jackpotWin": false,
+      "timestamp": 1759751134333
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "4100000",
+      "jackpotWin": false,
+      "timestamp": 1759758949397
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000000",
+      "jackpotWin": false,
+      "timestamp": 1759998968654
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "119600000",
+      "jackpotWin": false,
+      "timestamp": 1759999099008
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "2000000",
+      "jackpotWin": false,
+      "timestamp": 1759999151467
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "30000000",
+      "jackpotWin": false,
+      "timestamp": 1759999214363
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "147400000",
+      "jackpotWin": false,
+      "timestamp": 1760018142977
+    }
+  ],
+  "100057358747428": [
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "2952",
+      "jackpotWin": false,
+      "timestamp": 1759752997231
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "82961",
+      "jackpotWin": false,
+      "timestamp": 1759766178120
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "192683",
+      "jackpotWin": false,
+      "timestamp": 1759853820686
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "68000",
+      "jackpotWin": false,
+      "timestamp": 1759936572204
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "63473",
+      "jackpotWin": false,
+      "timestamp": 1759936754360
+    }
+  ],
+  "100081019047023": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "70000",
+      "jackpotWin": false,
+      "timestamp": 1759936908304
+    }
+  ],
+  "100007513902065": [
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "174490",
+      "jackpotWin": false,
+      "timestamp": 1759945823618
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "396742",
+      "jackpotWin": false,
+      "timestamp": 1759980616349
+    }
+  ],
+  "100068357624910": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "85116",
+      "jackpotWin": false,
+      "timestamp": 1759946018062
+    }
+  ],
+  "100021588095422": [
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "400000",
+      "jackpotWin": false,
+      "timestamp": 1759994616373
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "200000",
+      "jackpotWin": false,
+      "timestamp": 1759994666499
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "800000",
+      "jackpotWin": false,
+      "timestamp": 1759994683470
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "400000",
+      "jackpotWin": false,
+      "timestamp": 1759994724718
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "400000",
+      "jackpotWin": false,
+      "timestamp": 1759994742113
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "200000",
+      "jackpotWin": false,
+      "timestamp": 1759994758415
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "20000",
+      "jackpotWin": false,
+      "timestamp": 1760000876014
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "1200000",
+      "jackpotWin": false,
+      "timestamp": 1760000888508
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "9491579108",
+      "jackpotWin": false,
+      "timestamp": 1760365526081
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "43159806",
+      "jackpotWin": false,
+      "timestamp": 1760786770607
+    }
+  ],
+  "61558125797448": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "3000000",
+      "jackpotWin": false,
+      "timestamp": 1759991211725
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "10000000",
+      "jackpotWin": false,
+      "timestamp": 1759991323684
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000000",
+      "jackpotWin": false,
+      "timestamp": 1759991368865
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "16000000",
+      "jackpotWin": false,
+      "timestamp": 1759991441886
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "16000000",
+      "jackpotWin": false,
+      "timestamp": 1759991482055
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000000",
+      "jackpotWin": false,
+      "timestamp": 1759992250985
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "2500000",
+      "jackpotWin": false,
+      "timestamp": 1759992496763
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "9548706",
+      "jackpotWin": false,
+      "timestamp": 1759992620214
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "28646118",
+      "jackpotWin": false,
+      "timestamp": 1759992712678
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "200000",
+      "jackpotWin": false,
+      "timestamp": 1760034533278
+    }
+  ],
+  "100068454206292": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "20000000",
+      "jackpotWin": false,
+      "timestamp": 1759991242649
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "100000000",
+      "jackpotWin": false,
+      "timestamp": 1759991274432
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "87560950",
+      "jackpotWin": false,
+      "timestamp": 1759994155636
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "5000000",
+      "jackpotWin": false,
+      "timestamp": 1759994306511
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "10000000",
+      "jackpotWin": false,
+      "timestamp": 1759994364578
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "2780562",
+      "jackpotWin": false,
+      "timestamp": 1759994740382
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "8341686",
+      "jackpotWin": false,
+      "timestamp": 1759994771900
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "25025058",
+      "jackpotWin": false,
+      "timestamp": 1759994800488
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "6845000000",
+      "jackpotWin": false,
+      "timestamp": 1760249015611
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "30000000000",
+      "jackpotWin": false,
+      "timestamp": 1760249149489
+    }
+  ],
+  "100077040901735": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "48740",
+      "jackpotWin": false,
+      "timestamp": 1759990697915
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "48521150",
+      "jackpotWin": false,
+      "timestamp": 1759991148139
+    }
+  ],
+  "100047367426519": [
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000000",
+      "jackpotWin": false,
+      "timestamp": 1759991131423
+    }
+  ],
+  "61573391337037": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "40000000",
+      "jackpotWin": false,
+      "timestamp": 1759991342478
+    }
+  ],
+  "100046580550022": [
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "2432043",
+      "jackpotWin": false,
+      "timestamp": 1759992643348
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "3242724",
+      "jackpotWin": false,
+      "timestamp": 1759992673623
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "2000000",
+      "jackpotWin": false,
+      "timestamp": 1759992758764
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "6000000",
+      "jackpotWin": false,
+      "timestamp": 1759992776297
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "18000000",
+      "jackpotWin": false,
+      "timestamp": 1759992801228
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "27000000",
+      "jackpotWin": false,
+      "timestamp": 1759992820140
+    }
+  ],
+  "100000109694041": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "2000000",
+      "jackpotWin": false,
+      "timestamp": 1759992888239
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "5790000",
+      "jackpotWin": false,
+      "timestamp": 1759993089149
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "1578511666",
+      "jackpotWin": false,
+      "timestamp": 1759993808200
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "100000000",
+      "jackpotWin": false,
+      "timestamp": 1759994138004
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "40000000",
+      "jackpotWin": false,
+      "timestamp": 1759994296720
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "3668428000",
+      "jackpotWin": false,
+      "timestamp": 1759994401105
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "3851884582",
+      "jackpotWin": false,
+      "timestamp": 1759994501122
+    }
+  ],
+  "100093110019680": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "63136",
+      "jackpotWin": false,
+      "timestamp": 1759993781737
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "2037125",
+      "jackpotWin": false,
+      "timestamp": 1759994075771
+    }
+  ],
+  "61552753911942": [
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "2000000",
+      "jackpotWin": false,
+      "timestamp": 1759994006343
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000000",
+      "jackpotWin": false,
+      "timestamp": 1759994026849
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "2000000",
+      "jackpotWin": false,
+      "timestamp": 1759994040941
+    }
+  ],
+  "100073999434970": [
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "156980120",
+      "jackpotWin": false,
+      "timestamp": 1760010357722
+    }
+  ],
+  "100086980630039": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "40000000",
+      "jackpotWin": false,
+      "timestamp": 1760011020897
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "200000000",
+      "jackpotWin": false,
+      "timestamp": 1760011483067
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "50000000",
+      "jackpotWin": false,
+      "timestamp": 1760013556078
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "50000000",
+      "jackpotWin": false,
+      "timestamp": 1760016643799
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "100000000",
+      "jackpotWin": false,
+      "timestamp": 1760018014012
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "100000000",
+      "jackpotWin": false,
+      "timestamp": 1760018110201
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "50000000",
+      "jackpotWin": false,
+      "timestamp": 1760018133392
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "71833716",
+      "jackpotWin": false,
+      "timestamp": 1760018185827
+    }
+  ],
+  "100081068686897": [
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "10000000000000",
+      "jackpotWin": false,
+      "timestamp": 1761124034658
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "10000000000000",
+      "jackpotWin": false,
+      "timestamp": 1761124063327
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1000000000000",
+      "jackpotWin": false,
+      "timestamp": 1761124079099
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "10000000000000",
+      "jackpotWin": false,
+      "timestamp": 1761124101129
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "1500000000000",
+      "jackpotWin": false,
+      "timestamp": 1761124120127
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "10000000000000",
+      "jackpotWin": false,
+      "timestamp": 1761124143286
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "5000000000000",
+      "jackpotWin": false,
+      "timestamp": 1761124157112
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "5000000000000",
+      "jackpotWin": false,
+      "timestamp": 1761124200948
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "88000000000000",
+      "jackpotWin": false,
+      "timestamp": 1761124231915
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "88000000000000",
+      "jackpotWin": false,
+      "timestamp": 1761124258798
+    }
+  ],
+  "61556551965856": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "11252",
+      "jackpotWin": false,
+      "timestamp": 1761007388900
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "40000000000000",
+      "jackpotWin": false,
+      "timestamp": 1761023136190
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "60000000000000",
+      "jackpotWin": false,
+      "timestamp": 1761023148523
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "70000000000000",
+      "jackpotWin": false,
+      "timestamp": 1761023227801
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "10000000000000",
+      "jackpotWin": false,
+      "timestamp": 1761023255893
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "6000000000000",
+      "jackpotWin": false,
+      "timestamp": 1761023276805
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "121000000000000",
+      "jackpotWin": false,
+      "timestamp": 1761023303733
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "96322",
+      "jackpotWin": false,
+      "timestamp": 1761031090067
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "84145",
+      "jackpotWin": false,
+      "timestamp": 1761101513483
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "21823",
+      "jackpotWin": false,
+      "timestamp": 1761177074891
+    }
+  ],
+  "100092202667700": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "500076442",
+      "jackpotWin": false,
+      "timestamp": 1760770758458
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "98322",
+      "jackpotWin": false,
+      "timestamp": 1760771635674
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "120000000000",
+      "jackpotWin": false,
+      "timestamp": 1760857512983
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "600000000000",
+      "jackpotWin": false,
+      "timestamp": 1760857747075
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "60000000000",
+      "jackpotWin": false,
+      "timestamp": 1760858505320
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "20000000000",
+      "jackpotWin": false,
+      "timestamp": 1760858536874
+    }
+  ],
+  "61554220534892": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "100000000088674",
+      "jackpotWin": false,
+      "timestamp": 1761123827092
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "150000000133011",
+      "jackpotWin": false,
+      "timestamp": 1761123890102
+    }
+  ],
+  "100088341553323": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "200000",
+      "jackpotWin": false,
+      "timestamp": 1761299548961
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "50000",
+      "jackpotWin": false,
+      "timestamp": 1761299612934
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "200000",
+      "jackpotWin": false,
+      "timestamp": 1761299675028
+    },
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "200000",
+      "jackpotWin": false,
+      "timestamp": 1761299704916
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "55000",
+      "jackpotWin": false,
+      "timestamp": 1761299751744
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "990000",
+      "jackpotWin": false,
+      "timestamp": 1761299810710
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "15000",
+      "jackpotWin": false,
+      "timestamp": 1761299867568
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "3470000",
+      "jackpotWin": false,
+      "timestamp": 1761299908749
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "20670",
+      "jackpotWin": false,
+      "timestamp": 1761300571999
+    }
+  ],
+  "100077224715871": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "109534",
+      "jackpotWin": false,
+      "timestamp": 1761299580903
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "40000",
+      "jackpotWin": false,
+      "timestamp": 1761300527119
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "62044",
+      "jackpotWin": false,
+      "timestamp": 1761300571942
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "20000",
+      "jackpotWin": false,
+      "timestamp": 1761300711511
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "2000",
+      "jackpotWin": false,
+      "timestamp": 1761300768618
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "10000",
+      "jackpotWin": false,
+      "timestamp": 1761300811085
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "24658",
+      "jackpotWin": false,
+      "timestamp": 1761300842401
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "20000",
+      "jackpotWin": false,
+      "timestamp": 1761300963869
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "30000",
+      "jackpotWin": false,
+      "timestamp": 1761300979809
+    }
+  ],
+  "100006943089350": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "89144",
+      "jackpotWin": false,
+      "timestamp": 1761300633469
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "61632",
+      "jackpotWin": false,
+      "timestamp": 1761300687291
+    }
+  ],
+  "100081972917249": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "71658",
+      "jackpotWin": false,
+      "timestamp": 1761300709358
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "20000",
+      "jackpotWin": false,
+      "timestamp": 1761300824583
+    }
+  ],
+  "100086318903468": [
+    {
+      "bet": "tài",
+      "diceResult": "tài",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "400000",
+      "jackpotWin": false,
+      "timestamp": 1761302072636
+    }
+  ],
+  "100064985150160": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "13000",
+      "jackpotWin": false,
+      "timestamp": 1763918300958
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "12000",
+      "jackpotWin": false,
+      "timestamp": 1763918498904
+    }
+  ],
+  "100050003196233": [
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "14618",
+      "jackpotWin": false,
+      "timestamp": 1763918498313
+    }
+  ]
+}

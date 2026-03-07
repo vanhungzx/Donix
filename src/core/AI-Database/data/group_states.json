@@ -1,0 +1,251 @@
+[
+  {
+    "_id": "6328370547184627",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true
+    },
+    "timestamp": "2025-11-15T20:33:27.153Z"
+  },
+  {
+    "_id": "722146370916700",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-11-16T00:34:19.162Z"
+  },
+  {
+    "_id": "9981886048607095",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true
+    },
+    "timestamp": "2025-11-16T01:43:06.188Z"
+  },
+  {
+    "_id": "6804616456270022",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-11-16T23:26:34.558Z"
+  },
+  {
+    "_id": "6644357448929842",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-11-19T16:58:56.293Z"
+  },
+  {
+    "_id": "2831457320386194",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-11-23T09:19:08.526Z"
+  },
+  {
+    "_id": "24303373172581613",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-11-27T10:35:13.620Z"
+  },
+  {
+    "_id": "24060929900234673",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-11-27T22:49:39.073Z"
+  },
+  {
+    "_id": "1933983253838054",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-12-01T12:33:22.087Z"
+  },
+  {
+    "_id": "640544338882970",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-12-01T18:24:29.515Z"
+  },
+  {
+    "_id": "24537158482587928",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true
+    },
+    "timestamp": "2025-12-01T18:30:38.004Z"
+  },
+  {
+    "_id": "24119107144367310",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-12-01T22:53:22.711Z"
+  },
+  {
+    "_id": "1838598186737845",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-12-07T12:11:00.435Z"
+  },
+  {
+    "_id": "9262520537127734",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-12-16T05:47:11.818Z"
+  },
+  {
+    "_id": "24296361643329379",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-12-16T06:19:24.279Z"
+  },
+  {
+    "_id": "9866579163392072",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-12-16T09:58:55.217Z"
+  },
+  {
+    "_id": "24236613949296572",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-12-16T14:06:20.561Z"
+  },
+  {
+    "_id": "2833629070166115",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-12-17T02:10:06.155Z"
+  },
+  {
+    "_id": "1700783720601357",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-12-17T03:08:56.854Z"
+  },
+  {
+    "_id": "24469373499322440",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-12-17T04:52:42.772Z"
+  },
+  {
+    "_id": "1160381258897622",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-12-18T10:21:27.412Z"
+  },
+  {
+    "_id": "1303008948286512",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-12-20T07:58:56.896Z"
+  },
+  {
+    "_id": "9632024723543788",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-12-20T13:06:50.637Z"
+  },
+  {
+    "_id": "1156328006684396",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-12-21T09:52:17.134Z"
+  },
+  {
+    "_id": "7419700334794277",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-12-22T15:51:48.367Z"
+  },
+  {
+    "_id": "23949797927973099",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2025-12-22T17:25:00.096Z"
+  },
+  {
+    "_id": "1329932828617871",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2026-03-07T13:30:04.226Z"
+  },
+  {
+    "_id": "1389407492873563",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2026-03-07T13:33:58.300Z"
+  }
+]

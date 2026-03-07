@@ -1,0 +1,124 @@
+{
+    "allquestion": [
+        {
+            "question": "Có câu 'Vắng như chùa Bà Đanh'. Nơi nào sau đây có chùa Bà Đanh?",
+            "a": "Hà Nam",
+            "b": "Thái Bình", 
+            "c": "Nam Định",
+            "d": "Ninh Bình",
+            "dapan": "A",
+            "helpone": ["A", "D"],
+            "helptwo": [45, 10, 15, 20],
+            "helpthree": ["A"],
+            "giaithich": "Chùa Bà Đanh nằm ở xã Đại Đồng, huyện Bình Lục, tỉnh Hà Nam."
+        },
+        {
+            "question": "Tên gọi địa danh Mù Cang Chải (Yên Bái) theo tiếng dân tộc Mông có ý nghĩa gì?",
+            "a": "Nương lúa mới",
+            "b": "Đất gỗ khô",
+            "c": "Miền mây ấm", 
+            "d": "Bản ruộng xa",
+            "dapan": "B",
+            "helpone": ["A", "B"],
+            "helptwo": [20, 56, 15, 20],
+            "helpthree": ["B"],
+            "giaithich": "Theo tiếng dân tộc Mông, Mù Cang Chải có nghĩa là 'đất gỗ khô'."
+        },
+        {
+            "question": "Vào tháng 2/2021, quốc gia Châu Phi nào sau đây đã phát hành tiền xu để tri ân các nhân viên y tế?",
+            "a": "Kenya",
+            "b": "Ghana",
+            "c": "Nam Phi",
+            "d": "Ai Cập",
+            "dapan": "D",
+            "helpone": ["A", "D"],
+            "helptwo": [20, 5, 15, 57],
+            "helpthree": ["D"],
+            "giaithich": "Vào tháng 2/2021, Ai Cập đã phát hành tiền xu đặc biệt để tri ân các nhân viên y tế trong cuộc chiến chống đại dịch COVID-19."
+        },
+        {
+            "question": "Kính viễn vọng không gian James Webb được đặt tên để vinh danh ai?",
+            "a": "Một nhà vật lý",
+            "b": "Một nhà thiên văn",
+            "c": "Một lãnh đạo NASA",
+            "d": "Một phi hành gia vũ trụ",
+            "dapan": "C",
+            "helpone": ["A", "C"],
+            "helptwo": [20, 5, 75, 6],
+            "helpthree": ["C"],
+            "giaithich": "Kính viễn vọng James Webb được đặt theo tên của James E. Webb - người từng là Giám đốc NASA từ năm 1961-1968, đóng vai trò quan trọng trong chương trình Apollo."
+        },
+        {
+            "question": "Bài hát nào của nhạc sĩ Lưu Hữu Phước được in trong bộ tem kỷ niệm 100 năm ngày sinh của ông (1921 - 2021)?",
+            "a": "Giải phóng miền Nam",
+            "b": "Ca ngợi Hồ Chủ tịch",
+            "c": "Tiếng về Sài Gòn",
+            "d": "Tỉnh Bác sáng đời ta",
+            "dapan": "B",
+            "helpone": ["A", "B"],
+            "helptwo": [20, 87, 10, 6],
+            "helpthree": ["B"],
+            "giaithich": "Bài hát 'Ca ngợi Hồ Chủ tịch' của nhạc sĩ Lưu Hữu Phước đã được in trong bộ tem kỷ niệm 100 năm ngày sinh của ông năm 2021."
+        },
+        {
+            "question": "Vỏ của loài động vật thân mềm nào được dùng làm thuốc với tên gọi là 'Thạch quyết minh'?",
+            "a": "Sò điệp",
+            "b": "Ốc xà cừ",
+            "c": "Tu hài",
+            "d": "Bào ngư",
+            "dapan": "D",
+            "helpone": ["C", "D"],
+            "helptwo": [20, 5, 30, 78],
+            "helpthree": ["D"],
+            "giaithich": "Vỏ của bào ngư được dùng làm thuốc với tên gọi là 'Thạch quyết minh' trong y học cổ truyền."
+        },
+        {
+            "question": "Lòng cổ nào ở Hà Nội nổi tiếng với nghề nuôi bắt rắn?",
+            "a": "La Cả",
+            "b": "Ước Lễ",
+            "c": "Lê Mật",
+            "d": "Cự Đà",
+            "dapan": "C",
+            "helpone": ["C", "D"],
+            "helptwo": [20, 5, 30, 78],
+            "helpthree": ["C"],
+            "giaithich": "Làng Lê Mật (Long Biên, Hà Nội) nổi tiếng với nghề nuôi bắt rắn truyền thống từ hàng trăm năm nay."
+        },
+        {
+            "question": "Trong bốn tổng thống Hoa Kỳ được tạc tượng ở núi Rushmore, vị nào tượng trưng cho nền dân chủ?",
+            "a": "George Washington",
+            "b": "Thomas Jefferson",
+            "c": "Abraham Lincoln",
+            "d": "Theodore Roosevelt",
+            "dapan": "B",
+            "helpone": ["C", "B"],
+            "helptwo": [10, 69, 20, 5],
+            "helpthree": ["B"],
+            "giaithich": "Thomas Jefferson được chọn để tượng trưng cho nền dân chủ vì ông là tác giả chính của Tuyên ngôn Độc lập và là người ủng hộ mạnh mẽ cho nền dân chủ Hoa Kỳ."
+        },
+        {
+            "question": "Năm 1993, ai là người Việt Nam đầu tiên vinh dự nhận giải thưởng 'Nhà Dinh dưỡng xuất sắc nhất Châu Á'?",
+            "a": "GS.TSKH. Hà Huy Khôi",
+            "b": "GS.TS. Nguyễn Công Khấn",
+            "c": "GS. Từ Giấy",
+            "d": "GS.TS. Lê Thị Hợp",
+            "dapan": "C",
+            "helpone": ["A", "C"],
+            "helptwo": [30, 10, 70, 5],
+            "helpthree": ["C"],
+            "giaithich": "GS. Từ Giấy là người Việt Nam đầu tiên vinh dự nhận giải thưởng 'Nhà Dinh dưỡng xuất sắc nhất Châu Á' vào năm 1993."
+        },
+        {
+            "question": "Theo cách tính giờ riêng của người Ethiopia một ngày mới sẽ bắt đầu vào mấy giờ sáng?",
+            "a": "0 giờ",
+            "b": "3 giờ",
+            "c": "6 giờ",
+            "d": "9 giờ",
+            "dapan": "C",
+            "helpone": ["A", "C"],
+            "helptwo": [30, 10, 70, 5],
+            "helpthree": ["C"],
+            "giaithich": "Theo cách tính giờ truyền thống của người Ethiopia, một ngày mới bắt đầu vào lúc 6 giờ sáng."
+        }
+    ]
+  }

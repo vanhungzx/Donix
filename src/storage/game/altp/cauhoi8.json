@@ -1,0 +1,124 @@
+{
+    "allquestion": [
+        {
+            "question": "Cảng hàng không quốc tế Nội bài đã từng mang tên gọi nào sau đây?",
+            "a": "Sân bay Sóc Sơn",
+            "b": "Sân bay Vĩnh Phúc",
+            "c": "Sân bay Đa Phúc",
+            "d": "Sân bay Phúc Thắng",
+            "dapan": "C",
+            "helpone": ["A", "C"],
+            "helptwo": [20, 15, 45, 20],
+            "helpthree": ["C"],
+            "giaithich": "Trước khi được đổi tên thành Cảng hàng không quốc tế Nội Bài, sân bay này có tên là sân bay Đa Phúc do được xây dựng trên địa bàn xã Đa Phúc (nay là xã Mai Đình, huyện Sóc Sơn)."
+        },
+        {
+            "question": "Trước khi tìm ra cao su, người ta thường dùng bằng gì để tẩy vết bút chì?",
+            "a": "Vỏ cam",
+            "b": "Vải len",
+            "c": "Vụn bánh mì",
+            "d": "Than hoạt tính",
+            "dapan": "C",
+            "helpone": ["A", "C"],
+            "helptwo": [20, 15, 45, 20],
+            "helpthree": ["C"],
+            "giaithich": "Trước khi cao su được phát minh và sử dụng làm tẩy, người ta thường dùng vụn bánh mì vo tròn để tẩy vết bút chì vì tính chất hút graphite của nó."
+        },
+        {
+            "question": "Trong cách bố trí đúng của bộ ba tượng Tam Đa, bức tượng của vị nào được đặt ở ngoài cùng bên trái?",
+            "a": "Phúc",
+            "b": "Lộc",
+            "c": "Thọ",
+            "d": "An",
+            "dapan": "C",
+            "helpone": ["B", "C"],
+            "helptwo": [20, 35, 65, 26],
+            "helpthree": ["C"],
+            "giaithich": "Trong bộ Tam Đa truyền thống, thứ tự sắp xếp từ trái sang phải là: Thọ - Phúc - Lộc. Vì vậy, tượng Thọ luôn được đặt ở vị trí ngoài cùng bên trái."
+        },
+        {
+            "question": "Thành phố nào được biết đến là 'Một điểm đến - 5 di sản'?",
+            "a": "Hà Nội",
+            "b": "Huế",
+            "c": "Hội An",
+            "d": "TP. Hồ Chí Minh",
+            "dapan": "B",
+            "helpone": ["B", "C"],
+            "helptwo": [20, 55, 25, 10],
+            "helpthree": ["B"],
+            "giaithich": "Huế được UNESCO công nhận 5 di sản: Quần thể di tích Cố đô Huế (1993), Nhã nhạc cung đình Huế (2003), Mộc bản triều Nguyễn (2009), Châu bản triều Nguyễn (2014), và Ca Huế (2023)."
+        },
+        {
+            "question": "Thành phố được mệnh danh là 'Thủ đô kim cương của thế giới' nằm ở quốc gia nào?",
+            "a": "Nam Phi",
+            "b": "Australia",
+            "c": "Nga",
+            "d": "Bỉ",
+            "dapan": "D",
+            "helpone": ["B", "D"],
+            "helptwo": [10, 55, 4, 25],
+            "helpthree": ["D"],
+            "giaithich": "Antwerp (Bỉ) được mệnh danh là thủ đô kim cương của thế giới vì khoảng 84% kim cương thô trên thế giới được giao dịch tại đây. Thành phố này cũng là trung tâm cắt và đánh bóng kim cương lớn nhất thế giới."
+        },
+        {
+            "question": "Nhà văn Nguyễn Tuân đã tham gia vai diễn nào trong bộ phim điện ảnh Việt Nam nổi tiếng 'Chị Dậu'?",
+            "a": "Nghị Quế",
+            "b": "Lý cựu",
+            "c": "Chánh tổng",
+            "d": "Quan phủ",
+            "dapan": "C",
+            "helpone": ["B", "C"],
+            "helptwo": [10, 35, 66, 25],
+            "helpthree": ["C"],
+            "giaithich": "Nhà văn Nguyễn Tuân đã tham gia đóng vai Chánh tổng trong bộ phim 'Chị Dậu' được chuyển thể từ tác phẩm 'Tắt đèn' của Ngô Tất Tố, phim được sản xuất năm 1980."
+        },
+        {
+            "question": "Tháng nào sau đây được nhắc đến trong bài 'Hạt gạo làng ta' của nhà thơ Trần Đăng Khoa?",
+            "a": "Tháng bảy",
+            "b": "Tháng tư",
+            "c": "Tháng ba",
+            "d": "Tháng sáu",
+            "dapan": "B",
+            "helpone": ["B", "C"],
+            "helptwo": [10, 65, 30, 25],
+            "helpthree": ["B"],
+            "giaithich": "Trong bài thơ 'Hạt gạo làng ta', tác giả Trần Đăng Khoa có viết: 'Tháng tư về gió hát trên đồng/Lúa đang ngào ngạt đứng bông'. Đây là thời điểm lúa trổ bông vào mùa xuân."
+        },
+        {
+            "question": "San Marino là đất nước nằm gọn trong lòng lãnh thổ quốc gia nào?",
+            "a": "Hà Lan",
+            "b": "Ý",
+            "c": "Bồ Đào Nha",
+            "d": "Nga",
+            "dapan": "B",
+            "helpone": ["B", "C"],
+            "helptwo": [10, 65, 30, 25],
+            "helpthree": ["B"],
+            "giaithich": "San Marino là một quốc gia độc lập nằm hoàn toàn trong lãnh thổ của nước Ý. Đây là một trong những quốc gia nhỏ nhất thế giới và là nước cộng hòa lâu đời nhất còn tồn tại."
+        },
+        {
+            "question": "Trong môi trường kĩ thuật số, thuật ngữ 'Cyberbully' dùng để chỉ điều gì?",
+            "a": "Thao túng tâm lý trên mạng",
+            "b": "Bắt nạt trên mạng",
+            "c": "Tung tin giả trên mạng",
+            "d": "Lừa đảo trên mạng",
+            "dapan": "B",
+            "helpone": ["B", "C"],
+            "helptwo": [10, 65, 30, 25],
+            "helpthree": ["B"],
+            "giaithich": "Cyberbully (bắt nạt trên mạng) là hành vi sử dụng công nghệ số như mạng xã hội, tin nhắn, email để quấy rối, đe dọa, làm nhục hoặc gây tổn thương người khác một cách có chủ đích và lặp đi lặp lại."
+        },
+        {
+            "question": "Biểu tượng của giải bóng đá UEFA Euro 2024 gồn có bao nhiêu màu sắc chủ đạo?",
+            "a": "4",
+            "b": "5",
+            "c": "6",
+            "d": "7",
+            "dapan": "C",
+            "helpone": ["B", "C"],
+            "helptwo": [10, 30, 88, 25],
+            "helpthree": ["C"],
+            "giaithich": "Logo UEFA Euro 2024 có 6 màu sắc chủ đạo đại diện cho các màu cờ của các quốc gia tham gia giải đấu. Logo được thiết kế với hình dáng sân vận động Olympiastadion Berlin - nơi diễn ra trận chung kết, kết hợp với màu sắc rực rỡ tượng trưng cho niềm vui và lễ hội bóng đá."
+        }
+    ]
+}

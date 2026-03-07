@@ -1,0 +1,124 @@
+{
+    "allquestion": [
+        {
+            "question": "Hành tinh Kon-Tiki là một chuyến đi nổi tiếng vượt Thái Bình Dương trong thế kỷ XX bằng phương tiện gì?",
+            "a": "Bè Gỗ",
+            "b": "Thuyền đánh cá",
+            "c": "Thuyền buồm",
+            "d": "Tàu hơi nước",
+            "dapan": "A",
+            "helpone": ["A", "C"],
+            "helptwo": [45, 20, 25, 10],
+            "helpthree": ["A"],
+            "giaithich": "Kon-Tiki là tên chuyến đi vượt Thái Bình Dương bằng bè gỗ do nhà thám hiểm Thor Heyerdahl thực hiện năm 1947."
+        },
+        {
+            "question": "'20 tuổi đời sống mãi với quê hương anh hùng / Hát khúc anh hùng ca' là những câu hát nhạc sĩ Huy Du viết về liệt sĩ nào?",
+            "a": "Nguyễn Văn Trỗi",
+            "b": "Bế Văn Đàn",
+            "c": "Phan Đình Giót", 
+            "d": "Nguyễn Viết Xuân",
+            "dapan": "B",
+            "helpone": ["A", "B"],
+            "helptwo": [35, 60, 20, 10],
+            "helpthree": ["B"],
+            "giaithich": "Nhạc sĩ Huy Du đã sáng tác những câu hát này để tưởng nhớ liệt sĩ Bế Văn Đàn - người đã hy sinh ở tuổi 20 trong cuộc kháng chiến chống Pháp."
+        },
+        {
+            "question": "Chỉ số Henley được áp dụng trong việc xếp hạng ở lĩnh vực gì trên thế giới?",
+            "a": "Năng lực cạnh tranh toàn cầu",
+            "b": "Quyền lực của hộ chiếu",
+            "c": "Tự do báo chí",
+            "d": "Mức độ ô nhiệm môi trường",
+            "dapan": "B",
+            "helpone": ["A", "B"],
+            "helptwo": [35, 60, 20, 10],
+            "helpthree": ["B"],
+            "giaithich": "Chỉ số Henley là bảng xếp hạng thường niên về quyền lực của hộ chiếu các quốc gia, đánh giá mức độ thuận lợi trong việc đi lại giữa các quốc gia."
+        },
+        {
+            "question": "Tác giả của phát minh nào sau đây là một người phụ nữ?",
+            "a": "Cần gạt nước ô tô",
+            "b": "Xe nôi",
+            "c": "Kính an toàn",
+            "d": "TV",
+            "dapan": "A",
+            "helpone": ["A", "B"],
+            "helptwo": [60, 30, 20, 10],
+            "helpthree": ["A"],
+            "giaithich": "Mary Anderson là người phụ nữ đã phát minh ra cần gạt nước ô tô vào năm 1903, giúp cải thiện tầm nhìn cho người lái xe trong điều kiện thời tiết xấu."
+        },
+        {
+            "question": "Câu thành ngữ 'Đỏ lửa, vàng chanh, xanh thiên lý' nói về kỹ thuật làm nghề gì trong dân gian?",
+            "a": "Làm gốm",
+            "b": "Nung rèn",
+            "c": "Chế tác vàng bạc",
+            "d": "Chạm khảm xà cừ",
+            "dapan": "D",
+            "helpone": ["A", "D"],
+            "helptwo": [30, 10, 2, 87],
+            "helpthree": ["D"],
+            "giaithich": "Câu thành ngữ này mô tả các màu sắc đặc trưng trong nghề chạm khảm xà cừ truyền thống, phản ánh kỹ thuật tinh xảo của nghề thủ công này."
+        },
+        {
+            "question": "Sazae-san là bộ phim dài nhất thế giới ở thể loại nào?",
+            "a": "Hoạt hình",
+            "b": "Trinh thám",
+            "c": "Hành Động",
+            "d": "kinh dị",
+            "dapan": "A",
+            "helpone": ["A", "D"],
+            "helptwo": [60, 10, 2, 27],
+            "helpthree": ["A"],
+            "giaithich": "Sazae-san là bộ phim hoạt hình dài nhất thế giới của Nhật Bản, đã phát sóng từ năm 1969 đến nay với hơn 7500 tập."
+        },
+        {
+            "question": "Thác nước cao nhất trên thế giới ở Venezuela được đặt tên là Angel để vinh danh ai?",
+            "a": "Một tù trưởng",
+            "b": "Một bác sĩ",
+            "c": "Một phi công",
+            "d": "Một nhà leo núi",
+            "dapan": "C",
+            "helpone": ["A", "C"],
+            "helptwo": [30, 10, 60, 27],
+            "helpthree": ["C"],
+            "giaithich": "Thác Angel được đặt theo tên của phi công người Mỹ Jimmie Angel, người đầu tiên phát hiện ra thác nước này vào năm 1933 khi đang bay qua khu vực."
+        },
+        {
+            "question": "Bác Hồ đã trồng cây tại địa điểm nào ngày nay ở Hà Nội để mở đầu phong trào 'Tết trồng cây'?",
+            "a": "Vườn Phủ Chủ Tịch",
+            "b": "Công viên Bách Thảo",
+            "c": "Hồ Gươm",
+            "d": "Công viên Thống Nhất",
+            "dapan": "D",
+            "helpone": ["A", "D"],
+            "helptwo": [30, 10, 4, 60],
+            "helpthree": ["D"],
+            "giaithich": "Vào Tết Canh Tý 1960, Bác Hồ đã trồng cây tại Công viên Thống Nhất (Hà Nội), khởi đầu cho phong trào 'Tết trồng cây' trên cả nước."
+        },
+        {
+            "question": "Đoàn Thành là tên gọi khác của di tích lịch sử cấp Quốc gia nào?",
+            "a": "Thành cổ Diên Khánh",
+            "b": "Thành cổ Quảng Trị",
+            "c": "Thành cổ Lạng Sơn",
+            "d": "Thành cổ Sơn Tây",
+            "dapan": "C",
+            "helpone": ["B", "C"],
+            "helptwo": [5, 30, 60, 10],
+            "helpthree": ["C"],
+            "giaithich": "Đoàn Thành là tên gọi khác của Thành cổ Lạng Sơn, một di tích lịch sử cấp Quốc gia có giá trị về mặt lịch sử và kiến trúc."
+        },
+        { 
+            "question": "'Thắng dền' là tên gọi thứ gì ở vùng cao nguyên đá Hà Giang?",
+            "a": "Một loại quả",
+            "b": "Một loại xôi",
+            "c": "Một loại bánh",
+            "d": "Một loại rượu",
+            "dapan": "C",
+            "helpone": ["A", "C"],
+            "helptwo": [35, 10, 60, 10],
+            "helpthree": ["C"],
+            "giaithich": "'Thắng dền' là một loại bánh truyền thống của đồng bào dân tộc ở vùng cao nguyên đá Hà Giang, được làm từ gạo nếp và có hương vị đặc trưng."
+        }
+    ]
+  }

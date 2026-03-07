@@ -1,0 +1,25 @@
+import formatID from "../value/formatID.js";
+
+export const formatThread = (data: any) => ({
+  threadID: formatID(data.thread_fbid.toString()),
+  participants: data.participants.map((p: any) => formatID(p)),
+  participantIDs: data.participants.map((p: any) => formatID(p)),
+  name: data.name,
+  nicknames: data.custom_nickname,
+  snippet: data.snippet,
+  snippetSender: formatID((data.snippet_sender || "").toString()),
+  unreadCount: data.unread_count,
+  messageCount: data.message_count,
+  imageSrc: data.image_src,
+  timestamp: data.timestamp,
+  muteUntil: data.mute_until,
+  isGroup: data.thread_type === 2,
+  isArchived: data.is_archived,
+  canReply: data.can_reply,
+  lastMessageTimestamp: data.last_message_timestamp,
+  lastReadTimestamp: data.last_read_timestamp,
+  emoji: data.custom_like_icon,
+  color: data.custom_color,
+  adminIDs: data.admin_ids,
+  threadType: data.thread_type,
+});

@@ -1,0 +1,125 @@
+{
+    "allquestion": [
+        {
+            "question": "Đâu không phải từ chỉ màu sắc?",
+            "a": "Cánh gián",
+            "b": "Xám lông chuột",
+            "c": "Xanh cổ vịt",
+            "d": "Lợn sữa",
+            "dapan": "D",
+            "helpone": ["D", "A"],
+            "helptwo": [25, 15, 10, 50],
+            "helpthree": ["D"],
+            "giaithich": "'Lợn sữa' chỉ một loại thực phẩm, không phải là từ chỉ màu sắc như các lựa chọn khác."
+        },
+        {
+            "question": "Từ nào sau đây viết đúng chính tả?",
+            "a": "Chả đá",
+            "b": "Chả rá",
+            "c": "Trả giá",
+            "d": "Trả đá",
+            "dapan": "C",
+            "helpone": ["C", "A"],
+            "helptwo": [25, 15, 55, 10],
+            "helpthree": ["C"],
+            "giaithich": "'Trả giá' là cách viết đúng chính tả trong tiếng Việt, chỉ hành động thương lượng về giá cả."
+        },
+        {
+            "question": "Người ta thường dùng giấy quỳ tím để kiểm nghiệm yếu tố nào trong hoá học?",
+            "a": "Độ ẩm",
+            "b": "Độ pH",
+            "c": "Độ đặc",
+            "d": "Độ mịn",
+            "dapan": "B",
+            "helpone": ["B", "D"],
+            "helptwo": [15, 55, 10, 30],
+            "helpthree": ["B"],
+            "giaithich": "Giấy quỳ tím là một chỉ thị pH phổ biến trong hóa học, dùng để xác định độ pH (tính axit - bazơ) của dung dịch."
+        },
+        {
+            "question": "Cầu nào không thể đi lại được?",
+            "a": "Cầu treo",
+            "b": "Cầu vồng",
+            "c": "Cầu khỉ",
+            "d": "Cầu dây vằng",
+            "dapan": "B",
+            "helpone": ["B", "C"],
+            "helptwo": [15, 55, 30, 10],
+            "helpthree": ["B"],
+            "giaithich": "Cầu vồng là hiện tượng tự nhiên do ánh sáng khúc xạ qua các giọt nước tạo thành, không phải là cây cầu thật có thể đi lại được."
+        },
+        {
+            "question": "Theo các truyện cổ, ma cà rồng thường sợ thứ gì sau đây?",
+            "a": "Hoa hồng",
+            "b": "Tiếng cú kêu",
+            "c": "Ánh nắng mặt trời",
+            "d": "Nước lạnh",
+            "dapan": "C",
+            "helpone": ["C", "A"],
+            "helptwo": [30, 15, 55, 10],
+            "helpthree": ["C"],
+            "giaithich": "Trong văn hóa dân gian và truyện cổ, ma cà rồng được cho là sợ ánh nắng mặt trời, vì nó có thể tiêu diệt họ."
+        },
+        {
+            "question": "Đâu là tên một môn học trong chương trình giáo dục phổ thông hiện hành ở nước ta?",
+            "a": "Tin vui",
+            "b": "Tin đồn",
+            "c": "Tin học",
+            "d": "Tin cậy",
+            "dapan": "C",
+            "helpone": ["C", "A"],
+            "helptwo": [20, 15, 55, 10],
+            "helpthree": ["C"],
+            "giaithich": "Tin học là môn học chính thức trong chương trình giáo dục phổ thông, giúp học sinh làm quen với máy tính và công nghệ thông tin."
+        },
+        {
+            "question": "Theo truyền thuyết, khi xông trận đánh giặc Thánh Gióng cưỡi ngựa làm bằng gì?",
+            "a": "Vàng",
+            "b": "Đồng",
+            "c": "Tre",
+            "d": "Sắt",
+            "dapan": "D",
+            "helpone": ["D", "B"],
+            "helptwo": [15, 20, 10, 55],
+            "helpthree": ["D"],
+            "giaithich": "Theo truyền thuyết, Thánh Gióng cưỡi ngựa sắt khi ra trận đánh giặc Ân, thể hiện sức mạnh phi thường của người anh hùng."
+        },
+        {
+            "question": "Đâu là tên một kỳ quan kiến trúc của nước Ý?",
+            "a": "Spaghetti",
+            "b": "Pisa",
+            "c": "Cappuccino",
+            "d": "Espresso",
+            "dapan": "B",
+            "helpone": ["B", "A"],
+            "helptwo": [20, 55, 10, 15],
+            "helpthree": ["B"],
+            "giaithich": "Tháp nghiêng Pisa là một trong những kỳ quan kiến trúc nổi tiếng của Ý, các đáp án còn lại đều là tên các món ăn, đồ uống."
+        },
+        {
+            "question": "Từ nào còn thiếu trong câu: 'Căng da bụng, chùng da....'?",
+            "a": "Môi",
+            "b": "Trán",
+            "c": "Mắt",
+            "d": "Cổ",
+            "dapan": "C",
+            "helpone": ["C", "D"],
+            "helptwo": [15, 10, 55, 20],
+            "helpthree": ["C"],
+            "giaithich": "Câu tục ngữ đầy đủ là 'Căng da bụng, chùng da mắt', ý nói khi no thì buồn ngủ."
+        },
+        {
+            "question": "Đâu là tên dụng cụ đo áp suất của chất lỏng và chất khí?",
+            "a": "Áp suất",
+            "b": "Áp lực",
+            "c": "Áp kế",
+            "d": "Áp dụng",
+            "dapan": "C",
+            "helpone": ["C", "B"],
+            "helptwo": [15, 20, 55, 10],
+            "helpthree": ["C"],
+            "giaithich": "Áp kế là dụng cụ dùng để đo áp suất của chất lỏng và chất khí, được sử dụng phổ biến trong khoa học và kỹ thuật."
+        }
+
+    ]
+  }

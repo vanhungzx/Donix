@@ -1,0 +1,124 @@
+{
+    "allquestion": [
+        {
+            "question": "Loài vật nào được nhắc đến trong bài hát 'Nhạc rừng' của nhạc sĩ Hoàng Việt?",
+            "a": "Ếch",
+            "b": "Ve",
+            "c": "Dế",
+            "d": "Ong",
+            "dapan": "B",
+            "helpone": ["B", "D"],
+            "helptwo": [10, 60, 20, 40],
+            "helpthree": ["B"],
+            "giaithich": "Trong bài hát 'Nhạc rừng', nhạc sĩ Hoàng Việt có nhắc đến tiếng ve kêu trong rừng."
+        },
+        {
+            "question": "Trong tác phẩm nào, nhà văn Nam Cao đã chia sẻ: 'Nghệ thuật không cần phải là ánh trăng lừa dối'?",
+            "a": "Sống mòn",
+            "b": "Đời thừa",
+            "c": "Đôi mắt",
+            "d": "Trăng sáng",
+            "dapan": "D",
+            "helpone": ["D", "B"],
+            "helptwo": [15, 23, 10, 60],
+            "helpthree": ["D"],
+            "giaithich": "Trong tác phẩm 'Trăng sáng', Nam Cao đã nói câu này về nghệ thuật chân chính."
+        },
+        {
+            "question": "'Búp bê Nga' là biệt danh của tay vợt nữ nào?",
+            "a": "Simona Halep",
+            "b": "Caroline Wozniacki",
+            "c": "Serena Williams",
+            "d": "Maria Sharapova",
+            "dapan": "D",
+            "helpone": ["D", "A"],
+            "helptwo": [40, 12, 20, 64],
+            "helpthree": ["D"],
+            "giaithich": "'Búp bê Nga' là biệt danh của Maria Sharapova, tay vợt nổi tiếng người Nga."
+        },
+        {
+            "question": "Chữ Ambulance trên xe cứu thương thường được viết như thế nào?",
+            "a": "Viết bằng kí hiệu",
+            "b": "Viết ngược",
+            "c": "Viết tắt",
+            "d": "Viết theo hàng dọc",
+            "dapan": "B",
+            "helpone": ["B", "D"],
+            "helptwo": [12, 64, 20, 30],
+            "helpthree": ["B"],
+            "giaithich": "Chữ 'Ambulance' trên xe cứu thương được viết ngược để phản chiếu qua gương chiếu hậu của các phương tiện phía trước."
+        },
+        {
+            "question": "Copa America là giải bóng đá cấp độ đội tuyển của khu vực nào?",
+            "a": "Bắc Mỹ",
+            "b": "Châu Phi",
+            "c": "Nam Mỹ",
+            "d": "Đông Nam Á",
+            "dapan": "C",
+            "helpone": ["C", "A"],
+            "helptwo": [40, 10, 60, 11],
+            "helpthree": ["C"],
+            "giaithich": "Copa America là giải vô địch bóng đá quốc gia Nam Mỹ, được tổ chức giữa các đội tuyển khu vực này."
+        },
+        {
+            "question": "Những câu hát 'Gọi mẹ thưa cha, ăn vạ cả làng/ Cho em lấy chàng' nói về nhân vật nào sau đây?",
+            "a": "Thị Kịnh",
+            "b": "Thị Mầu",
+            "c": "Ngọc Hoa",
+            "d": "Thị Hến",
+            "dapan": "B",
+            "helpone": ["B", "D"],
+            "helptwo": [12, 40, 15, 23],
+            "helpthree": ["B"],
+            "giaithich": "Đây là câu hát trong tác phẩm 'Chí Phèo', nói về nhân vật Thị Mầu."
+        },
+        {
+            "question": "Nhật ký 'Mãi mãi tuổi hai mươi' là tên cuốn sách của liệt sĩ nào?",
+            "a": "Liệt sĩ Nguyễn Văn Thạc",
+            "b": "Liệt sĩ Đặng Thuỳ Trâm",
+            "c": "Liệt sĩ Trần Minh Tiến",
+            "d": "Liệt sĩ Vũ Xuân",
+            "dapan": "A",
+            "helpone": ["A", "B"],
+            "helptwo": [60, 20, 11, 10],
+            "helpthree": ["A"],
+            "giaithich": "'Mãi mãi tuổi hai mươi' là cuốn nhật ký của liệt sĩ Nguyễn Văn Thạc, người hy sinh khi còn rất trẻ."
+        },
+        {
+            "question": "Những người sinh ngày 23/11 thuộc cung hoàng đạo nào?",
+            "a": "Thiên Bình",
+            "b": "Ma Kết",
+            "c": "Nhân Mã",
+            "d": "Bạch Dương",
+            "dapan": "C",
+            "helpone": ["C", "B"],
+            "helptwo": [10, 15, 40, 13],
+            "helpthree": ["C"],
+            "giaithich": "Ngày 23/11 thuộc cung Nhân Mã trong cung hoàng đạo."
+        },
+        {
+            "question": "Logo của VTV3 không có màu nào sau đây?",
+            "a": "Đỏ",
+            "b": "Tím",
+            "c": "Xanh lá",
+            "d": "Xanh dương",
+            "dapan": "B",
+            "helpone": ["B", "D"],
+            "helptwo": [23, 64, 21, 30],
+            "helpthree": ["B"],
+            "giaithich": "Logo của VTV3 không có màu tím."
+        },
+        {
+            "question": "Nhà hàng hải nào đã tìm ra Châu Mỹ?",
+            "a": "Ferdinand Magellan",
+            "b": "Christopher Columbus",
+            "c": "Marco Polo",
+            "d": "James Cook",
+            "dapan": "B",
+            "helpone": ["B", "A"],
+            "helptwo": [20, 60, 15, 24],
+            "helpthree": ["B"],
+            "giaithich": "Christopher Columbus là người đã phát hiện ra Châu Mỹ vào năm 1492."
+        }
+    ]
+}

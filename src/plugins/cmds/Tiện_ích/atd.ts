@@ -1,0 +1,743 @@
+import fs from "fs";
+import path from "path";
+
+function urlify(text: unknown): string[] {
+  if (typeof text !== "string") {
+    return [];
+  }
+  const urlRegex = /(https?:\/\/[^\s]+)/gi;
+  const matches = text.match(urlRegex);
+  return matches || [];
+}
+
+let musicSent = false;
+
+
+const PLATFORM_GROUPS: Record<string, string[]> = {
+  social: ["tiktok", "facebook", "instagram", "threads", "pinterest", "douyin"],
+  video: ["youtube", "douyin", "capcut", "tiktok"],
+  music: ["soundcloud", "zingmp3", "nhaccuatui"],
+  other: ["j2"],
+};
+
+const ALL_PLATFORMS = [
+  "tiktok", "youtube", "facebook", "instagram", "soundcloud", "threads",
+  "zingmp3", "capcut", "nhaccuatui", "pinterest", "douyin", "j2"
+];
+
+
+async function isPlatformEnabled(
+  platform: string,
+  threadData: any,
+  threadID: string
+): Promise<boolean> {
+  try {
+    const thread = await threadData.get(threadID);
+
+    if (!thread) return true;
+
+    const settings = thread.settings || {};
+    const autodown = settings.autodown || {};
+
+
+    if (Object.keys(autodown).length === 0) return true;
+
+
+    if (autodown.enabled === false) return false;
+    if (autodown.enabled === true) {
+
+      if (autodown.disabledPlatforms && autodown.disabledPlatforms.includes(platform)) {
+        return false;
+      }
+      return true;
+    }
+
+
+    for (const [groupName, platforms] of Object.entries(PLATFORM_GROUPS)) {
+      if (platforms.includes(platform)) {
+        if (autodown.disabledGroups && autodown.disabledGroups.includes(groupName)) {
+          return false;
+        }
+        if (autodown.enabledGroups && autodown.enabledGroups.includes(groupName)) {
+          return true;
+        }
+      }
+    }
+
+
+    if (autodown.disabledPlatforms && autodown.disabledPlatforms.includes(platform)) {
+      return false;
+    }
+    if (autodown.enabledPlatforms && autodown.enabledPlatforms.includes(platform)) {
+      return true;
+    }
+
+
+    return true;
+  } catch (error) {
+    console.error("Error checking platform status:", error);
+    return true;
+  }
+}
+
+
+async function updateAutodownSettings(
+  threadData: any,
+  threadID: string,
+  update: {
+    enabled?: boolean;
+    enabledPlatforms?: string[];
+    disabledPlatforms?: string[];
+    enabledGroups?: string[];
+    disabledGroups?: string[];
+  }
+): Promise<void> {
+  try {
+    const thread = await threadData.get(threadID);
+    const settings = thread?.settings || {};
+    const autodown = settings.autodown || {};
+
+    if (update.enabled !== undefined) {
+      autodown.enabled = update.enabled;
+    }
+    if (update.enabledPlatforms) {
+      autodown.enabledPlatforms = Array.from(new Set([...(autodown.enabledPlatforms || []), ...update.enabledPlatforms]));
+
+      if (autodown.disabledPlatforms) {
+        autodown.disabledPlatforms = autodown.disabledPlatforms.filter((p: string) => !update.enabledPlatforms!.includes(p));
+      }
+    }
+    if (update.disabledPlatforms) {
+      autodown.disabledPlatforms = Array.from(new Set([...(autodown.disabledPlatforms || []), ...update.disabledPlatforms]));
+
+      if (autodown.enabledPlatforms) {
+        autodown.enabledPlatforms = autodown.enabledPlatforms.filter((p: string) => !update.disabledPlatforms!.includes(p));
+      }
+    }
+    if (update.enabledGroups) {
+      autodown.enabledGroups = Array.from(new Set([...(autodown.enabledGroups || []), ...update.enabledGroups]));
+      if (autodown.disabledGroups) {
+        autodown.disabledGroups = autodown.disabledGroups.filter((g: string) => !update.enabledGroups!.includes(g));
+      }
+    }
+    if (update.disabledGroups) {
+      autodown.disabledGroups = Array.from(new Set([...(autodown.disabledGroups || []), ...update.disabledGroups]));
+      if (autodown.enabledGroups) {
+        autodown.enabledGroups = autodown.enabledGroups.filter((g: string) => !update.disabledGroups!.includes(g));
+      }
+    }
+
+    settings.autodown = autodown;
+    await threadData.update(threadID, { settings });
+  } catch (error) {
+    console.error("Error updating autodown settings:", error);
+  }
+}
+
+function getPlatformName(url: string): string | undefined {
+  const platforms: Record<string, RegExp> = {
+    espn: /https:\/\/(www\.)?espn\.com\//,
+    kuaishou: /(^https:\/\/)(www\.)?kuaishou\.com\//,
+    ifunny: /https:\/\/(www\.)?ifunny\.co\//,
+    izlesene: /https:\/\/(www\.)?izlesene\.com\//,
+    reddit: /https:\/\/(www\.)?reddit\.com\//,
+    twitter: /https:\/\/(www\.)?twitter\.com\//,
+    vimeo: /https:\/\/(www\.)?vimeo\.com\//,
+    snapchat: /https:\/\/(www\.)?snapchat\.com\//,
+    bilibili: /https:\/\/(www\.)?bilibili\.com\//,
+    dailymotion: /https:\/\/(www\.)?dailymotion\.com\//,
+    sharecin: /https:\/\/(www\.)?linkedin\.com\//,
+    tumblrhat: /https:\/\/(www\.)?sharechat\.com\//,
+    linked: /https:\/\/(www\.)?tumblr\.com\//,
+    hipi: /https:\/\/(www\.)?hipi\.com\//,
+    telegram: /https:\/\/(www\.)?telegram\.org\//,
+    getstickerpack: /https:\/\/(www\.)?getstickerpack\.com\//,
+    bitchute: /https:\/\/(www\.)?bitchute\.com\//,
+    febspot: /https:\/\/(www\.)?febspot\.com\//,
+    oke_ru: /https:\/\/(www\.)?oke\.ru\//,
+    rumble: /https:\/\/(www\.)?rumble\.com\//,
+    streamable: /https:\/\/(www\.)?streamable\.com\//,
+    ted: /https:\/\/(www\.)?ted\.com\//,
+    sohutv: /https:\/\/(www\.)?sohu\.com\//,
+    xiaohongshu: /^(http:\/\/xhslink\.com\/|https:\/\/(www\.)?xiaohongshu\.com\/)/,
+    weibo: /^https?:\/\/(www\.)?weibo\.com\/\d+\/[A-Za-z0-9]+$/,
+    miaopai: /https:\/\/(www\.)?miaopai\.com\//,
+    meipai: /https:\/\/(www\.)?meipai\.com\//,
+    xiaoying: /https:\/\/(www\.)?xiaoying\.com\//,
+    nationalvideo: /https:\/\/(www\.)?nationalvideo\.com\//,
+    yingke: /https:\/\/(www\.)?yingke\.com\//,
+    mixcloud: /https:\/\/(www\.)?mixcloud\.com\//,
+    spotify: /https:\/\/(www\.)?(spotify\.com|open\.spotify\.com)\//,
+    bandcamp: /https:\/\/(www\.)?bandcamp\.com\//,
+  };
+  for (const platform in platforms) {
+    const regex = platforms[platform];
+    if (regex && regex.test(url)) {
+      return platform;
+    }
+  }
+  return;
+}
+
+const atd = {
+  name: "atd",
+  alias: ["atd"],
+  version: "1.1.1",
+  role: 3,
+  desc: "Tự động tải xuống khi phát hiện liên kết",
+  guide: "[on/off/group/platform/status/list]",
+  cd: 2,
+  prefix: true,
+  onCall: async function ({ event, args, reply, threadData }: any): Promise<void> {
+    const threadID = event.threadID;
+    const action = args[0]?.toLowerCase();
+    const scope = args[1]?.toLowerCase();
+
+    if (!action) {
+      await reply({
+        body: `📋 HƯỚNG DẪN QUẢN LÝ AUTODOWN
+
+🔹 Bật/tắt nhóm hiện tại:
+  {pn} on - Bật autodown cho nhóm này
+  {pn} off - Tắt autodown cho nhóm này
+
+🔹 Bật/tắt tất cả nhóm:
+  {pn} on all - Bật autodown cho tất cả nhóm
+  {pn} off all - Tắt autodown cho tất cả nhóm
+
+🔹 Bật/tắt theo nhóm platform:
+  {pn} group on <tên nhóm> - Bật nhóm (social/video/music/other)
+  {pn} group off <tên nhóm> - Tắt nhóm
+
+🔹 Bật/tắt từng platform:
+  {pn} platform on <tên> - Bật platform
+  {pn} platform off <tên> - Tắt platform
+
+🔹 Xem trạng thái:
+  {pn} status - Xem cấu hình hiện tại
+  {pn} list - Xem danh sách platform và nhóm
+
+📌 Ví dụ:
+  {pn} on              # Bật cho nhóm này
+  {pn} on all          # Bật cho tất cả nhóm
+  {pn} group off social
+  {pn} platform on tiktok`,
+      });
+      return;
+    }
+
+    try {
+      if (action === "on") {
+        if (scope === "all") {
+
+          const allThreadIDs = await threadData.idAll();
+          let successCount = 0;
+          for (const tid of allThreadIDs) {
+            try {
+              await updateAutodownSettings(threadData, tid, { enabled: true });
+              successCount++;
+            } catch (error) {
+              console.error(`Error updating thread ${tid}:`, error);
+            }
+          }
+          await reply({ body: `✅ Đã bật autodown cho ${successCount}/${allThreadIDs.length} nhóm` });
+        } else {
+
+          await updateAutodownSettings(threadData, threadID, { enabled: true });
+          await reply({ body: "✅ Đã bật autodown cho nhóm này" });
+        }
+      } else if (action === "off") {
+        if (scope === "all") {
+
+          const allThreadIDs = await threadData.idAll();
+          let successCount = 0;
+          for (const tid of allThreadIDs) {
+            try {
+              await updateAutodownSettings(threadData, tid, { enabled: false });
+              successCount++;
+            } catch (error) {
+              console.error(`Error updating thread ${tid}:`, error);
+            }
+          }
+          await reply({ body: `❌ Đã tắt autodown cho ${successCount}/${allThreadIDs.length} nhóm` });
+        } else {
+
+          await updateAutodownSettings(threadData, threadID, { enabled: false });
+          await reply({ body: "❌ Đã tắt autodown cho nhóm này" });
+        }
+      } else if (action === "group") {
+        const groupAction = args[1]?.toLowerCase();
+        const groupName = args[2]?.toLowerCase();
+        if (!groupName || !PLATFORM_GROUPS[groupName]) {
+          await reply({
+            body: `❌ Nhóm không hợp lệ!\n📌 Các nhóm có sẵn: ${Object.keys(PLATFORM_GROUPS).join(", ")}`,
+          });
+          return;
+        }
+        if (groupAction === "on") {
+          await updateAutodownSettings(threadData, threadID, { enabledGroups: [groupName] });
+          await reply({ body: `✅ Đã bật autodown cho nhóm: ${groupName}` });
+        } else if (groupAction === "off") {
+          await updateAutodownSettings(threadData, threadID, { disabledGroups: [groupName] });
+          await reply({ body: `❌ Đã tắt autodown cho nhóm: ${groupName}` });
+        }
+      } else if (action === "platform") {
+        const platformAction = args[1]?.toLowerCase();
+        const platformName = args[2]?.toLowerCase();
+        if (!platformName || !ALL_PLATFORMS.includes(platformName)) {
+          await reply({
+            body: `❌ Platform không hợp lệ!\n📌 Các platform có sẵn: ${ALL_PLATFORMS.join(", ")}`,
+          });
+          return;
+        }
+        if (platformAction === "on") {
+          await updateAutodownSettings(threadData, threadID, { enabledPlatforms: [platformName] });
+          await reply({ body: `✅ Đã bật autodown cho: ${platformName}` });
+        } else if (platformAction === "off") {
+          await updateAutodownSettings(threadData, threadID, { disabledPlatforms: [platformName] });
+          await reply({ body: `❌ Đã tắt autodown cho: ${platformName}` });
+        }
+      } else if (action === "status") {
+        const thread = await threadData.get(threadID);
+        const settings = thread?.settings?.autodown || {};
+        let statusText = "📊 TRẠNG THÁI AUTODOWN\n\n";
+        statusText += `🔹 Trạng thái chung: ${settings.enabled === false ? "❌ Tắt" : settings.enabled === true ? "✅ Bật" : "⚙️ Mặc định"}\n\n`;
+        if (settings.enabledGroups?.length > 0) {
+          statusText += `✅ Nhóm đã bật: ${settings.enabledGroups.join(", ")}\n`;
+        }
+        if (settings.disabledGroups?.length > 0) {
+          statusText += `❌ Nhóm đã tắt: ${settings.disabledGroups.join(", ")}\n`;
+        }
+        if (settings.enabledPlatforms?.length > 0) {
+          statusText += `✅ Platform đã bật: ${settings.enabledPlatforms.join(", ")}\n`;
+        }
+        if (settings.disabledPlatforms?.length > 0) {
+          statusText += `❌ Platform đã tắt: ${settings.disabledPlatforms.join(", ")}\n`;
+        }
+        if (!settings.enabledGroups && !settings.disabledGroups && !settings.enabledPlatforms && !settings.disabledPlatforms) {
+          statusText += "⚙️ Chưa có cấu hình riêng, sử dụng mặc định";
+        }
+        await reply({ body: statusText });
+      } else if (action === "list") {
+        let listText = "📋 DANH SÁCH PLATFORM VÀ NHÓM\n\n";
+        listText += "🔹 Các nhóm:\n";
+        for (const [groupName, platforms] of Object.entries(PLATFORM_GROUPS)) {
+          listText += `  • ${groupName}: ${platforms.join(", ")}\n`;
+        }
+        listText += "\n🔹 Tất cả platform:\n";
+        listText += `  ${ALL_PLATFORMS.join(", ")}`;
+        await reply({ body: listText });
+      } else {
+        await reply({ body: "❌ Lệnh không hợp lệ! Gõ {pn} để xem hướng dẫn" });
+      }
+    } catch (error: any) {
+      await reply({ body: `❌ Lỗi: ${error?.message || error}` });
+    }
+  },
+  onChat: async function ({ api, client, event, reply, utils, commandName, main, threadData }: any): Promise<void> {
+    if (event.senderID == client.getCurrentUserID()) return;
+    const urls = urlify(event.body);
+    const threadID = event.threadID;
+
+    for (let rawUrl of urls) {
+      let url = rawUrl;
+
+      if (/https:\/\/l\.facebook\.com\/l\.php/.test(url)) {
+        try {
+          const urlObj = new URL(url);
+          const uParam = urlObj.searchParams.get("u");
+          if (uParam) {
+            url = decodeURIComponent(uParam);
+          }
+        } catch (error) {
+
+          const match = url.match(/[?&]u=([^&]+)/);
+          if (match && match[1]) {
+            url = decodeURIComponent(match[1]);
+          }
+        }
+      }
+      if (/tiktok.com/.test(url)) {
+        if (!(await isPlatformEnabled("tiktok", threadData, threadID))) return;
+        const res = await api.tiktok.download(url);
+        if (!res) return;
+        const attachments: any[] = [];
+        if (res.attachments && res.attachments.length > 0) {
+          for (const attachment of res.attachments) {
+            if (attachment.type === "Video" && attachment.buffer) {
+              const uuid = utils.getGUID();
+              const filePath = path.join(process.cwd(), `src/temp/tiktok_video_${uuid}.mp4`);
+              fs.writeFileSync(filePath, attachment.buffer);
+              attachments.push(fs.createReadStream(filePath));
+            } else if (attachment.type === "Photo" && attachment.url) {
+              attachments.push(await utils.stream(attachment.url, "jpg"));
+            }
+          }
+        }
+        if (attachments.length > 0) {
+          client.sendMessage(
+            {
+              body: `TIKTOK: ${res.message}\n👤 ${res.author?.name} (@${res.author.username})\n🎵 ${res.music?.title || "Không có nhạc"}`,
+              attachment: attachments,
+            },
+            event.threadID,
+            (_err: any, dataMsg: any) => {
+              main.onReact.set(dataMsg.messageID, {
+                commandName,
+                messageID: dataMsg.messageID,
+                title: res.music?.title || "",
+                url: res.music?.url,
+                type: "TIKTOK",
+              });
+              musicSent = false;
+            },
+            event.messageID
+          );
+        }
+      }
+      if (/youtube\.com/.test(url) || /youtu\.be/.test(url)) {
+        if (!(await isPlatformEnabled("youtube", threadData, threadID))) return;
+        function getId(u: string): string | null {
+          const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube.com\/shorts\/)([a-zA-Z0-9_-]{11})/;
+          const match = u.match(regex);
+          return match && match[1] ? match[1] : null;
+        }
+        const id = getId(url);
+        if (!id) return;
+        const res = await api.youtube.getMp4(id);
+        reply({
+          body: `YOUTUBE: ${res.title}`,
+          attachment: await utils.stream(res.url, "mp4"),
+        });
+      } else if (
+        /^https:\/\/(www\.|m\.)?(facebook|fb)\.(com|watch)\/(?!.*\/(profile\.php|[\w.-]+\/$))(share\/(p\/[\w-]+\/?|[\w-]+\/?|))|(stories\/[\w-]+\/?|page\.\w+\/?|story\.php\?[\w=&]+|[\w\/]+)/.test(
+          url
+        )
+      ) {
+        if (!(await isPlatformEnabled("facebook", threadData, threadID))) return;
+        const res = await api.facebook.download(encodeURIComponent(url));
+        if (res && res.attachments && res.attachments.length > 0) {
+          const attachment: any[] = [];
+          if (res.queryStorieID) {
+            const match = res.attachments.find((item: any) => item.id == res.queryStorieID);
+            if (match) {
+              if (match.type === "Video") {
+                const videoUrl = match?.url?.hd || match.url.sd;
+                if (videoUrl) {
+                  attachment.push(await utils.stream(videoUrl, "mp4"));
+                }
+              } else if (match.type === "Photo") {
+                const photoUrl = match.url;
+                if (photoUrl) {
+                  attachment.push(await utils.stream(photoUrl, "jpg"));
+                }
+              }
+            }
+          } else {
+            for (const attachmentItem of res.attachments) {
+              if (attachmentItem.type === "Video") {
+                const videoUrl = attachmentItem.url.hd || attachmentItem.url.sd;
+                if (videoUrl) {
+                  attachment.push(await utils.stream(videoUrl, "mp4"));
+                }
+              } else if (attachmentItem.type === "Photo") {
+                const photoUrl = attachmentItem.url;
+                if (photoUrl) {
+                  attachment.push(await utils.stream(photoUrl, "jpg"));
+                }
+              }
+            }
+          }
+          let stats = "";
+          if (res.like || res.comment) {
+            stats = `| ${res.like ? `${res.like}❤️` : ""} ${res.comment ? `${res.comment}💬` : ""} |`.trim();
+          }
+          reply({
+            body: `FACEBOOK: ${res.message || "null"}\n👤 ${res.author || "unknown"}\n${stats}`.trim(),
+            attachment,
+          });
+        }
+      }
+      if (/instagram\.com/i.test(url)) {
+        if (!(await isPlatformEnabled("instagram", threadData, threadID))) return;
+        const res = await api.instagram.down(url);
+        if (Array.isArray(res)) {
+          for (const item of res) {
+            const attachments: any[] = [];
+            if (item.attachments && item.attachments.length > 0) {
+              for (const at of item.attachments) {
+                if (at.type === "Video") {
+                  attachments.push(await utils.stream(at.url, "mp4"));
+                } else if (at.type === "Photo") {
+                  attachments.push(await utils.stream(at.url, "jpg"));
+                }
+              }
+            }
+            reply({
+              body: `INSTAGRAM: ${item.message}\nTác giả: ${item.author}\n❤️ ${item.like} | 💬 ${item.comment}`,
+              attachment: attachments,
+            });
+          }
+        } else {
+          const attachments: any[] = [];
+          if (res.attachments && res.attachments.length > 0) {
+            for (const at of res.attachments) {
+              if (at.type === "Video") {
+                attachments.push(await utils.stream(at.url, "mp4"));
+              } else if (at.type === "Photo") {
+                attachments.push(await utils.stream(at.url, "jpg"));
+              }
+            }
+          }
+          reply({
+            body: `INSTAGRAM: ${res.message}\nTác giả: ${res.author}\n❤️ ${res.like} | 💬 ${res.comment}`,
+            attachment: attachments,
+          });
+        }
+      }
+      if (/https?:\/\/(www\.|m\.|on\.)?soundcloud\.com(\/.+)?/.test(url)) {
+        if (!(await isPlatformEnabled("soundcloud", threadData, threadID))) return;
+        const trackInfo = await api.soundcloud.down(url);
+        if (trackInfo.attachments && trackInfo.attachments.length > 0) {
+          const audioAttachment = trackInfo.attachments.find((att: any) => att.type === "Audio");
+          const audioUrl = audioAttachment ? audioAttachment.url : null;
+          if (!audioUrl) return;
+          reply({
+            body: `SOUNDCLOUD: ${trackInfo.title}\nTác giả: ${trackInfo.author}\n👀 ${trackInfo.playback} | ❤️ ${trackInfo.likes} | 💬 ${trackInfo.comment}`,
+            attachment: await utils.stream(audioUrl, "mp3"),
+          });
+        }
+      }
+      if (/https:\/\/www\.threads\.com\/\S+$/.test(url)) {
+        if (!(await isPlatformEnabled("threads", threadData, threadID))) return;
+        const res = await api.threads.down(url);
+        if (res && Array.isArray(res.attachments) && res.attachments.length > 0) {
+          const messageBody = `THREADS: ${res.message}\nTác giả: ${res.author}\n❤️ ${res.like_count}`;
+          const photoStreams: any[] = [];
+          for (const at of res.attachments) {
+            if (at.type === "Photo") {
+              const stream = await utils.stream(at.url, "jpg");
+              if (stream) photoStreams.push(stream);
+            }
+          }
+          if (photoStreams.length > 0) {
+            await reply({ body: messageBody, attachment: photoStreams });
+          }
+          const videoStreams: any[] = [];
+          for (const at of res.attachments) {
+            if (at.type === "Video") {
+              const stream = await utils.stream(at.url, "mp4");
+              if (stream) videoStreams.push(stream);
+            }
+          }
+          if (videoStreams.length > 0) {
+            await reply({ body: messageBody, attachment: videoStreams });
+          }
+          const audioStreams: any[] = [];
+          for (const at of res.attachments) {
+            if (at.type === "Audio") {
+              const stream = await utils.stream(at.url, "mp3");
+              if (stream) audioStreams.push(stream);
+            }
+          }
+          if (audioStreams.length > 0) {
+            await reply({ body: messageBody, attachment: videoStreams });
+          }
+        }
+      }
+      if (/https?:\/\/(www\.)?zingmp3\.vn\/(bai-hat|album|video-clip|playlist)\/[\w-]+\/([A-Z0-9]+)/.test(url)) {
+        if (!(await isPlatformEnabled("zingmp3", threadData, threadID))) return;
+        function getMp3Id(link: string): string | null {
+          const match = link.match(/\/([A-Z0-9]+)\.html$/);
+          return match && match[1] ? match[1] : null;
+        }
+        const id = getMp3Id(url);
+        if (!id) return;
+        const resAT = await api.zingmp3.getStream(id);
+        const resInfo = await api.zingmp3.getInfoSong(id);
+        const link = resAT.data["128"];
+        const { title } = resInfo.data;
+        reply({
+          body: `ZINGMP3: ${title}`,
+          attachment: await utils.stream(link, "mp3"),
+        });
+      }
+      if (/^https:\/\/(?:www\.)?(?:m\.)?capcut\.(com|net)\/\S+$/.test(url)) {
+        if (!(await isPlatformEnabled("capcut", threadData, threadID))) return;
+        const res = await api.capcut.down(url);
+        const attachments: any[] = [];
+        if (res.attachments && res.attachments.length > 0) {
+          for (const at of res.attachments) {
+            if (at.type === "Video") {
+              attachments.push(await utils.stream(at.url, "mp4"));
+            } else if (at.type === "Photo") {
+              attachments.push(await utils.stream(at.url, "jpg"));
+            }
+          }
+          let message = `CAPCUT: ${res.short_title || res.title || ""} ${res.message || ""}\nTác giả: ${res.author?.name || res.author || ""
+            }`;
+          if (res.like_count) {
+            message += `\n❤️ ${res.like_count}`;
+          }
+          if (res.play_amount) {
+            message += `\n👀 ${res.play_amount}`;
+          }
+          reply({ body: message, attachment: attachments });
+        }
+      }
+      if (/https?:\/\/(www\.)?nhaccuatui\.com\/bai-hat\/[\w-]+\.([a-zA-Z0-9]+)\.html/.test(url)) {
+        if (!(await isPlatformEnabled("nhaccuatui", threadData, threadID))) return;
+        function getNctId(link: string): string | null {
+          const match = link.match(
+            /https?:\/\/(www\.)?nhaccuatui\.com\/bai-hat\/[\w-]+\.([a-zA-Z0-9]+)\.html/
+          );
+          return match && match[2] ? match[2] : null;
+        }
+        const id = getNctId(url);
+        if (!id) return;
+        const data = await api.nct.getSong(id);
+        reply({
+          body: `NHACCUATUI: ${data.song.title}`,
+          attachment: await utils.stream(data.song.streamUrls[0].streamUrl, "mp3"),
+        });
+      }
+      if (/^(?:https?:\/\/)?(?:(?:www\.)?pinterest\.com\/pin\/[\w-]+|pin\.it\/[\w-]+)\/?(?:\?.*)?$/i.test(url)) {
+        if (!(await isPlatformEnabled("pinterest", threadData, threadID))) return;
+        console.log("Pinterest URL:", url);
+        const res = await api.pinterest.down(url);
+        if (res && res.attachments && res.attachments.length > 0) {
+          const attachments: any[] = [];
+          for (const at of res.attachments) {
+            if (at.type === "Video") {
+              if (at.buffer) {
+                const uuid = utils.getGUID();
+                const filePath = path.join(process.cwd(), `src/temp/pinterest_video_${uuid}.mp4`);
+                fs.writeFileSync(filePath, at.buffer);
+                attachments.push(fs.createReadStream(filePath));
+              } else if (at.url) {
+                attachments.push(await utils.stream(at.url, "mp4"));
+              }
+            } else if (at.type === "Photo" || at.type === "Gif") {
+              attachments.push(await utils.stream(at.url, at.type === "Gif" ? "gif" : "jpg"));
+            }
+          }
+          reply({
+            body: `PINTEREST: ${res.title || res.message || "No title"}\n👤 ${res.uploader?.full_name || res.author || "Unknown"
+              }\n❤️ ${res.repin_count || res.like || 0} | 💬 ${res.comment_count || res.comment || 0}`,
+            attachment: attachments,
+          });
+        }
+      }
+      if (/douyin\.com/i.test(url)) {
+        if (!(await isPlatformEnabled("douyin", threadData, threadID))) return;
+        const res = await api.douyin.down(url);
+        if (!res || !res.attachments) {
+          return;
+        }
+        const attachment: any[] = [];
+        for (const at of res.attachments) {
+          if (at.url) {
+            try {
+              if (at.type === "Video") {
+                attachment.push(await utils.stream(at.url, "mp4"));
+              } else if (at.type === "Photo") {
+                attachment.push(await utils.stream(at.url, "jpg"));
+              }
+            } catch (error) {
+              console.error(`Error downloading ${at.type}:`, error);
+            }
+          }
+        }
+        if (attachment.length > 0) {
+          const stats = [
+            res.statistics?.digg_count && `❤️ ${res.statistics.digg_count}`,
+            res.statistics?.comment_count && `💬 ${res.statistics.comment_count}`,
+            res.statistics?.share_count && `🔄 ${res.statistics.share_count}`,
+            res.statistics?.play_count && `👀 ${res.statistics.play_count}`,
+          ]
+            .filter(Boolean)
+            .join(" | ");
+          reply(
+            {
+              body: `DOUYIN: ${res.message || "No title"}\n👤 ${res.author?.nickname || "Unknown"
+                } (@${res.author?.unique_id || ""})\n${stats}`,
+              attachment,
+            },
+            (_err: any, dataMsg: any) => {
+              if (res.music?.url) {
+                main.onReact.set(dataMsg.messageID, {
+                  commandName,
+                  messageID: dataMsg.messageID,
+                  title: res.music.title || "",
+                  url: res.music.url,
+                  type: "DOUYIN",
+                });
+                musicSent = false;
+              }
+            }
+          );
+        }
+      } else {
+        const apps = getPlatformName(url);
+        if (!apps) return;
+        if (!(await isPlatformEnabled("j2", threadData, threadID))) return;
+        const res = await api.j2(url);
+        if (!res || !res.medias) {
+          return;
+        }
+        const { author, title, medias } = res;
+        const attachment: any[] = [];
+        if (medias) {
+          let videoDownloaded = false;
+          for (const media of res.medias) {
+            if (media.url) {
+              if (media.type === "video" && !videoDownloaded) {
+                try {
+                  const fileStream = await utils.stream(media.url, media.extension || "mp4");
+                  attachment.push(fileStream);
+                  videoDownloaded = true;
+                } catch (error) {
+                  console.error("Lỗi khi tải video:", error);
+                }
+              } else if (media.type === "image") {
+                try {
+                  const fileStream = await utils.stream(media.url, media.extension || "jpg");
+                  attachment.push(fileStream);
+                } catch (error) {
+                  console.error("Lỗi khi tải hình ảnh:", error);
+                }
+              } else if (media.type === "audio") {
+                try {
+                  const fileStream = await utils.stream(media.url, media.extension || "mp3");
+                  attachment.push(fileStream);
+                } catch (error) {
+                  console.error("Lỗi khi tải hình ảnh:", error);
+                }
+              }
+            }
+          }
+        }
+        if (attachment.length > 0) {
+          reply({
+            body: `${apps.toUpperCase()}: ${title || "Không có tiêu đề"}\nTác giả: ${author || "Null"}`,
+            attachment,
+          });
+        }
+      }
+    }
+  },
+  onReact: async ({ reply, event, Reaction, utils }: any): Promise<void> => {
+    if (event.reaction == "😆" && !musicSent) {
+      const _ = Reaction;
+      if (_.type === "TIKTOK" || _.type === "DOUYIN" || _.type === "YOUTUBE") {
+        reply({
+          body: `[ MUSIC ${_.type} ]\n────────────────\n⩺ Tiêu đề: ${_.title}`,
+          attachment: await utils.stream(_.url, "mp3"),
+        });
+        musicSent = true;
+      }
+    }
+  },
+};
+
+export default atd;

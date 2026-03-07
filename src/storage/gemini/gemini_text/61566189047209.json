@@ -1,0 +1,21 @@
+{
+  "summary": "",
+  "history": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "gemini"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Hello! How can I help you today?"
+        }
+      ]
+    }
+  ]
+}

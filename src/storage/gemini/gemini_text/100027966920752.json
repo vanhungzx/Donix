@@ -1,0 +1,21 @@
+{
+  "summary": "",
+  "history": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "riêng ạ"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "\"Riêng ạ\" có thể có nhiều nghĩa tùy theo ngữ cảnh. Bạn có thể vui lòng cho mình biết bạn muốn nói về điều gì cụ thể hơn được không? Ví dụ:\n\n*   Bạn muốn giữ điều gì đó riêng tư?\n*   Bạn muốn nói chuyện riêng?\n*   Bạn đang hỏi về một thông tin cụ thể nào đó?\n\nHãy cung cấp thêm thông tin để mình có thể hỗ trợ bạn tốt nhất nhé."
+        }
+      ]
+    }
+  ]
+}

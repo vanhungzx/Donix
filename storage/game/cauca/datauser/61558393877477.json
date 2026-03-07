@@ -1,0 +1,89 @@
+{
+  "name": "Bitoku Đặng",
+  "ID": "61558393877477",
+  "mainROD": "The Blessing From The Sea",
+  "accessory": null,
+  "GPS": {
+    "locate": "The Crater",
+    "area": "Safe Shallows"
+  },
+  "fishBag": [
+    {
+      "ID": 0,
+      "name": "Đừng bán con cá này ko là lỗi tao đéo chịu trách nhiệm đâu",
+      "category": "Unnamed",
+      "size": 999999,
+      "sell": 0
+    },
+    {
+      "ID": 1,
+      "name": "Gasopod",
+      "category": "Rare",
+      "size": 470,
+      "sell": 2800,
+      "image": "https://i.imgur.com/d5RYnzo.png"
+    },
+    {
+      "ID": 2,
+      "name": "Gasopod",
+      "category": "Rare",
+      "size": 470,
+      "sell": 2800,
+      "image": "https://i.imgur.com/d5RYnzo.png"
+    },
+    {
+      "ID": 3,
+      "name": "Gasopod",
+      "category": "Rare",
+      "size": 470,
+      "sell": 2800,
+      "image": "https://i.imgur.com/d5RYnzo.png"
+    }
+  ],
+  "item": [
+    {
+      "name": "The Blessing From The Sea",
+      "price": 15312350000,
+      "durability": 119960,
+      "countdown": 2,
+      "luck": 15000,
+      "countdownData": 1739291091887,
+      "image": "https://i.imgur.com/S7eXgbY.png"
+    }
+  ],
+  "equipments": [],
+  "point": [
+    {
+      "ID": 0,
+      "name": "Đừng bán con cá này ko là lỗi tao đéo chịu trách nhiệm đâu",
+      "category": "Unnamed",
+      "size": 999999,
+      "sell": 0
+    },
+    {
+      "ID": 1,
+      "name": "Gasopod",
+      "category": "Rare",
+      "size": 470,
+      "sell": 2800,
+      "image": "https://i.imgur.com/d5RYnzo.png"
+    },
+    {
+      "ID": 2,
+      "name": "Gasopod",
+      "category": "Rare",
+      "size": 470,
+      "sell": 2800,
+      "image": "https://i.imgur.com/d5RYnzo.png"
+    },
+    {
+      "ID": 3,
+      "name": "Gasopod",
+      "category": "Rare",
+      "size": 470,
+      "sell": 2800,
+      "image": "https://i.imgur.com/d5RYnzo.png"
+    }
+  ],
+  "timeRegister": "23:04:13 11/2/2025"
+}

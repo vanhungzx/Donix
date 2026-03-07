@@ -1,0 +1,212 @@
+{
+  "groupSettings": {
+    "7721053277920777": {
+      "maxWarn": 3,
+      "autoReset": false,
+      "resetAfterDays": 7,
+      "notifyGroup": true,
+      "autoKick": true,
+      "banTime": 30
+    },
+    "8226404287476972": {
+      "maxWarn": 3,
+      "autoReset": false,
+      "resetAfterDays": 7,
+      "notifyGroup": true,
+      "autoKick": true,
+      "banTime": 30
+    },
+    "6804616456270022": {
+      "maxWarn": 3,
+      "autoReset": false,
+      "resetAfterDays": 7,
+      "notifyGroup": true,
+      "autoKick": true,
+      "banTime": 30
+    },
+    "24601063579531210": {
+      "maxWarn": 3,
+      "autoReset": false,
+      "resetAfterDays": 7,
+      "notifyGroup": true,
+      "autoKick": true,
+      "banTime": 30
+    },
+    "9463709050390805": {
+      "maxWarn": 3,
+      "autoReset": false,
+      "resetAfterDays": 7,
+      "notifyGroup": true,
+      "autoKick": true,
+      "banTime": 30
+    },
+    "8577785992319737": {
+      "maxWarn": 3,
+      "autoReset": false,
+      "resetAfterDays": 7,
+      "notifyGroup": true,
+      "autoKick": true,
+      "banTime": 30
+    },
+    "9632024723543788": {
+      "maxWarn": 3,
+      "autoReset": false,
+      "resetAfterDays": 7,
+      "notifyGroup": true,
+      "autoKick": true,
+      "banTime": 30
+    }
+  },
+  "bannedUsers": {
+    "61552617271933": {
+      "24601063579531210": {
+        "time": 1761047397199,
+        "until": 1761049197199
+      }
+    },
+    "100070875971941": {
+      "24601063579531210": {
+        "time": 1761047610510,
+        "until": 1761049410510
+      }
+    }
+  },
+  "100070078325031": {
+    "warns": 1,
+    "reason": [
+      "Đạt tự ý rời box"
+    ],
+    "threadID": "7721053277920777",
+    "time": "18:53:58 13/9/2025"
+  },
+  "100079465356843": {
+    "warns": 2,
+    "reason": [
+      "Hiếu tag all",
+      "Hiếu tội j thì tự bt nhé"
+    ],
+    "threadID": "7721053277920777",
+    "time": "9/29/2025, 8:09:09 PM"
+  },
+  "61567336198527": {
+    "warns": 1,
+    "reason": [
+      "15cm"
+    ],
+    "threadID": "8226404287476972",
+    "time": "13:32:25 22/9/2025"
+  },
+  "61579209039020": {
+    "warns": 1,
+    "reason": [
+      "Nè Tag all"
+    ],
+    "threadID": "7721053277920777",
+    "time": "9/24/2025, 6:48:33 PM"
+  },
+  "100077844633223": {
+    "warns": 1,
+    "reason": [
+      "Xuân Kha mắt kém còn cãi lại qtv"
+    ],
+    "threadID": "7721053277920777",
+    "time": "22:13:07 24/9/2025"
+  },
+  "61580513413020": {
+    "warns": 1,
+    "reason": [
+      "Không có"
+    ],
+    "threadID": "6804616456270022",
+    "time": "21:57:49 28/9/2025"
+  },
+  "61563899065241": {
+    "warns": 1,
+    "reason": [
+      "Không có"
+    ],
+    "threadID": "6804616456270022",
+    "time": "9/29/2025, 10:08:47 AM"
+  },
+  "100071894952726": {
+    "warns": 1,
+    "reason": [
+      "Không có"
+    ],
+    "threadID": "6804616456270022",
+    "time": "9/29/2025, 7:55:20 PM"
+  },
+  "100033476377058": {
+    "warns": 1,
+    "reason": [
+      "Không có"
+    ],
+    "threadID": "6804616456270022",
+    "time": "16:22:47 2/10/2025"
+  },
+  "100093278194006": {
+    "warns": 1,
+    "reason": [
+      "Duy AN tag all"
+    ],
+    "threadID": "7721053277920777",
+    "time": "21:25:26 2/10/2025"
+  },
+  "100034752414560": {
+    "warns": 2,
+    "reason": [
+      "Không có",
+      "Không có"
+    ],
+    "threadID": "24601063579531210",
+    "time": "17:31:44 22/10/2025"
+  },
+  "100089614057880": {
+    "warns": 1,
+    "reason": [
+      "Nguyệt"
+    ],
+    "threadID": "9463709050390805",
+    "time": "10/30/2025, 1:05:32 PM"
+  },
+  "100006943089350": {
+    "warns": 1,
+    "reason": [
+      "Không có"
+    ],
+    "threadID": "8577785992319737",
+    "time": "21:22:29 6/11/2025"
+  },
+  "100073143769156": {
+    "warns": 1,
+    "reason": [
+      "Không có"
+    ],
+    "threadID": "8577785992319737",
+    "time": "16:54:45 8/11/2025"
+  },
+  "61577057994361": {
+    "warns": 1,
+    "reason": [
+      "chửi bot"
+    ],
+    "threadID": "9632024723543788",
+    "time": "18:17:12 20/11/2025"
+  },
+  "61566968954510": {
+    "warns": 1,
+    "reason": [
+      "chửi bot"
+    ],
+    "threadID": "9632024723543788",
+    "time": "18:17:25 20/11/2025"
+  },
+  "61550317686627": {
+    "warns": 1,
+    "reason": [
+      "chửi bot"
+    ],
+    "threadID": "9632024723543788",
+    "time": "18:17:37 20/11/2025"
+  }
+}

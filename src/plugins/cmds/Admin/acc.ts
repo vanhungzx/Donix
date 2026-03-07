@@ -1,0 +1,367 @@
+import type { Command } from "@types";
+import fs from "node:fs";
+import path from "node:path";
+import loginWeb from "../../../core/auth_login/facebook_web";
+
+const configPath = path.resolve(process.cwd(), "src/core/config/config.json");
+
+type FbAccount = {
+  email?: string;
+  password?: string;
+  secret2FA?: string | null;
+  twofactor?: string | null;
+  cookie?: string;
+  disabled?: boolean;
+  [key: string]: unknown;
+};
+
+type DonixConfig = {
+  fbAccounts?: FbAccount[];
+  cookie?: string;
+  token?: Record<string, unknown> | null;
+  [key: string]: unknown;
+};
+
+type AccountTokens = Record<string, string>;
+
+type ReplyCallbackInfo = { messageID?: string };
+type ReplyCallback = (err: unknown, info?: ReplyCallbackInfo) => void;
+type ReplyFn = (message: string | { body: string }, callback?: ReplyCallback) => unknown;
+
+type ReplyData = {
+  type?: "acc-select-index" | "acc-select-method";
+  author?: string;
+  accIndex?: number;
+};
+
+function extractUserIdFromCookie(cookie: string): string | null {
+  const parts = cookie.split(";").map((p) => p.trim());
+  const cUser = parts.find((p) => p.startsWith("c_user="));
+  if (!cUser) return null;
+  return cUser.split("=")[1] || null;
+}
+
+function loadFreshConfig(): DonixConfig {
+  try {
+    const raw = fs.readFileSync(configPath, "utf-8");
+    return JSON.parse(raw) as DonixConfig;
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    throw new Error(`Không thể đọc config: ${message}`);
+  }
+}
+
+function saveConfig(config: DonixConfig): void {
+  try {
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), "utf-8");
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    throw new Error(`Không thể ghi config: ${message}`);
+  }
+}
+
+function applyCookieToConfigAndGlobal(newCookie: string, accountIndex: number, cfg: DonixConfig): void {
+  const nextCfg: DonixConfig = { ...cfg, cookie: newCookie };
+  const accounts = Array.isArray(cfg.fbAccounts) ? [...cfg.fbAccounts] : [];
+
+  if (Number.isInteger(accountIndex) && accountIndex >= 0 && accountIndex < accounts.length) {
+    const existing = accounts[accountIndex] || {};
+    accounts[accountIndex] = {
+      ...existing,
+      cookie: newCookie,
+      disabled: false,
+    };
+    nextCfg.fbAccounts = accounts;
+  }
+
+  saveConfig(nextCfg);
+
+  try {
+    const globalState = global as typeof globalThis & { account?: { cookie?: string; token?: unknown } };
+    const tokenValue =
+      nextCfg.token && typeof nextCfg.token === "object"
+        ? (nextCfg.token as AccountTokens)
+        : null;
+
+    globalState.account = {
+      cookie: newCookie,
+      token: tokenValue,
+    };
+  } catch {
+
+  }
+}
+
+async function performLoginWithMethod(
+  idx: number,
+  method: string,
+  acc: FbAccount,
+  cfg: DonixConfig,
+  reply: ReplyFn
+): Promise<void> {
+  const email: string | undefined = acc.email;
+  const password: string | undefined = acc.password;
+  // Chuẩn hoá secret 2FA: ưu tiên field secret2FA, nếu không có thì dùng twofactor từ config.json
+  const secret2FA: string | null =
+    ((acc.secret2FA as string | null) ?? (acc.twofactor as string | null)) || null;
+
+  if (!email || !password) {
+    reply("Tài khoản này chưa cấu hình đầy đủ email/password.");
+    return;
+  }
+
+  // Dùng chung một phương thức chính: facebook_web
+  await reply(`⏳ Đang đăng nhập lại acc #${idx + 1} bằng phương thức web (facebook_web)...`);
+
+  try {
+    const result = await loginWeb({ email, password, secret2FA });
+
+    if (result.status !== "success") {
+      if (result.checkpointCode === "282" || result.checkpointCode === "956") {
+        reply(
+          `❌ Đăng nhập web thất bại: tài khoản bị checkpoint ${result.checkpointCode}` +
+          (result.checkpointReason ? ` - ${result.checkpointReason}` : "")
+        );
+      } else {
+        reply(
+          `❌ Đăng nhập web thất bại: ${result.error || result.status || "Không rõ lỗi"}`
+        );
+      }
+      return;
+    }
+
+    const cookie = result.cookie;
+    if (!cookie || typeof cookie !== "string" || !cookie.includes("c_user=")) {
+      reply("❌ Đăng nhập thất bại: cookie trả về không hợp lệ hoặc thiếu c_user.");
+      return;
+    }
+
+    applyCookieToConfigAndGlobal(cookie, idx, cfg);
+
+    const uid = extractUserIdFromCookie(cookie);
+    reply(
+      `✅ Đăng nhập thành công bằng web.\n` +
+      (uid ? `➡️ UID: ${uid}\n` : "") +
+      "Cookie & acc active đã được cập nhật vào config.\n🔄 Đang khởi động lại bot..."
+    );
+
+    setTimeout(() => {
+      process.exit(1);
+    }, 1500);
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    reply(`❌ Lỗi khi đăng nhập web: ${message}`);
+  }
+}
+
+const command: Command = {
+  name: "acc",
+  version: "1.0.0",
+  desc: "Quản lý tài khoản Facebook cho auto login (xem, đổi acc, bật/tắt)",
+  guide:
+    "{p}acc list\n" +
+    "{p}acc use <index>\n" +
+    "{p}acc login <index>\n" +
+    "{p}acc disable <index>\n" +
+    "{p}acc enable <index>",
+  prefix: true,
+  cd: 3,
+  role: 3,
+  alias: ["fbaccount", "fbset", "acc"],
+
+  onCall: async ({ args, reply, main, event, commandName }) => {
+    const sub = (args[0] || "").toLowerCase();
+    const cfg = loadFreshConfig();
+    const accounts = Array.isArray(cfg.fbAccounts) ? cfg.fbAccounts : [];
+
+    if (!sub || ["help", "-h", "--help"].includes(sub)) {
+      reply(
+        "⚙️ Quản lý tài khoản Facebook auto-login:\n" +
+        "- fbacc list: xem danh sách tài khoản + acc đang dùng\n" +
+        "- fbacc use <index>: đổi acc mặc định (chỉ ảnh hưởng các lần auto login tiếp theo)\n" +
+        "- fbacc login <index>: đăng nhập ngay bằng acc index (đổi cookie + UID hiện tại)\n" +
+        "- fbacc disable <index>: tắt acc (bỏ qua khi auto login)\n" +
+        "- fbacc enable <index>: bật lại acc"
+      );
+      return;
+    }
+
+    if (sub === "list") {
+      if (!accounts.length) {
+        reply("Hiện chưa cấu hình fbAccounts trong config.");
+        return;
+      }
+      const lines = accounts.map((acc: FbAccount, i: number) => {
+        const displayIndex = i + 1;
+        const mark = "  ";
+        const email = acc.email || "(chưa đặt email)";
+        const has2FA = acc.secret2FA || acc.twofactor ? "✅2FA" : "❌2FA";
+        const disabled = acc.disabled ? "🚫disabled" : "✅active";
+        return `${mark} [${displayIndex}] ${email} | ${has2FA} | ${disabled}`;
+      });
+      reply(
+        {
+          body:
+            "Danh sách tài khoản FB:\n" +
+            lines.join("\n") +
+            "\n\n👉 Reply STT (bắt đầu từ 1) vào tin nhắn này để chọn acc, sau đó chọn phương thức login.",
+        },
+        (err: unknown, info: { messageID?: string } | undefined) => {
+          if (err || !info?.messageID) return;
+          main.onReply.set(info.messageID, {
+            commandName,
+            messageID: info.messageID,
+            type: "acc-select-index",
+            author: String(event.senderID),
+          });
+        }
+      );
+      return;
+    }
+
+    if (sub === "login") {
+      if (!accounts.length) {
+        reply("Chưa có fbAccounts trong config để đăng nhập.");
+        return;
+      }
+      const idxRaw = args[1];
+      const idxNum = Number.parseInt(idxRaw || "", 10);
+      const idx = idxNum >= 1 ? idxNum - 1 : idxNum;
+      if (!Number.isInteger(idx) || idx < 0 || idx >= accounts.length) {
+        reply(`Index không hợp lệ. Vui lòng nhập số từ 1 đến ${accounts.length}.`);
+        return;
+      }
+
+      const acc = accounts[idx];
+      if (!acc || acc.disabled) {
+        reply("Tài khoản này đang bị disable hoặc chưa cấu hình đúng.");
+        return;
+      }
+
+      const email: string | undefined = acc.email;
+      const password: string | undefined = acc.password;
+
+      if (!email || !password) {
+        reply("Tài khoản này chưa cấu hình đầy đủ email/password.");
+        return;
+      }
+
+      try {
+        await performLoginWithMethod(idx, "web", acc, cfg, reply);
+        return;
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e);
+        reply(`❌ Lỗi khi login acc (web): ${message}`);
+        return;
+      }
+    }
+
+    if (sub === "disable") {
+      if (!accounts.length) {
+        reply("Chưa có fbAccounts trong config.");
+        return;
+      }
+      const idxRaw = args[1];
+      const idxNum = Number.parseInt(idxRaw || "", 10);
+      const idx = idxNum >= 1 ? idxNum - 1 : idxNum;
+      if (!Number.isInteger(idx) || idx < 0 || idx >= accounts.length) {
+        reply(`Index không hợp lệ. Vui lòng nhập số từ 1 đến ${accounts.length}.`);
+        return;
+      }
+      const cloned = [...accounts];
+      cloned[idx] = { ...cloned[idx], disabled: true };
+      try {
+        const newCfg = { ...cfg, fbAccounts: cloned };
+        saveConfig(newCfg);
+        reply(`✅ Đã disable acc index ${idx}. Auto login sẽ bỏ qua acc này.`);
+        return;
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e);
+        reply(`❌ Lỗi khi disable acc: ${message}`);
+        return;
+      }
+    }
+
+    if (sub === "enable") {
+      if (!accounts.length) {
+        reply("Chưa có fbAccounts trong config.");
+        return;
+      }
+      const idxRaw = args[1];
+      const idxNum = Number.parseInt(idxRaw || "", 10);
+      const idx = idxNum >= 1 ? idxNum - 1 : idxNum;
+      if (!Number.isInteger(idx) || idx < 0 || idx >= accounts.length) {
+        reply(`Index không hợp lệ. Vui lòng nhập số từ 1 đến ${accounts.length}.`);
+        return;
+      }
+      const cloned = [...accounts];
+      cloned[idx] = { ...cloned[idx], disabled: false };
+      try {
+        const newCfg = { ...cfg, fbAccounts: cloned };
+        saveConfig(newCfg);
+        reply(`✅ Đã enable acc index ${idx}.`);
+        return;
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e);
+        reply(`❌ Lỗi khi enable acc: ${message}`);
+        return;
+      }
+    }
+
+    reply("Subcommand không hợp lệ. Dùng: fbacc help để xem hướng dẫn.");
+    return;
+  },
+  onReply: async ({ event, reply, Reply, main, commandName, client }) => {
+    try {
+      const body = (event.body || "").trim();
+      if (!body) return;
+
+      const replyData = (Reply || {}) as ReplyData;
+      const { type, author, accIndex } = replyData;
+
+      if (author && String(author) !== String(event.senderID)) {
+        return;
+      }
+
+      if (type === "acc-select-index") {
+        const stt = Number.parseInt(body, 10);
+        if (!Number.isInteger(stt) || stt < 1) {
+          reply("❌ Vui lòng reply STT hợp lệ (>= 1).");
+          return;
+        }
+
+        const cfg = loadFreshConfig();
+        const accounts = Array.isArray(cfg.fbAccounts) ? cfg.fbAccounts : [];
+        if (!accounts.length) {
+          reply("Chưa có fbAccounts trong config.");
+          return;
+        }
+        if (stt > accounts.length) {
+          reply(`STT quá lớn. Vui lòng nhập số từ 1 đến ${accounts.length}.`);
+          return;
+        }
+
+        const idx = stt - 1;
+        const acc = accounts[idx];
+        if (!acc || acc.disabled) {
+          reply("Tài khoản này đang bị disable hoặc chưa cấu hình đúng.");
+          return;
+        }
+
+        reply(
+          `Đã chọn acc #${stt} (${acc.email || "no-email"}).\n` +
+          "Dùng lệnh: fbacc login " + stt + " để đăng nhập bằng phương thức web (facebook_web)."
+        );
+        return;
+      }
+
+      return;
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      reply(`❌ Lỗi khi xử lý reply fbacc: ${message}`);
+      return;
+    }
+  },
+};
+
+export default command;
