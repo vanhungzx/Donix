@@ -4,7 +4,7 @@ import log from "@log";
 import { EventEmitter as NodeEventEmitter } from "events";
 import { createMqttClient, setupMqttConnection } from "./connection";
 import { handleFriendRequest, handleLsResponse, handlePresenceUpdate, handleTmsMessage, handleTypingNotification, handleWebRTCMessage } from "./messageHandlers";
-import { reconnectMqtt, resetReconnectCount } from "./reconnect";
+import { reconnectMqtt, resetReconnectCount, isCurrentlyReconnecting } from "./reconnect";
 import { createGetSeqID } from "./sequenceId";
 
 let messageCleanupInterval: NodeJS.Timeout | null = null;
@@ -15,29 +15,14 @@ function createRealtimeCallbackWrapper(baseCallback: MqttCallback, ctx: any): Mq
   const realtime = ctx?.options?.mqttRealtime === true;
   if (!realtime) return baseCallback;
 
-  // Đảm bảo luôn đọc concurrency một cách an toàn khi ctx.options chưa được set
-  const rawConcurrency = ctx?.options?.mqttCallbackConcurrency;
-  const numericConcurrency = Number(rawConcurrency);
-  const concurrency = Number.isFinite(numericConcurrency)
-    ? Math.max(1, Math.min(numericConcurrency, 16))
+  const concurrency = Number.isFinite(ctx?.options?.mqttCallbackConcurrency)
+    ? Math.max(1, Math.min(Number(ctx.options.mqttCallbackConcurrency), 16))
     : 1;
 
-  // Tối ưu: Thêm queue limit dựa trên memory để tránh memory buildup
+  // No queue limit - process all events without dropping (realtime optimization).
   // Concurrency control prevents overwhelming the event loop.
   let inFlight = 0;
   const queue: Array<{ err: any; msg: any }> = [];
-  // Dynamic queue limit based on RSS memory
-  const getMaxQueueSize = (): number => {
-    try {
-      const rssMB = process.memoryUsage().rss / 1024 / 1024;
-      if (rssMB > 300) return 50; // Rất thấp khi RSS rất cao
-      if (rssMB > 280) return 100; // Thấp khi RSS cao
-      if (rssMB > 250) return 200; // Trung bình khi RSS tăng
-      return 500; // Bình thường
-    } catch {
-      return 500; // Fallback
-    }
-  };
 
   const defer = (fn: () => void) => {
     if (typeof setImmediate === "function") {
@@ -72,16 +57,7 @@ function createRealtimeCallbackWrapper(baseCallback: MqttCallback, ctx: any): Mq
   };
 
   return (err: any, msg?: any) => {
-    // Tối ưu: Giới hạn queue size dựa trên memory để tránh memory buildup
-    const maxQueue = getMaxQueueSize();
-    if (queue.length >= maxQueue) {
-      // Xóa message cũ nhất khi queue đầy (FIFO)
-      queue.shift();
-      // Log warning nếu drop quá nhiều
-      if (queue.length >= maxQueue * 0.9) {
-        console.warn(`[MQTT] Queue gần đầy (${queue.length}/${maxQueue}), đã drop message cũ`);
-      }
-    }
+    // Never drop events - process all without limit (realtime optimization).
     queue.push({ err, msg });
     drain();
   };
@@ -91,7 +67,7 @@ function listenMqtt(defaultFuncs: any, api: any, ctx: any, globalCallback: any):
   // Cleanup previous client instance to avoid socket/listener leaks.
   if (ctx.mqttClient) {
     try {
-      ctx.mqttClient.removeAllListeners();
+    ctx.mqttClient.removeAllListeners();
     } catch {
       // ignore
     }
@@ -106,17 +82,25 @@ function listenMqtt(defaultFuncs: any, api: any, ctx: any, globalCallback: any):
   const mqttClient = createMqttClient(ctx);
   ctx.mqttClient = mqttClient;
   (global as any).mqttClient = mqttClient;
-  // Tối ưu: Expose ctx globally để cleanup có thể truy cập ctx.tasks
-  (global as any).mqttContext = ctx;
 
-  // Set MaxListeners to 0 (unlimited) to avoid MaxListenersExceededWarning
+  // Keep listener limit sane (don't hide leaks globally).
   try {
-    mqttClient.setMaxListeners(0);
+    mqttClient.setMaxListeners(30);
   } catch {
     // ignore
   }
 
   const getSeqID = createGetSeqID(ctx, defaultFuncs, api, listenMqtt, globalCallback, messageCleanupInterval);
+
+  /** Kích hoạt reconnect khi MQTT không healthy (vd: bị 049) — debounce 60s để tránh spam */
+  const RECONNECT_TRIGGER_DEBOUNCE_MS = 60000;
+  ctx._triggerReconnect = function triggerReconnectIfUnhealthy() {
+    if (isCurrentlyReconnecting()) return;
+    if (ctx._lastReconnectTrigger && Date.now() - ctx._lastReconnectTrigger < RECONNECT_TRIGGER_DEBOUNCE_MS) return;
+    ctx._lastReconnectTrigger = Date.now();
+    log.warn("MQTT không healthy khi gửi tin - đang kích hoạt reconnect (kiểm tra checkpoint 049)...");
+    reconnectMqtt(ctx, messageCleanupInterval, getSeqID);
+  };
 
   mqttClient.on("error", (err: any) => {
     const errorMsg = err?.message || String(err || "");
@@ -125,13 +109,9 @@ function listenMqtt(defaultFuncs: any, api: any, ctx: any, globalCallback: any):
     const isNetworkErr =
       lowerMsg.includes("enotfound") ||
       lowerMsg.includes("econnreset") ||
-      lowerMsg.includes("econnrefused") ||
-      lowerMsg.includes("connection refused") ||
-      lowerMsg.includes("no subscription existed") ||
       lowerMsg.includes("network") ||
       err?.code === "ENOTFOUND" ||
-      err?.code === "ECONNRESET" ||
-      err?.code === "ECONNREFUSED";
+      err?.code === "ECONNRESET";
 
     // Trường hợp phổ biến khi client đang tự đóng kết nối (ví dụ stopListening/end)
     // Thư viện MQTT thường bắn error "client disconnecting" nhưng đây không phải lỗi nặng.
@@ -145,18 +125,12 @@ function listenMqtt(defaultFuncs: any, api: any, ctx: any, globalCallback: any):
       return;
     }
 
-    // Lỗi "Connection refused: No subscription existed" cần reconnect ngay
-    const isConnectionRefused =
-      lowerMsg.includes("connection refused") ||
-      lowerMsg.includes("no subscription existed");
-
-    if (isNetworkErr || isConnectionRefused) {
-      log.warn(`Lỗi kết nối MQTT: ${errorMsg}. Sẽ tự động kết nối lại...`);
+    if (isNetworkErr) {
+      log.warn(`Lỗi mạng kết nối MQTT: ${errorMsg}. Sẽ tự động kết nối lại khi có mạng...`);
     } else {
       log.error(`Lỗi kết nối MQTT: ${errorMsg}`);
     }
 
-    // Luôn gọi reconnect cho mọi lỗi để đảm bảo kết nối được khôi phục
     reconnectMqtt(ctx, messageCleanupInterval, getSeqID);
   });
 
@@ -235,18 +209,18 @@ function listenMqtt(defaultFuncs: any, api: any, ctx: any, globalCallback: any):
       } catch {
         return;
       }
+
       // Fast path: use strict equality for exact topic matches (faster than switch for common cases)
       if (topic === TOPIC_T_MS) {
-        handleTmsMessage(jsonMessage, ctx, defaultFuncs, api, globalCallback);
+          handleTmsMessage(jsonMessage, ctx, defaultFuncs, api, globalCallback);
       } else if (topic === TOPIC_THREAD_TYPING || topic === TOPIC_ORCA_TYPING) {
-        handleTypingNotification(jsonMessage, globalCallback);
+          handleTypingNotification(jsonMessage, globalCallback);
       } else if (topic === TOPIC_ORCA_PRESENCE) {
-        // An toàn hơn khi ctx.options chưa tồn tại
-        if (!ctx.options || !ctx.options.updatePresence) {
-          handlePresenceUpdate(jsonMessage, globalCallback);
-        }
+          if (!ctx.options.updatePresence) {
+            handlePresenceUpdate(jsonMessage, globalCallback);
+          }
       } else if (topic === TOPIC_LS_RESP) {
-        handleLsResponse(jsonMessage, ctx);
+          handleLsResponse(jsonMessage, ctx);
       } else if (
         topic === TOPIC_WEBRTC || topic === TOPIC_RTC_MULTI || topic === TOPIC_ONEVC ||
         topic === TOPIC_T_WEBRTC || topic === TOPIC_T_RTC_MULTI || topic === TOPIC_T_ONEVC ||
@@ -254,7 +228,7 @@ function listenMqtt(defaultFuncs: any, api: any, ctx: any, globalCallback: any):
       ) {
         handleWebRTCMessage(jsonMessage, ctx, globalCallback, topic);
       } else {
-        handleFriendRequest(jsonMessage, globalCallback);
+          handleFriendRequest(jsonMessage, globalCallback);
       }
     } catch (ex: any) {
       console.error("Message parsing error:", ex);

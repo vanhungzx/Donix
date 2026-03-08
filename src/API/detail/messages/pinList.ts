@@ -78,7 +78,8 @@ export default function (
           using_white_navbar: true,
           pixel_ratio: 1.5,
           is_push_on: true,
-          bloks_version: "e4ac5d6944a7e6c15b7353672e454568871b99f82a8810e33351bd7aa0bd97ea",
+          bloks_version:
+            "e4ac5d6944a7e6c15b7353672e454568871b99f82a8810e33351bd7aa0bd97ea",
         },
         medium_preview_width: 526,
         blur: 0,
@@ -98,15 +99,29 @@ export default function (
         server_timestamps: "true",
       });
 
+      // Resolve access token from context or config
+      let accessToken =
+        (ctx as any).eaadToken ||
+        (ctx as any).globalOptions?.accessToken ||
+        (ctx as any).access_token;
+
+      if (!accessToken) {
         const config = getConfig();
-        const accessToken =
+        accessToken =
           (config as any)?.token?.EAAD ||
           (config as any)?.token?.EAAAAU ||
           (config as any)?.token &&
           typeof (config as any).token === "object"
             ? (Object.values((config as any).token)[0] as string)
             : undefined;
+      }
 
+      if (!accessToken) {
+        const err = new Error("Access token not found. Please login again.");
+        callback(err);
+        rejectFunc(err);
+        return returnPromise;
+      }
 
       const response = await axios({
         method: "POST",

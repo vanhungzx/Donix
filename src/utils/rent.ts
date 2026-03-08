@@ -2,7 +2,9 @@ import type { BotConfig, ExtendedMessageEvent, FacebookClient } from "@types";
 import fs from "fs-extra";
 import moment from "moment-timezone";
 import path from "path";
-const RENT_PATH = path.join(process.cwd(), "src/storage/rent/rent.json");
+import { RENT_JSON_PATH } from "../core/storagePath";
+
+const RENT_PATH = RENT_JSON_PATH();
 interface RentData {
   threadID: string;
   endDate?: string;

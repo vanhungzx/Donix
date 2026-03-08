@@ -1,9 +1,12 @@
 import crypto from 'crypto';
 import fs from 'fs';
 import moment from 'moment-timezone';
-const RENT_PATH = './src/storage/rent/rent.json';
-const KEY_PATH = './src/storage/rent/keys.json';
-const RENT_DIR = './src/storage/rent';
+import { RENT_JSON_PATH, RENT_KEYS_PATH, STORAGE_RENT } from '../../../core/storagePath';
+
+const RENT_PATH = RENT_JSON_PATH();
+const KEY_PATH = RENT_KEYS_PATH();
+const RENT_DIR = STORAGE_RENT();
+
 interface RentRecord {
   threadID: string;
   userID: string;
@@ -25,13 +28,7 @@ interface RentKey {
   groupId: string;
 }
 
-type ReplyType =
-  | 'bank'
-  | 'unbank'
-  | 'clear'
-  | 'list'
-  | 'listkey'
-  | 'check';
+type ReplyType = 'bank' | 'unbank' | 'clear' | 'list' | 'listkey' | 'check';
 
 interface ReplyMeta {
   type: ReplyType;
@@ -63,7 +60,7 @@ const loadData = (p: string): any[] => {
       return JSON.parse(fileData);
     }
   } catch {
-
+    // ignore
   }
   return [];
 };
@@ -99,13 +96,13 @@ const onLoad = (): void => {
     if (!fs.existsSync(RENT_PATH)) fs.writeFileSync(RENT_PATH, '[]', 'utf-8');
     if (!fs.existsSync(KEY_PATH)) fs.writeFileSync(KEY_PATH, '[]', 'utf-8');
   } catch {
-
+    // ignore
   }
 };
 
 const onCall = async ({
   reply,
-  bot,
+  client, // ✅ bot -> client
   event,
   args,
   userData,
@@ -278,8 +275,7 @@ const onCall = async ({
         .map((k, i) => {
           const status = k.used ? `Đã dùng cho nhóm: ${k.groupId || 'N/A'}` : 'Chưa sử dụng';
           const typ = k.type === 'renew' ? 'Gia hạn' : 'Kích hoạt';
-          return `🔑 Key ${i + 1}: ${k.key}\n- Ngày tạo: ${k.createdDate}\n- Hết hạn: ${k.expiryDate
-            }\n- Thời hạn: ${k.duration}\n- Loại: ${typ}\n- Trạng thái: ${status}`;
+          return `🔑 Key ${i + 1}: ${k.key}\n- Ngày tạo: ${k.createdDate}\n- Hết hạn: ${k.expiryDate}\n- Thời hạn: ${k.duration}\n- Loại: ${typ}\n- Trạng thái: ${status}`;
         })
         .join('\n\n');
 
@@ -299,8 +295,7 @@ const onCall = async ({
     }
 
     case 'giahan': {
-      if (args.length < 2)
-        return reply('Vui lòng nhập thời gian gia hạn (ngày | 1t | DD/MM/YYYY).');
+      if (args.length < 2) return reply('Vui lòng nhập thời gian gia hạn (ngày | 1t | DD/MM/YYYY).');
 
       const threadID = String(event.threadID);
       const rentList = loadData(RENT_PATH) as RentRecord[];
@@ -308,8 +303,7 @@ const onCall = async ({
       if (!rec) return reply('⚠️ Nhóm này chưa có dữ liệu thuê.');
 
       const curEnd = moment(rec.endDate, 'DD/MM/YYYY').tz('Asia/Ho_Chi_Minh');
-      if (!curEnd.isValid())
-        return reply(`⚠️ Ngày hết hạn hiện tại không hợp lệ: ${rec.endDate}`);
+      if (!curEnd.isValid()) return reply(`⚠️ Ngày hết hạn hiện tại không hợp lệ: ${rec.endDate}`);
 
       const token = String(args[1]).toLowerCase();
       let newEnd: moment.Moment;
@@ -342,9 +336,7 @@ const onCall = async ({
 
       rec.endDate = newEnd.format('DD/MM/YYYY');
       saveData(rentList, RENT_PATH);
-      return reply(
-        `🎉 Gia hạn thành công!\n📅 ${rec.startDate} → ${rec.endDate}\n📝 Đã gia hạn thêm ${label}.`
-      );
+      return reply(`🎉 Gia hạn thành công!\n📅 ${rec.startDate} → ${rec.endDate}\n📝 Đã gia hạn thêm ${label}.`);
     }
 
     case 'key': {
@@ -395,11 +387,7 @@ const onCall = async ({
 
       const title = type === 'renew' ? 'gia hạn' : 'kích hoạt';
       const text = out
-        .map(
-          (k, i) =>
-            `Key ${i + 1}: ${k.key}\n- Ngày tạo: ${k.createdDate}\n- Hết hạn: ${k.expiryDate
-            }\n- Loại: ${title}`
-        )
+        .map((k, i) => `Key ${i + 1}: ${k.key}\n- Ngày tạo: ${k.createdDate}\n- Hết hạn: ${k.expiryDate}\n- Loại: ${title}`)
         .join('\n\n');
 
       return reply(`✅ Tạo ${qty} key ${title} (${num} ${unit}):\n\n${text}`);
@@ -416,11 +404,11 @@ const onCall = async ({
         ({ threadInfo: { threadName: 'Không xác định' } } as any);
       const threadName = tinfo.threadInfo.threadName;
       const d = calculateRemainingDays(rec.endDate);
-      const status =
-        d >= 0 ? `còn ${d.toLocaleString()} ngày` : `đã hết hạn ${Math.abs(d).toLocaleString()} ngày`;
+      const status = d >= 0 ? `còn ${d.toLocaleString()} ngày` : `đã hết hạn ${Math.abs(d).toLocaleString()} ngày`;
 
       return reply(
-        `[ Thông Tin Thuê Bot ]\n\n📌 Nhóm: ${threadName}\n👤 Người thuê: ${userName}\n📅 ${rec.startDate} → ${rec.endDate}\n🔑 Key: ${rec.key || 'không có'
+        `[ Thông Tin Thuê Bot ]\n\n📌 Nhóm: ${threadName}\n👤 Người thuê: ${userName}\n📅 ${rec.startDate} → ${rec.endDate}\n🔑 Key: ${
+          rec.key || 'không có'
         }\n🔰 Trạng thái: ${status}`
       );
     }
@@ -441,18 +429,11 @@ const onCall = async ({
         const lines = await Promise.all(
           pageItems.map(async (rent, i) => {
             const name = await userData.getName(rent.userID).catch(() => 'N/A');
-            const thread =
-              (await threadData.get(rent.threadID))?.threadInfo?.threadName || 'N/A';
+            const thread = (await threadData.get(rent.threadID))?.threadInfo?.threadName || 'N/A';
             const days = calculateRemainingDays(rent.endDate);
-            const status =
-              days >= 0 ? `✅ Còn ${days} ngày` : `❌ Hết hạn ${Math.abs(days)} ngày`;
+            const status = days >= 0 ? `✅ Còn ${days} ngày` : `❌ Hết hạn ${Math.abs(days)} ngày`;
             const idx = start + i + 1;
-            return (
-              `│ ╭─ ${idx}. ${thread}\n` +
-              `│ ├─ 👤 ${name}\n` +
-              `│ ├─ ⏳ ${status}\n` +
-              `│ ╰─ 📅 ${rent.startDate} → ${rent.endDate}\n│`
-            );
+            return `│ ╭─ ${idx}. ${thread}\n│ ├─ 👤 ${name}\n│ ├─ ⏳ ${status}\n│ ╰─ 📅 ${rent.startDate} → ${rent.endDate}\n│`;
           })
         );
 
@@ -523,9 +504,7 @@ const onCall = async ({
         );
 
         return reply(
-          `📝 Nhóm hết hạn:\n${lines.join(
-            '\n'
-          )}\n\nReply: "out N" để out 1 nhóm, "out all" để out tất cả`,
+          `📝 Nhóm hết hạn:\n${lines.join('\n')}\n\nReply: "out N" để out 1 nhóm, "out all" để out tất cả`,
           (err: any, info: any) => {
             if (err) return;
             const meta: ReplyMeta = {
@@ -547,7 +526,7 @@ const onCall = async ({
 
     case 'clear': {
       try {
-        const groups = (await bot.getThreadList(150, null, ['INBOX']))
+        const groups = (await client.getThreadList(150, null, ['INBOX']))
           .filter((g: any) => g.isSubscribed && g.isGroup)
           .map((g: any) => String(g.threadID));
 
@@ -574,16 +553,15 @@ const onCall = async ({
               ({ threadInfo: { threadName: 'Unknown' } } as any);
             const name = tinfo?.threadInfo?.threadName || 'Unknown';
             const v = calculateRemainingDays(r.endDate);
-            s += `- ${name} (${r.threadID}) - ${v >= 0 ? `Còn ${v} ngày` : `Hết hạn ${Math.abs(v)} ngày`
-              }\n`;
+            s += `- ${name} (${r.threadID}) - ${v >= 0 ? `Còn ${v} ngày` : `Hết hạn ${Math.abs(v)} ngày`}\n`;
           }
           return s + '\n';
         };
 
-        report += await mk(validInGroups, '✅ Nhóm còn hạn và bot đang ở trong:');
-        report += await mk(expiredInGroups, '❌ Nhóm hết hạn bot đang ở trong:');
-        report += await mk(validNotInGroups, '⚠️ Nhóm còn hạn nhưng bot không ở trong:');
-        report += await mk(expiredNotInGroups, '🗑️ Nhóm hết hạn và bot không ở trong:');
+        report += await mk(validInGroups, '✅ Nhóm còn hạn và client đang ở trong:');
+        report += await mk(expiredInGroups, '❌ Nhóm hết hạn client đang ở trong:');
+        report += await mk(validNotInGroups, '⚠️ Nhóm còn hạn nhưng client không ở trong:');
+        report += await mk(expiredNotInGroups, '🗑️ Nhóm hết hạn và client không ở trong:');
 
         if (validNotInGroups.length || expiredNotInGroups.length) {
           const updated = rentList.filter(
@@ -592,13 +570,12 @@ const onCall = async ({
               !validNotInGroups.some((x) => x.threadID === r.threadID)
           );
           saveData(updated, RENT_PATH);
-          report += '✅ Đã xóa dữ liệu của các nhóm không còn bot.\n';
+          report += '✅ Đã xóa dữ liệu của các nhóm không còn client.\n';
         }
 
         report += '\n📝 Reply lựa chọn:\n';
-        if (expiredInGroups.length)
-          report += '• "out" — out các nhóm hết hạn (bot đang trong nhóm)\n';
-        report += '• "clean" — out nhóm hết hạn + xóa dữ liệu nhóm không có bot\n';
+        if (expiredInGroups.length) report += '• "out" — out các nhóm hết hạn (client đang trong nhóm)\n';
+        report += '• "clean" — out nhóm hết hạn + xóa dữ liệu nhóm không có client\n';
         report += '• "remove" — xóa tất cả dữ liệu không hợp lệ\n';
 
         return reply(report, (err: any, info: any) => {
@@ -632,13 +609,11 @@ const onCall = async ({
       for (let i = 0; i < unbanked.length; i++) {
         const r = unbanked[i];
         if (!r) continue;
-        const threadName =
-          (await threadData.get(r.threadID))?.threadInfo?.threadName || r.threadID;
+        const threadName = (await threadData.get(r.threadID))?.threadInfo?.threadName || r.threadID;
         const userName = await userData.getName(r.userID).catch(() => r.userID);
         const d = calculateRemainingDays(r.endDate);
         const st = d >= 0 ? `còn ${d} ngày` : `hết hạn ${Math.abs(d)} ngày`;
-        msg += `${i + 1}. ${threadName}\n👤 ${userName}\n⏳ ${st}\n📅 ${r.startDate} → ${r.endDate
-          }\n\n`;
+        msg += `${i + 1}. ${threadName}\n👤 ${userName}\n⏳ ${st}\n📅 ${r.startDate} → ${r.endDate}\n\n`;
       }
       msg += '💡 Reply số (có thể nhiều số, cách nhau bởi khoảng trắng) để đánh dấu đã bank.';
 
@@ -669,13 +644,11 @@ const onCall = async ({
       for (let i = 0; i < banked.length; i++) {
         const r = banked[i];
         if (!r) continue;
-        const threadName =
-          (await threadData.get(r.threadID))?.threadInfo?.threadName || r.threadID;
+        const threadName = (await threadData.get(r.threadID))?.threadInfo?.threadName || r.threadID;
         const userName = await userData.getName(r.userID).catch(() => r.userID);
         const d = calculateRemainingDays(r.endDate);
         const st = d >= 0 ? `còn ${d} ngày` : `hết hạn ${Math.abs(d)} ngày`;
-        msg += `${i + 1}. ${threadName}\n👤 ${userName}\n⏳ ${st}\n📅 ${r.startDate} → ${r.endDate
-          }\n\n`;
+        msg += `${i + 1}. ${threadName}\n👤 ${userName}\n⏳ ${st}\n📅 ${r.startDate} → ${r.endDate}\n\n`;
       }
       msg += '💡 Reply số (có thể nhiều số) để bỏ đánh dấu bank.';
 
@@ -701,7 +674,7 @@ const onCall = async ({
 };
 
 const onReply = async ({
-  bot,
+  client, // ✅ bot -> client
   Reply,
   main,
   event,
@@ -710,7 +683,7 @@ const onReply = async ({
 }: any): Promise<any> => {
   const body = String(event.body || '').trim();
   if (Reply.author && Reply.author !== event.senderID) {
-    return bot.sendMessage(
+    return client.sendMessage(
       '⚠️ Bạn không phải người yêu cầu thao tác này.',
       Reply.threadID || event.threadID,
       Reply.messageID
@@ -724,7 +697,7 @@ const onReply = async ({
         .map((n) => parseInt(n, 10))
         .filter((n) => !isNaN(n) && n >= 1 && n <= Reply.unbankedGroups.length);
       if (!indices.length)
-        return bot.sendMessage('⚠️ Vui lòng nhập số hợp lệ.', Reply.threadID, Reply.messageID);
+        return client.sendMessage('⚠️ Vui lòng nhập số hợp lệ.', Reply.threadID, Reply.messageID);
 
       const rentList = loadData(RENT_PATH) as RentRecord[];
       let updated = 0;
@@ -737,11 +710,7 @@ const onReply = async ({
         }
       }
       saveData(rentList, RENT_PATH);
-      return bot.sendMessage(
-        `✅ Đã đánh dấu bank cho ${updated} nhóm.`,
-        Reply.threadID,
-        Reply.messageID
-      );
+      return client.sendMessage(`✅ Đã đánh dấu bank cho ${updated} nhóm.`, Reply.threadID, Reply.messageID);
     }
 
     case 'unbank': {
@@ -750,7 +719,7 @@ const onReply = async ({
         .map((n) => parseInt(n, 10))
         .filter((n) => !isNaN(n) && n >= 1 && n <= Reply.bankedGroups.length);
       if (!indices.length)
-        return bot.sendMessage('⚠️ Vui lòng nhập số hợp lệ.', Reply.threadID, Reply.messageID);
+        return client.sendMessage('⚠️ Vui lòng nhập số hợp lệ.', Reply.threadID, Reply.messageID);
 
       const rentList = loadData(RENT_PATH) as RentRecord[];
       let updated = 0;
@@ -763,11 +732,7 @@ const onReply = async ({
         }
       }
       saveData(rentList, RENT_PATH);
-      return bot.sendMessage(
-        `✅ Đã bỏ đánh dấu bank cho ${updated} nhóm.`,
-        Reply.threadID,
-        Reply.messageID
-      );
+      return client.sendMessage(`✅ Đã bỏ đánh dấu bank cho ${updated} nhóm.`, Reply.threadID, Reply.messageID);
     }
 
     case 'clear': {
@@ -779,17 +744,13 @@ const onReply = async ({
           fail = 0;
         for (const r of expiredInGroups) {
           try {
-            await bot.removeUserFromGroup(String(bot.getCurrentUserID()), r.threadID);
+            await client.removeUserFromGroup(String(client.getCurrentUserID()), r.threadID);
             ok++;
           } catch {
             fail++;
           }
         }
-        return bot.sendMessage(
-          `✅ Out nhóm hết hạn: ${ok} thành công, ${fail} thất bại.`,
-          Reply.threadID,
-          Reply.messageID
-        );
+        return client.sendMessage(`✅ Out nhóm hết hạn: ${ok} thành công, ${fail} thất bại.`, Reply.threadID, Reply.messageID);
       }
 
       if (cmd === 'remove') {
@@ -801,11 +762,7 @@ const onReply = async ({
         );
         const removedCount = rentList.length - updated.length;
         saveData(updated, RENT_PATH);
-        return bot.sendMessage(
-          `✅ Đã xóa ${removedCount} nhóm khỏi dữ liệu không hợp lệ.`,
-          Reply.threadID,
-          Reply.messageID
-        );
+        return client.sendMessage(`✅ Đã xóa ${removedCount} nhóm khỏi dữ liệu không hợp lệ.`, Reply.threadID, Reply.messageID);
       }
 
       if (cmd === 'clean') {
@@ -813,7 +770,7 @@ const onReply = async ({
           fail = 0;
         for (const r of expiredInGroups) {
           try {
-            await bot.removeUserFromGroup(String(bot.getCurrentUserID()), r.threadID);
+            await client.removeUserFromGroup(String(client.getCurrentUserID()), r.threadID);
             ok++;
           } catch {
             fail++;
@@ -827,38 +784,25 @@ const onReply = async ({
         );
         const removedCount = rentList.length - updated.length;
         saveData(updated, RENT_PATH);
-        return bot.sendMessage(
+        return client.sendMessage(
           `✅ Dọn dẹp xong:\n• Out nhóm hết hạn: ${ok} (fail: ${fail})\n• Xóa ${removedCount} nhóm khỏi dữ liệu`,
           Reply.threadID,
           Reply.messageID
         );
       }
 
-      return bot.sendMessage(
-        '⚠️ Lựa chọn không hợp lệ. Hãy dùng: out / clean / remove',
-        Reply.threadID,
-        Reply.messageID
-      );
+      return client.sendMessage('⚠️ Lựa chọn không hợp lệ. Hãy dùng: out / clean / remove', Reply.threadID, Reply.messageID);
     }
 
     case 'list': {
-
       if (/^page\s+\d+$/i.test(body)) {
         const parts = body.split(/\s+/);
         const page = parts[1] ? parseInt(parts[1], 10) : 1;
         if (!page || page < 1 || page > Reply.totalPages) {
-          return bot.sendMessage(
-            `⚠️ Số trang không hợp lệ (1-${Reply.totalPages}).`,
-            Reply.threadID,
-            Reply.messageID
-          );
+          return client.sendMessage(`⚠️ Số trang không hợp lệ (1-${Reply.totalPages}).`, Reply.threadID, Reply.messageID);
         }
         if (page === Reply.page) {
-          return bot.sendMessage(
-            `⚠️ Bạn đang ở trang ${page}.`,
-            Reply.threadID,
-            Reply.messageID
-          );
+          return client.sendMessage(`⚠️ Bạn đang ở trang ${page}.`, Reply.threadID, Reply.messageID);
         }
 
         const PER_PAGE = 10;
@@ -868,18 +812,11 @@ const onReply = async ({
         const rows = await Promise.all(
           pageItems.map(async (rent: RentRecord, i: number) => {
             const name = await userData.getName(rent.userID).catch(() => 'N/A');
-            const thread =
-              (await threadData.get(rent.threadID))?.threadInfo?.threadName || 'N/A';
+            const thread = (await threadData.get(rent.threadID))?.threadInfo?.threadName || 'N/A';
             const days = calculateRemainingDays(rent.endDate);
-            const status =
-              days >= 0 ? `✅ Còn ${days} ngày` : `❌ Hết hạn ${Math.abs(days)} ngày`;
+            const status = days >= 0 ? `✅ Còn ${days} ngày` : `❌ Hết hạn ${Math.abs(days)} ngày`;
             const idx = start + i + 1;
-            return (
-              `│ ╭─ ${idx}. ${thread}\n` +
-              `│ ├─ 👤 ${name}\n` +
-              `│ ├─ ⏳ ${status}\n` +
-              `│ ╰─ 📅 ${rent.startDate} → ${rent.endDate}\n│`
-            );
+            return `│ ╭─ ${idx}. ${thread}\n│ ├─ 👤 ${name}\n│ ├─ ⏳ ${status}\n│ ╰─ 📅 ${rent.startDate} → ${rent.endDate}\n│`;
           })
         );
 
@@ -894,12 +831,17 @@ const onReply = async ({
           `│ ➜ page + số\n` +
           `╰──────────────╯`;
 
-        return bot.sendMessage(
+        return client.sendMessage(
           message,
           Reply.threadID,
           (err: any, info: any) => {
             if (err) return;
-            main.onReply.set(info.messageID, { ...Reply, page, messageID: info.messageID, createdAt: Date.now() });
+            main.onReply.set(info.messageID, {
+              ...Reply,
+              page,
+              messageID: info.messageID,
+              createdAt: Date.now()
+            });
           },
           Reply.messageID
         );
@@ -911,27 +853,15 @@ const onReply = async ({
           .trim()
           .split(/\s+/)
           .map(Number);
-        const invalid = indices.filter(
-          (i: number) => isNaN(i) || i < 1 || i > Reply.rentList.length
-        );
+        const invalid = indices.filter((i: number) => isNaN(i) || i < 1 || i > Reply.rentList.length);
         if (invalid.length)
-          return bot.sendMessage(
-            `⚠️ STT không hợp lệ: ${invalid.join(', ')}`,
-            Reply.threadID,
-            Reply.messageID
-          );
+          return client.sendMessage(`⚠️ STT không hợp lệ: ${invalid.join(', ')}`, Reply.threadID, Reply.messageID);
 
-        const toDelete: RentRecord[] = indices.map(
-          (i: number) => Reply.rentList[i - 1]
-        );
-        const updatedRent = Reply.rentList.filter(
-          (_: RentRecord, idx: number) => !indices.includes(idx + 1)
-        );
+        const toDelete: RentRecord[] = indices.map((i: number) => Reply.rentList[i - 1]);
+        const updatedRent = Reply.rentList.filter((_: RentRecord, idx: number) => !indices.includes(idx + 1));
 
         const keyList = loadData(KEY_PATH) as RentKey[];
-        const updatedKeys = keyList.filter(
-          (k) => !toDelete.some((g) => g.threadID === k.groupId)
-        );
+        const updatedKeys = keyList.filter((k) => !toDelete.some((g) => g.threadID === k.groupId));
 
         saveData(updatedRent, RENT_PATH);
         saveData(updatedKeys, KEY_PATH);
@@ -945,23 +875,13 @@ const onReply = async ({
           })
         );
 
-        return bot.sendMessage(
-          `✅ Đã xóa:\n${names.map((n: string) => `- ${n}`).join('\n')}`,
-          Reply.threadID,
-          Reply.messageID
-        );
+        return client.sendMessage(`✅ Đã xóa:\n${names.map((n: string) => `- ${n}`).join('\n')}`, Reply.threadID, Reply.messageID);
       }
 
-      if (
-        /^giahan\s+(all|\d+)\s+((\d+t|\d+|\d{2}\/\d{2}\/\d{4}))$/i.test(body)
-      ) {
+      if (/^giahan\s+(all|\d+)\s+((\d+t|\d+|\d{2}\/\d{2}\/\d{4}))$/i.test(body)) {
         const m = body.match(/^giahan\s+(all|\d+)\s+((\d+t|\d+|\d{2}\/\d{2}\/\d{4}))$/i);
         if (!m || !m[1] || !m[2]) {
-          return bot.sendMessage(
-            '⚠️ Cú pháp không hợp lệ.',
-            Reply.threadID,
-            Reply.messageID
-          );
+          return client.sendMessage('⚠️ Cú pháp không hợp lệ.', Reply.threadID, Reply.messageID);
         }
         const target = m[1];
         const timeInput = m[2];
@@ -971,40 +891,21 @@ const onReply = async ({
 
         if (/^\d+$/.test(timeInput)) {
           const d = parseInt(timeInput, 10);
-          if (!d || d <= 0)
-            return bot.sendMessage(
-              '⚠️ Số ngày không hợp lệ.',
-              Reply.threadID,
-              Reply.messageID
-            );
+          if (!d || d <= 0) return client.sendMessage('⚠️ Số ngày không hợp lệ.', Reply.threadID, Reply.messageID);
           daysToAdd = d;
           label = `${d.toLocaleString()} ngày`;
         } else if (/^\d+t$/i.test(timeInput)) {
           const mo = parseInt(timeInput.replace(/t$/i, ''), 10);
-          if (!mo || mo <= 0)
-            return bot.sendMessage(
-              '⚠️ Số tháng không hợp lệ.',
-              Reply.threadID,
-              Reply.messageID
-            );
+          if (!mo || mo <= 0) return client.sendMessage('⚠️ Số tháng không hợp lệ.', Reply.threadID, Reply.messageID);
           daysToAdd = mo * 30;
           label = `${mo.toLocaleString()} tháng`;
         } else if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(timeInput)) {
           const targetDate = moment(timeInput, 'DD/MM/YYYY').tz('Asia/Ho_Chi_Minh');
-          if (!targetDate.isValid())
-            return bot.sendMessage(
-              '⚠️ Ngày không hợp lệ.',
-              Reply.threadID,
-              Reply.messageID
-            );
+          if (!targetDate.isValid()) return client.sendMessage('⚠️ Ngày không hợp lệ.', Reply.threadID, Reply.messageID);
           daysToAdd = targetDate.diff(moment().tz('Asia/Ho_Chi_Minh'), 'days');
           label = `đến ${timeInput}`;
         } else {
-          return bot.sendMessage(
-            '⚠️ Thời gian không hợp lệ.',
-            Reply.threadID,
-            Reply.messageID
-          );
+          return client.sendMessage('⚠️ Thời gian không hợp lệ.', Reply.threadID, Reply.messageID);
         }
 
         const doExtend = async (rent: RentRecord) => {
@@ -1024,35 +925,20 @@ const onReply = async ({
           saveData(Reply.rentList, RENT_PATH);
           for (const rent of Reply.rentList) {
             try {
-              await bot.sendMessage(
+              await client.sendMessage(
                 `🎉 Nhóm của bạn đã được gia hạn!\n📅 Hết hạn: ${rent.endDate}\n📝 Gia hạn thêm: ${label}`,
                 rent.threadID
               );
             } catch {
-
+              // ignore
             }
           }
-          return bot.sendMessage(
-            `✅ Đã gia hạn cho tất cả nhóm (${label}).`,
-            Reply.threadID,
-            Reply.messageID
-          );
+          return client.sendMessage(`✅ Đã gia hạn cho tất cả nhóm (${label}).`, Reply.threadID, Reply.messageID);
         }
 
-        if (!target) {
-          return bot.sendMessage(
-            '⚠️ Số thứ tự không hợp lệ.',
-            Reply.threadID,
-            Reply.messageID
-          );
-        }
         const stt = parseInt(target, 10);
         if (!stt || stt < 1 || stt > Reply.rentList.length) {
-          return bot.sendMessage(
-            '⚠️ Số thứ tự không hợp lệ.',
-            Reply.threadID,
-            Reply.messageID
-          );
+          return client.sendMessage('⚠️ Số thứ tự không hợp lệ.', Reply.threadID, Reply.messageID);
         }
         const rent = Reply.rentList[stt - 1];
         await doExtend(rent);
@@ -1062,55 +948,40 @@ const onReply = async ({
           (await threadData.get(rent.threadID).catch(() => null)) ||
           ({ threadInfo: { threadName: 'Không xác định' } } as any);
         const name = tinfo?.threadInfo?.threadName;
+
         try {
-          await bot.sendMessage(
+          await client.sendMessage(
             `🎉 Nhóm của bạn đã được gia hạn!\n📅 Hết hạn: ${rent.endDate}\n📝 Gia hạn thêm: ${label}`,
             rent.threadID
           );
         } catch {
-
+          // ignore
         }
-        return bot.sendMessage(
-          `✅ Đã gia hạn cho "${name}" → ${rent.endDate} (${label}).`,
-          Reply.threadID,
-          Reply.messageID
-        );
+
+        return client.sendMessage(`✅ Đã gia hạn cho "${name}" → ${rent.endDate} (${label}).`, Reply.threadID, Reply.messageID);
       }
 
       if (/^out(?:\s+\d+)+$/i.test(body)) {
         const indices = [...body.matchAll(/\d+/g)]
           .map((m) => parseInt(m[0], 10))
           .filter((n) => n >= 1 && n <= Reply.rentList.length);
-        if (!indices.length)
-          return bot.sendMessage(
-            '⚠️ Không có STT hợp lệ.',
-            Reply.threadID,
-            Reply.messageID
-          );
+        if (!indices.length) return client.sendMessage('⚠️ Không có STT hợp lệ.', Reply.threadID, Reply.messageID);
 
         for (const i of indices) {
           const r = Reply.rentList[i - 1];
           try {
-            await bot.removeUserFromGroup(String(bot.getCurrentUserID()), r.threadID);
+            await client.removeUserFromGroup(String(client.getCurrentUserID()), r.threadID);
           } catch {
-
+            // ignore
           }
         }
-        return bot.sendMessage(
-          `⚠️ Đã out nhóm: ${indices.join(', ')}`,
-          Reply.threadID,
-          Reply.messageID
-        );
+        return client.sendMessage(`⚠️ Đã out nhóm: ${indices.join(', ')}`, Reply.threadID, Reply.messageID);
       }
 
       if (/^\d+$/.test(body)) {
         const i = parseInt(body, 10);
         if (i < 1 || i > Reply.rentList.length) {
-          return bot.sendMessage(
-            '⚠️ STT không hợp lệ.',
-            Reply.threadID,
-            Reply.messageID
-          );
+          return client.sendMessage('⚠️ STT không hợp lệ.', Reply.threadID, Reply.messageID);
         }
         const rent = Reply.rentList[i - 1];
         const userName = await userData.getName(rent.userID).catch(() => 'Không xác định');
@@ -1119,21 +990,17 @@ const onReply = async ({
           ({ threadInfo: { threadName: 'Không xác định' } } as any);
         const threadName = tinfo.threadInfo.threadName;
         const d = calculateRemainingDays(rent.endDate);
-        const status =
-          d >= 0 ? `còn ${d.toLocaleString()} ngày` : `đã hết hạn ${Math.abs(d).toLocaleString()} ngày`;
-        return bot.sendMessage(
-          `[ Thông Tin Thuê Bot ]\n\n📌 Nhóm: ${threadName}\n👤 Người thuê: ${userName}\n📅 ${rent.startDate} → ${rent.endDate}\n🔑 Key: ${rent.key || 'không có'
+        const status = d >= 0 ? `còn ${d.toLocaleString()} ngày` : `đã hết hạn ${Math.abs(d).toLocaleString()} ngày`;
+        return client.sendMessage(
+          `[ Thông Tin Thuê Bot ]\n\n📌 Nhóm: ${threadName}\n👤 Người thuê: ${userName}\n📅 ${rent.startDate} → ${rent.endDate}\n🔑 Key: ${
+            rent.key || 'không có'
           }\n🔰 Trạng thái: ${status}`,
           Reply.threadID,
           Reply.messageID
         );
       }
 
-      return bot.sendMessage(
-        '⚠️ Cú pháp không hợp lệ trong chế độ danh sách.',
-        Reply.threadID,
-        Reply.messageID
-      );
+      return client.sendMessage('⚠️ Cú pháp không hợp lệ trong chế độ danh sách.', Reply.threadID, Reply.messageID);
     }
 
     case 'listkey': {
@@ -1141,23 +1008,16 @@ const onReply = async ({
         .split(/\s+/)
         .map((n) => parseInt(n, 10))
         .filter((n) => !isNaN(n) && n >= 1 && n <= Reply.keyList.length);
-      if (!indices.length)
-        return bot.sendMessage('⚠️ STT không hợp lệ.', Reply.threadID, Reply.messageID);
+      if (!indices.length) return client.sendMessage('⚠️ STT không hợp lệ.', Reply.threadID, Reply.messageID);
 
-      const updated = Reply.keyList.filter(
-        (_: RentKey, idx: number) => !indices.includes(idx + 1)
-      );
+      const updated = Reply.keyList.filter((_: RentKey, idx: number) => !indices.includes(idx + 1));
       saveData(updated, KEY_PATH);
 
       const removed = indices
         .map((i) => Reply.keyList[i - 1])
         .map((k: RentKey) => `🔑 ${k.key}`)
         .join('\n');
-      return bot.sendMessage(
-        `✅ Đã xóa key:\n${removed}`,
-        Reply.threadID,
-        Reply.messageID
-      );
+      return client.sendMessage(`✅ Đã xóa key:\n${removed}`, Reply.threadID, Reply.messageID);
     }
 
     case 'check': {
@@ -1167,66 +1027,44 @@ const onReply = async ({
           fail = 0;
         for (const r of Reply.expiredRents) {
           try {
-            await bot.removeUserFromGroup(String(bot.getCurrentUserID()), r.threadID);
+            await client.removeUserFromGroup(String(client.getCurrentUserID()), r.threadID);
             ok++;
           } catch {
             fail++;
           }
         }
         const rentList = loadData(RENT_PATH) as RentRecord[];
-        const updated = rentList.filter(
-          (r) => !Reply.expiredRents.some((x: RentRecord) => x.threadID === r.threadID)
-        );
+        const updated = rentList.filter((r) => !Reply.expiredRents.some((x: RentRecord) => x.threadID === r.threadID));
         saveData(updated, RENT_PATH);
 
-        return bot.sendMessage(
-          `✅ Đã out: ${ok} nhóm (thất bại: ${fail}).`,
-          Reply.threadID,
-          Reply.messageID
-        );
+        return client.sendMessage(`✅ Đã out: ${ok} nhóm (thất bại: ${fail}).`, Reply.threadID, Reply.messageID);
       }
 
       const m = body.match(/^out\s+(\d+)$/i);
       if (m && m[1]) {
         const idx = parseInt(m[1], 10) - 1;
         if (idx < 0 || idx >= Reply.expiredRents.length) {
-          return bot.sendMessage(
-            '⚠️ STT không hợp lệ.',
-            Reply.threadID,
-            Reply.messageID
-          );
+          return client.sendMessage('⚠️ STT không hợp lệ.', Reply.threadID, Reply.messageID);
         }
         const pick = Reply.expiredRents[idx];
         try {
-          await bot.removeUserFromGroup(String(bot.getCurrentUserID()), pick.threadID);
+          await client.removeUserFromGroup(String(client.getCurrentUserID()), pick.threadID);
           const rentList = loadData(RENT_PATH) as RentRecord[];
           saveData(
             rentList.filter((r) => r.threadID !== pick.threadID),
             RENT_PATH
           );
-          return bot.sendMessage('✅ Đã out nhóm.', Reply.threadID, Reply.messageID);
+          return client.sendMessage('✅ Đã out nhóm.', Reply.threadID, Reply.messageID);
         } catch {
-          return bot.sendMessage(
-            '❌ Không thể out nhóm.',
-            Reply.threadID,
-            Reply.messageID
-          );
+          return client.sendMessage('❌ Không thể out nhóm.', Reply.threadID, Reply.messageID);
         }
       }
 
-      return bot.sendMessage(
-        '⚠️ Dùng: "out N" hoặc "out all".',
-        Reply.threadID,
-        Reply.messageID
-      );
+      return client.sendMessage('⚠️ Dùng: "out N" hoặc "out all".', Reply.threadID, Reply.messageID);
     }
 
     default:
-      return bot.sendMessage(
-        '❎ Loại phản hồi không hợp lệ.',
-        Reply.threadID || event.threadID,
-        Reply.messageID
-      );
+      return client.sendMessage('❎ Loại phản hồi không hợp lệ.', Reply.threadID || event.threadID, Reply.messageID);
   }
 };
 

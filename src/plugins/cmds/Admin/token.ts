@@ -2,6 +2,7 @@
 
 import type { Command, CommandOnCallContext } from "@types";
 import type { DonixGlobalState } from "../../../types/global";
+import { CONFIG_PATH, writeTokenKey } from "../../../core/handleEvents/task/token";
 
 const getDonixState = (): DonixGlobalState => {
   if (!global.Donix) {
@@ -27,7 +28,22 @@ interface ParsedAccessTokenData {
 interface APIWithTokenMethods {
   checkToken?: (accessToken: string) => Promise<ParsedAccessTokenData | undefined>;
   getToken?: (type: string) => Promise<string | undefined>;
+  createSessionForApp?: (options: {
+    accessToken: string;
+    newAppId?: string;
+    apiKey?: string;
+    currentlyLoggedInUserId?: string;
+    jazoest?: string;
+    [key: string]: unknown;
+  }) => Promise<{ access_token?: string; [key: string]: unknown } | undefined>;
 }
+
+/** App ID dùng cho convert token (create_session_for_app) */
+const CONVERT_APP_MAP: Record<string, { newAppId: string; apiKey: string }> = {
+  EAAD6V7: { newAppId: "275254692598279", apiKey: "275254692598279" },
+  EAAAAU: { newAppId: "350685531728", apiKey: "350685531728" },
+  EAAD: { newAppId: "256002347743983", apiKey: "256002347743983" },
+};
 
 function formatTokenInfo(tokenInfo: TokenInfo, tokenType: string): string {
   const lines: string[] = [];
@@ -80,6 +96,7 @@ const tokenCommand: Command = {
   guide: `
 • {pn} check [type]: Kiểm tra token từ config (nếu không có type thì check tất cả)
 • {pn} get <type>: Lấy token mới (EAAAAU, EAAD, EAAD6V7, ...)
+• {pn} convert: Đổi token EAAD (gốc, từ config) sang EAAD6V7 và ghi vào config
   `,
   cd: 2,
   prefix: true,
@@ -296,9 +313,59 @@ const tokenCommand: Command = {
         return;
       }
 
+      if (action === "convert") {
+        const tokensFromConfig = (config.token || config.tokens || {}) as Record<string, unknown>;
+
+        if (typeof api.createSessionForApp !== "function") {
+          await reply({ body: "⚠️ createSessionForApp (convert token) chưa khả dụng. Vui lòng thử lại sau." });
+          return;
+        }
+
+        const raw = tokensFromConfig.EAAD ?? tokensFromConfig.EAAAAU ?? tokensFromConfig.EAAD6V7;
+        if (!raw || typeof raw !== "string") {
+          await reply({
+            body: "⚠️ Không có token EAAD trong config. Thêm token EAAD (gốc) vào config rồi thử lại."
+          });
+          return;
+        }
+        const accessToken = String(raw).trim();
+
+        await reply({ body: "⏳ Đang convert EAAD (gốc) → EAAD6V7..." });
+
+        const uid = (ctx.event?.senderID ?? (donix as any)?.userID) as string | undefined;
+        const appTarget = CONVERT_APP_MAP.EAAD6V7;
+
+        try {
+          const result = await api.createSessionForApp({
+            accessToken,
+            newAppId: appTarget.newAppId,
+            apiKey: appTarget.apiKey,
+            currentlyLoggedInUserId: uid,
+          });
+          const newAccessToken = result?.access_token;
+          if (!newAccessToken) {
+            await reply({
+              body: `❌ Convert thất bại: không nhận được access_token.\n${JSON.stringify(result || {}, null, 2).slice(0, 400)}`
+            });
+            return;
+          }
+          const ok = await writeTokenKey(CONFIG_PATH, "token", "EAAD6V7", newAccessToken, logger);
+          await reply({
+            body: `✅ Convert EAAD → EAAD6V7 xong!\n\n🔑 EAAD6V7: ${newAccessToken}${ok ? "\n\n📁 Đã ghi EAAD6V7 vào config." : "\n\n⚠️ Ghi config thất bại."}\n\n💡 Dùng "{pn} check" để kiểm tra.`.replace(/{pn}/g, ctx.commandName || "token")
+          });
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          logger?.error?.(`Convert EAAD → EAAD6V7: ${msg}`);
+          await reply({
+            body: `❌ Lỗi convert: ${msg}`
+          });
+        }
+        return;
+      }
+
 
       await reply({
-        body: `⚠️ Lệnh không hợp lệ.\n\n📝 Cú pháp:\n• {pn} check [type] - Kiểm tra token từ config\n• {pn} get <type> - Lấy token mới`.replace(/{pn}/g, ctx.commandName || "token")
+        body: `⚠️ Lệnh không hợp lệ.\n\n📝 Cú pháp:\n• {pn} check [type] - Kiểm tra token từ config\n• {pn} get <type> - Lấy token mới\n• {pn} convert - Đổi EAAD (gốc) sang EAAD6V7 và ghi config`.replace(/{pn}/g, ctx.commandName || "token")
       });
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);

@@ -8,6 +8,7 @@ import type {
 import axios from "axios";
 import fs from "fs-extra";
 import path from "path";
+import { storagePath } from "../../../core/storagePath";
 
 interface Question {
   path: string;
@@ -33,11 +34,7 @@ const gameSession: Record<string, GameSession> = {};
 
 function loadQuestions(): { questions: Question[]; tempAnswer: string | null } {
   try {
-    const jsonPath = path.join(
-      process.cwd(),
-      "src/storage/game/dhbc",
-      "DHBC.json"
-    );
+    const jsonPath = storagePath("game", "dhbc", "DHBC.json");
 
     if (!fs.existsSync(jsonPath)) {
       fs.writeFileSync(
@@ -67,7 +64,7 @@ function saveQuestions(
   try {
     const jsonPath = path.join(
       process.cwd(),
-      "src/storage/game/dhbc",
+      "storage/game/dhbc",
       "DHBC.json"
     );
     fs.writeFileSync(
@@ -113,7 +110,7 @@ async function downloadImage(
   try {
     const imgDir = path.join(
       process.cwd(),
-      "src/storage/game/dhbc",
+      "storage/game/dhbc",
       "DHBC-Image"
     );
 
@@ -302,7 +299,7 @@ const dhbcCommand: Command = {
 
       const imgPath = path.join(
         process.cwd(),
-        "src/storage/game/dhbc",
+        "storage/game/dhbc",
         questionToDelete.path
       );
 
@@ -317,12 +314,12 @@ const dhbcCommand: Command = {
         if (!question) continue;
         const oldPath = path.join(
           process.cwd(),
-          "src/storage/game/dhbc",
+          "storage/game/dhbc",
           question.path
         );
         const newPath = path.join(
           process.cwd(),
-          "src/storage/game/dhbc",
+          "storage/game/dhbc",
           `DHBC-Image/${i + 1}.jpg`
         );
         question.path = `DHBC-Image/${i + 1}.jpg`;
@@ -527,7 +524,7 @@ const dhbcCommand: Command = {
 
       const imgPath = path.join(
         process.cwd(),
-        "src/storage/game/dhbc",
+        "storage/game/dhbc",
         randomQuestion.path
       );
 

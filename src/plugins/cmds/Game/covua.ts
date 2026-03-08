@@ -4,7 +4,11 @@ import type { Command, CommandOnCallContext, CommandOnReplyContext } from "@type
 import axios from "axios";
 import fs from "fs";
 import path from "path";
-import ChessCore from "../../../storage/game/chess";
+import { createRequire } from "module";
+import { storagePath } from "../../../core/storagePath";
+
+const require = createRequire(import.meta.url);
+const ChessCore = require(storagePath("game", "chess"));
 
 type Color = "white" | "black" | "";
 type Turn = "w" | "b";
@@ -31,7 +35,7 @@ interface ChessReplyData {
 
 const games = new Map<string, GameSession>();
 
-const CHESS_STORAGE_DIR = path.join(process.cwd(), "src/storage/game/chess");
+const CHESS_STORAGE_DIR = storagePath("game", "chess");
 const CHESS_IMAGES_DIR = path.join(CHESS_STORAGE_DIR, "images");
 const CHESS_STATE_PATH = path.join(CHESS_STORAGE_DIR, "game_state.json");
 const CHESS_FONT_PATH = path.join(CHESS_STORAGE_DIR, "font", "Montserrat-Bold.ttf");

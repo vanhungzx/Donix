@@ -4,6 +4,7 @@ import fs from "fs-extra";
 import path from "path";
 import type { Readable } from "stream";
 import { fileURLToPath } from "url";
+import { storagePath } from "../../../core/storagePath";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -96,11 +97,11 @@ const subnautica = {
   cd: 0,
   prefix: true,
   checkPath(type: number, senderID: string) {
-    const pathItem = path.join(__dirname, "../../../../src/storage/game", "cauca", "item.json");
-    const pathUser = path.join(__dirname, "../../../../src/storage/game", "cauca", "datauser", `${senderID}.json`);
+    const pathItem = storagePath("game", "cauca", "item.json");
+    const pathUser = storagePath("game", "cauca", "datauser", `${senderID}.json`);
     const pathUser_1 = fs.existsSync(pathUser) ? JSON.parse(fs.readFileSync(pathUser, "utf8")) : null;
     const pathItem_1 = fs.existsSync(pathItem) ? JSON.parse(fs.readFileSync(pathItem, "utf8")) : null;
-    const pathEquipment = path.join(__dirname, "../../../../src/storage/game", "cauca", "equipment.json");
+    const pathEquipment = storagePath("game", "cauca", "equipment.json");
     const pathEquipment_1 = fs.existsSync(pathEquipment) ? JSON.parse(fs.readFileSync(pathEquipment, "utf8")) : null;
     if (type == 1) return pathItem;
     if (type == 2) return pathItem_1;
@@ -110,9 +111,9 @@ const subnautica = {
     return null;
   },
   onLoad: async () => {
-    const dir = __dirname + `/../../../../src/storage/game/cauca/`;
-    const dirCache = __dirname + `/../../../../src/storage/game/cauca/cache/`;
-    const dirData = __dirname + `/../../../../src/storage/game/cauca/datauser/`;
+    const dir = storagePath("game", "cauca");
+    const dirCache = storagePath("game", "cauca", "cache");
+    const dirData = storagePath("game", "cauca", "datauser");
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     if (!fs.existsSync(dirData)) fs.mkdirSync(dirData, { recursive: true });
     if (!fs.existsSync(dirCache)) fs.mkdirSync(dirCache, { recursive: true });
@@ -140,7 +141,7 @@ const subnautica = {
     const { client: api, event, args, userData, main } = ctx;
     const { threadID, messageID, senderID } = event;
     const { writeFileSync, existsSync, readdirSync } = fs;
-    const pathData = path.join(__dirname, "../../../../src/storage/game", "cauca", "datauser", `${senderID}.json`);
+    const pathData = storagePath("game", "cauca", "datauser", `${senderID}.json`);
     switch (args[0]) {
       case "register":
       case "-r": {
@@ -458,11 +459,11 @@ const subnautica = {
           );
         }
         try {
-          const data = readdirSync(__dirname + `/../../../../src/storage/game/cauca/datauser`);
+          const data = readdirSync(storagePath("game", "cauca", "datauser"));
           if (data.length < 3) return api.sendMessage(`Cần ít nhất có 3 người chơi trên server để xem top`, threadID, messageID);
           const p: UserGameData[] = [];
           for (const i of data) {
-            const o = require(`../../../../src/storage/game/cauca/datauser/${i}`) as UserGameData;
+            const o = JSON.parse(fs.readFileSync(storagePath("game", "cauca", "datauser", i), "utf8")) as UserGameData;
             p.push(o);
           }
           p.sort((a, b) => b.point.length - a.point.length);
@@ -676,7 +677,7 @@ const subnautica = {
     }
   },
   dataFish: async function (a: string, b: string): Promise<FishItem[]> {
-    const data = require("../../../../src/storage/game/cauca/data.json") as LocationData[];
+    const data = JSON.parse(fs.readFileSync(storagePath("game", "cauca", "data.json"), "utf8")) as LocationData[];
     const loc = data.find((i: LocationData) => i.location == a);
     if (!loc) return [];
     const are = loc.area.find((i: { name: string; creature: FishItem[] }) => i.name == b);
@@ -685,7 +686,7 @@ const subnautica = {
   },
   image: async function (link: string): Promise<Readable[]> {
     const images: Readable[] = [];
-    const filePath = `${__dirname}/../../../../src/storage/game/cauca/cache/subnautica.png`;
+    const filePath = storagePath("game", "cauca", "cache", "subnautica.png");
     const response = await axios.get(link, {
       responseType: "arraybuffer",
       headers: {
@@ -755,10 +756,10 @@ const subnautica = {
       })
     ).data;
     fs.writeFileSync(
-      __dirname + `/../../../../src/storage/game/cauca/cache/subnauticapage.png`,
+      storagePath("game", "cauca", "cache", "subnauticapage.png"),
       Buffer.from(download, "utf-8"),
     );
-    images.push(fs.createReadStream(__dirname + `/../../../../src/storage/game/cauca/cache/subnauticapage.png`));
+    images.push(fs.createReadStream(storagePath("game", "cauca", "cache", "subnauticapage.png")));
     return images;
   },
   onReply: async function (ctx: CommandOnReplyContext) {
@@ -770,7 +771,7 @@ const subnautica = {
     const pathItem = this.checkPath(2, senderID);
     const pathEquipment = this.checkPath(5, senderID);
     const checkDur = async (a: string, b: number, c: string | number): Promise<number | string> => {
-      const data = require("../../../../src/storage/game/cauca/item.json") as RodItem[];
+      const data = JSON.parse(fs.readFileSync(storagePath("game", "cauca", "item.json"), "utf8")) as RodItem[];
       const find = data.find((i: RodItem) => i.name == a);
       if (!find) return "0/0 (0%)";
       if (c == "rate") return (b / find.durability) * 100;
@@ -953,7 +954,7 @@ const subnautica = {
         );
       }
       case "location": {
-        const data = require("../../../../src/storage/game/cauca/data.json") as LocationData[];
+        const data = JSON.parse(fs.readFileSync(storagePath("game", "cauca", "data.json"), "utf8")) as LocationData[];
         if (!body || isNaN(parseInt(body))) return api.sendMessage("Lựa chọn không hợp lệ!", threadID, messageID);
         const choice = parseInt(body, 10);
         if (choice < 1 || choice > 3 || choice > data.length)

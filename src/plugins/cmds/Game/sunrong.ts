@@ -10,8 +10,9 @@ import crypto from "crypto";
 import fs from "fs-extra";
 import moment from "moment-timezone";
 import path from "path";
+import { storagePath } from "../../../core/storagePath";
 
-const DATA_DIR = path.join(process.cwd(), "src/storage/game/sunrong");
+const DATA_DIR = storagePath("game", "sunrong");
 
 interface Color {
   key: string;
@@ -414,8 +415,8 @@ const sunrongCommand: Command = {
       return;
     }
 
-    const historyPath = path.join(process.cwd(), "src/storage/game/sunrong/history.json");
-    const jackpotPath = path.join(process.cwd(), "src/storage/game/sunrong/jackpot.json");
+    const historyPath = storagePath("game", "sunrong", "history.json");
+    const jackpotPath = storagePath("game", "sunrong", "jackpot.json");
     const tempDir = path.join(process.cwd(), "src/temp");
 
     let his: HistoryEntry[] = [];

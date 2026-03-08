@@ -97,14 +97,7 @@ const command: Command = {
     if (!threadID || !Reply) return;
     if (String(senderID) !== String(Reply.author)) return;
     if (Reply.type !== "scl-select") return;
-
-    // Unsend list message
-    if (Reply.messageID && unsend) {
-      try {
-        await unsend(String(Reply.messageID));
-      } catch { }
-    }
-
+      unsend(String(Reply.messageID));
     const choose = Number.parseInt(String(body || "").trim(), 10) - 1;
     const list = Reply.result;
     if (!Array.isArray(list) || Number.isNaN(choose) || choose < 0 || choose >= list.length) {
@@ -142,9 +135,14 @@ const command: Command = {
         `⩺ Tác giả: ${trackInfo?.author || chosenItem?.author?.full_name || chosenItem?.author?.username || "Unknown"}\n` +
         `⩺ Thời lượng: ${trackInfo?.duration || chosenItem?.duration || "N/A"}`;
 
+      const stream = await (utils as { stream: (url: string, ext: string) => Promise<unknown> }).stream(audio.url, "mp3");
       await reply({
         body: bodyFormat,
-        attachment: await (utils as { stream: (url: string, ext: string) => Promise<unknown> }).stream(audio.url, "mp3"),
+        attachment: {
+          stream,
+          filename: "audio.mp3",
+          contentType: "audio/mpeg",
+        },
       });
     } catch (e: unknown) {
       console.error("[scl] down error:", e instanceof Error ? e.message : e);

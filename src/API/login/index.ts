@@ -2,7 +2,7 @@
 import log from "@log";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import autoReloginWithFacebookWeb from "../../core/auth_login/auto_relogin.js";
+import autoRelogin from "../../core/auth_login/auto_relogin.js";
 import { getConfig } from "../../core/configManager.js";
 import type { DonixGlobalState } from "../../types/global.js";
 import type { FBResponse } from "../../types/request.js";
@@ -53,7 +53,7 @@ export default function login(
           if (!isRetry) {
             log.warn("Không tìm thấy cookie người dùng, đang thử auto login...");
             try {
-              const autoLoginSuccess = await autoReloginWithFacebookWeb();
+              const autoLoginSuccess = await autoRelogin();
               if (autoLoginSuccess) {
                 const newConfig = getConfig();
                 const newCookie = newConfig.cookie;

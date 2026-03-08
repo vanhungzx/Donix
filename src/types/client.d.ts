@@ -8,11 +8,18 @@ export interface MentionEntry {
   id: string;
 }
 
+/** Attachment as stream + metadata (used by uploadFb/ruploadAttachment) */
+export interface AttachmentStreamOptions {
+  stream: Readable;
+  filename?: string;
+  contentType?: string;
+}
+
 export type MessageForm =
   | string
   | {
     body?: string;
-    attachment?: string | string[] | Readable | Readable[] | [string, string][];
+    attachment?: string | string[] | Readable | Readable[] | [string, string][] | AttachmentStreamOptions;
     // "tag_thread" = tag toàn box, hoặc mảng MentionEntry (id + tag có trong body)
     mentions?: "tag_thread" | MentionEntry[];
     sticker?: string | number;

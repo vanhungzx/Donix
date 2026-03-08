@@ -19,6 +19,9 @@ export function createMqttClient(ctx: any): any {
     protocolVersion: 3,
     clean: true,
     keepalive: 30,
+    // IMPORTANT: Disable mqtt.js auto-reconnect.
+    // We implement our own reconnect logic in `reconnectMqttHandler` to avoid
+    // multiple reconnect loops and duplicated connection churn.
     reconnectPeriod: 0,
     connectTimeout: 5000,
     reschedulePings: false,

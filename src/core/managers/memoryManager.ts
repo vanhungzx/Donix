@@ -72,11 +72,10 @@ class MemoryManager {
     const heapMB = (stats.heapUsed / 1024 / 1024).toFixed(2);
     const heapTotalMB = (stats.heapTotal / 1024 / 1024).toFixed(2);
     const rssMB = (stats.rss / 1024 / 1024).toFixed(1);
-    const externalMB = (stats.external / 1024 / 1024).toFixed(1);
     const usagePercent = ((stats.heapUsed / stats.heapTotal) * 100).toFixed(1);
 
     log.info(
-      `[Memory] Heap: ${heapMB}MB / ${heapTotalMB}MB (${usagePercent}%) | RSS: ${rssMB}MB | External: ${externalMB}MB`
+      `[Memory] Heap: ${heapMB}MB / ${heapTotalMB}MB (${usagePercent}%) | RSS: ${rssMB}MB`
     );
 
     this.checkMemoryWarning(stats);
@@ -86,17 +85,13 @@ class MemoryManager {
     const usagePercent = (stats.heapUsed / stats.heapTotal) * 100;
     const heapMB = stats.heapUsed / 1024 / 1024;
     const rssMB = stats.rss / 1024 / 1024;
-    const externalMB = stats.external / 1024 / 1024;
 
-    // Tối ưu: Giảm ngưỡng RSS từ 280MB xuống 250MB để cleanup sớm hơn
     // Khi RSS cao nhưng heap không cao, vẫn thử GC nhẹ để tự phục hồi lâu dài.
     // Có cooldown để tránh spam GC khi RSS ổn định.
-    if (rssMB > 250 && typeof global.gc === "function") {
+    if (rssMB > 280 && typeof global.gc === "function") {
       const now = Date.now();
       const last = this.lastRssGcAt || 0;
-      // Giảm cooldown từ 60s xuống 45s khi RSS > 280MB để GC thường xuyên hơn
-      const cooldown = rssMB > 280 ? 45_000 : 60_000;
-      if (now - last > cooldown) {
+      if (now - last > 60_000) {
         this.lastRssGcAt = now;
         try {
           const beforeHeap = heapMB;
@@ -108,12 +103,8 @@ class MemoryManager {
             const afterRss = afterStats.rss / 1024 / 1024;
             const heapFreed = beforeHeap - afterHeap;
             const rssFreed = beforeRss - afterRss;
-            const beforeExternal = stats.external / 1024 / 1024;
-            const afterExternal = afterStats.external / 1024 / 1024;
-            const externalFreed = beforeExternal - afterExternal;
-
             log.warn(
-              `[Memory] RSS GC - Heap: ${beforeHeap.toFixed(2)}MB → ${afterHeap.toFixed(2)}MB (−${heapFreed.toFixed(2)}MB) | RSS: ${beforeRss.toFixed(1)}MB → ${afterRss.toFixed(1)}MB (−${rssFreed.toFixed(1)}MB) | External: ${beforeExternal.toFixed(1)}MB → ${afterExternal.toFixed(1)}MB (−${externalFreed.toFixed(1)}MB)`
+              `[Memory] RSS GC - Heap: ${beforeHeap.toFixed(2)}MB → ${afterHeap.toFixed(2)}MB (−${heapFreed.toFixed(2)}MB) | RSS: ${beforeRss.toFixed(1)}MB → ${afterRss.toFixed(1)}MB (−${rssFreed.toFixed(1)}MB)`
             );
           }, 50);
         } catch {
@@ -144,12 +135,8 @@ class MemoryManager {
             const heapFreed = beforeHeap - afterHeap;
             const rssFreed = beforeRSS - afterRSS;
 
-            const beforeExternal = stats.external / 1024 / 1024;
-            const afterExternal = afterStats.external / 1024 / 1024;
-            const externalFreed = beforeExternal - afterExternal;
-
             log.info(
-              `[Memory] GC hoàn tất - Heap: ${beforeHeap.toFixed(2)}MB → ${afterHeap.toFixed(2)}MB (giảm ${heapFreed.toFixed(2)}MB) | RSS: ${beforeRSS.toFixed(1)}MB → ${afterRSS.toFixed(1)}MB (giảm ${rssFreed.toFixed(1)}MB) | External: ${beforeExternal.toFixed(1)}MB → ${afterExternal.toFixed(1)}MB (giảm ${externalFreed.toFixed(1)}MB)`
+              `[Memory] GC hoàn tất - Heap: ${beforeHeap.toFixed(2)}MB → ${afterHeap.toFixed(2)}MB (giảm ${heapFreed.toFixed(2)}MB) | RSS: ${beforeRSS.toFixed(1)}MB → ${afterRSS.toFixed(1)}MB (giảm ${rssFreed.toFixed(1)}MB)`
             );
           }, 100);
         } catch (error) {
@@ -158,20 +145,10 @@ class MemoryManager {
       }
     }
 
-    // Cảnh báo về external memory (Buffer/ArrayBuffer) - nguyên nhân chính khiến RSS không giảm
-    if (externalMB > 50) {
+    // Cảnh báo RSS khi > 280MB và trigger cleanup tự động (realtime optimization)
+    if (rssMB > 280) {
       log.warn(
-        `External memory cao: ${externalMB.toFixed(1)}MB - Có thể do Buffer/ArrayBuffer chưa được giải phóng. RSS sẽ không giảm cho đến khi external memory được cleanup.`
-      );
-    }
-
-    // Tối ưu: Giảm ngưỡng từ 280MB xuống 250MB để trigger cleanup sớm hơn
-    // Cảnh báo RSS khi > 250MB và trigger cleanup tự động (realtime optimization)
-    if (rssMB > 250) {
-      const severity = rssMB > 300 ? "RẤT CAO" : (rssMB > 280 ? "CAO" : "TĂNG");
-      const externalInfo = externalMB > 50 ? ` (External: ${externalMB.toFixed(1)}MB - có thể là nguyên nhân)` : "";
-      log.warn(
-        `RSS ${severity}: ${rssMB.toFixed(1)}MB${externalInfo} - Đang trigger cleanup tự động (các map onReact/onReply, processData, scheduler, v.v.)`
+        `RSS cao: ${rssMB.toFixed(1)}MB - Đang trigger cleanup tự động (các map onReact/onReply, processData, scheduler, v.v.)`
       );
 
       // Trigger cleanup ngay khi RSS cao (realtime optimization - không đợi interval)
@@ -182,44 +159,6 @@ class MemoryManager {
         }
       } catch {
         // Ignore errors khi trigger cleanup
-      }
-
-      // Khi RSS cao và external memory cao, thử force GC nhiều lần để giải phóng external memory
-      // External memory thường được giải phóng sau khi heap GC và các reference được clear
-      if (externalMB > 50 && typeof global.gc === "function") {
-        const now = Date.now();
-        const last = this.lastRssGcAt || 0;
-        const cooldown = rssMB > 300 ? 30_000 : 45_000; // GC thường xuyên hơn khi RSS rất cao
-
-        if (now - last > cooldown) {
-          this.lastRssGcAt = now;
-          try {
-            const beforeHeap = heapMB;
-            const beforeRss = rssMB;
-            const beforeExternal = externalMB;
-
-            // Force GC nhiều lần để giải phóng external memory
-            global.gc();
-            setTimeout(() => {
-              global.gc(); // GC lần 2 để cleanup external memory tốt hơn
-              setTimeout(() => {
-                const afterStats = this.getMemoryUsage();
-                const afterHeap = afterStats.heapUsed / 1024 / 1024;
-                const afterRss = afterStats.rss / 1024 / 1024;
-                const afterExternal = afterStats.external / 1024 / 1024;
-                const heapFreed = beforeHeap - afterHeap;
-                const rssFreed = beforeRss - afterRss;
-                const externalFreed = beforeExternal - afterExternal;
-
-                log.warn(
-                  `[Memory] RSS GC (2x) - Heap: ${beforeHeap.toFixed(2)}MB → ${afterHeap.toFixed(2)}MB (−${heapFreed.toFixed(2)}MB) | RSS: ${beforeRss.toFixed(1)}MB → ${afterRss.toFixed(1)}MB (−${rssFreed.toFixed(1)}MB) | External: ${beforeExternal.toFixed(1)}MB → ${afterExternal.toFixed(1)}MB (−${externalFreed.toFixed(1)}MB)`
-                );
-              }, 100);
-            }, 50);
-          } catch {
-            // ignore GC errors
-          }
-        }
       }
     }
 
@@ -242,12 +181,8 @@ class MemoryManager {
           const heapFreed = beforeHeap - afterHeap;
           const rssFreed = beforeRSS - afterRSS;
 
-          const beforeExternal = stats.external / 1024 / 1024;
-          const afterExternal = afterStats.external / 1024 / 1024;
-          const externalFreed = beforeExternal - afterExternal;
-
           log.warn(
-            `[Memory] Emergency GC hoàn tất - Heap: ${beforeHeap.toFixed(2)}MB → ${afterHeap.toFixed(2)}MB (giảm ${heapFreed.toFixed(2)}MB) | RSS: ${beforeRSS.toFixed(1)}MB → ${afterRSS.toFixed(1)}MB (giảm ${rssFreed.toFixed(1)}MB) | External: ${beforeExternal.toFixed(1)}MB → ${afterExternal.toFixed(1)}MB (giảm ${externalFreed.toFixed(1)}MB)`
+            `[Memory] Emergency GC hoàn tất - Heap: ${beforeHeap.toFixed(2)}MB → ${afterHeap.toFixed(2)}MB (giảm ${heapFreed.toFixed(2)}MB) | RSS: ${beforeRSS.toFixed(1)}MB → ${afterRSS.toFixed(1)}MB (giảm ${rssFreed.toFixed(1)}MB)`
           );
         }, 100);
       }

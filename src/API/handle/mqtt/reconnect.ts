@@ -1,5 +1,6 @@
 import log from "@log";
-import autoReloginWithFacebookWeb from "../../../core/auth_login/auto_relogin";
+import autoRelogin from "../../../core/auth_login/auto_relogin";
+import { reloadConfig } from "../../../core/configManager";
 import { saveCookies } from "../../request/clients.js";
 import { parseAndCheckLogin } from "../../request/formatters/helpers";
 import { get, post } from "../../request/index";
@@ -58,7 +59,6 @@ function isNetworkError(error: any): boolean {
     errorMessage.includes('econnreset') ||
     errorMessage.includes('econnrefused') ||
     errorMessage.includes('connection refused') ||
-    errorMessage.includes('no subscription existed') ||
     errorMessage.includes('server unavailable') ||
     errorMessage.includes('connection reset') ||
     errorMessage.includes('socket hang up') ||
@@ -68,7 +68,6 @@ function isNetworkError(error: any): boolean {
     errorString.includes('econnreset') ||
     errorString.includes('econnrefused') ||
     errorString.includes('connection refused') ||
-    errorString.includes('no subscription existed') ||
     errorString.includes('server unavailable')
   );
 }
@@ -216,35 +215,36 @@ export async function reconnectMqttHandler(
     }
 
     if (resStr.includes("828281030927956") || resStr.includes("1501092823525282")) {
-      log.error("Bot bị checkpoint 282, đang tự động đăng nhập và đổi account...");
+      const checkpointCode = resStr.includes("1501092823525282") ? "282" : "956";
+      log.error(`Bot bị checkpoint ${checkpointCode}, đang tự động đổi tài khoản...`);
       isReconnecting = false;
       ctx.isReconnecting = false;
       reconnectPromise = null;
 
-      // Trigger auto login với skip current account
-      (async () => {
-        try {
-          const ok = await autoReloginWithFacebookWeb(ctx, true); // true = skip current account
-          if (ok) {
-            log.success("AUTO-LOGIN thành công sau checkpoint 282! Đang khởi động lại bot...");
-            process.exit(1); // Exit code 1 để restart bot
-          } else {
-            log.error("AUTO-LOGIN thất bại sau checkpoint 282. Vui lòng kiểm tra lại tài khoản!");
-            process.exit(1); // Vẫn restart để thử lại
+      try {
+        const ok = await autoRelogin(ctx);
+        if (ok) {
+          const reloadResult = await reloadConfig();
+          if (!reloadResult.success) {
+            log.warn(`Không thể reload config sau auto login: ${reloadResult.error || "Unknown error"}`);
           }
-        } catch (autoErr: any) {
-          log.error(`Lỗi khi auto login sau checkpoint 282: ${autoErr?.message || autoErr}`);
-          process.exit(1); // Vẫn restart để thử lại
+          log.success(`AUTO-LOGIN thành công sau checkpoint ${checkpointCode}! Đang khởi động lại...`);
+          process.exit(1);
+        } else {
+          log.error(`AUTO-LOGIN thất bại sau checkpoint ${checkpointCode}. Vui lòng kiểm tra lại thông tin đăng nhập!`);
+          process.exit(0);
         }
-      })();
-
+      } catch (autoErr: any) {
+        log.error(`Lỗi khi thực hiện AUTO-LOGIN sau checkpoint ${checkpointCode}: ${autoErr?.message || autoErr}`);
+        process.exit(0);
+      }
       return false;
     }
 
     if (resStr.includes("XCheckpointFBScrapingWarningController") ||
       resStr.includes("601051028565049") ||
       url.includes("checkpoint/601051028565049")) {
-      log.warn("Phát hiện checkpoint scraping warning 049, đang thử bypass...");
+      log.warn("Phát hiện checkpoint scraping warning, đang thử bypass...");
       const bypassed = await bypassCheckpoint(resStr);
 
       if (bypassed) {
@@ -259,67 +259,31 @@ export async function reconnectMqttHandler(
           if (refreshedUrl.includes("checkpoint/601051028565049") ||
             refreshedHtml.includes("XCheckpointFBScrapingWarningController") ||
             refreshedHtml.includes("601051028565049")) {
-            log.error("Checkpoint scraping warning 049 vẫn còn sau khi bypass - đang auto đổi account & restart bot...");
+            log.warn("Checkpoint vẫn còn sau khi bypass");
             isReconnecting = false;
             ctx.isReconnecting = false;
             reconnectPromise = null;
-
-            // Tự động login lại và restart giống logic checkpoint 282
-            (async () => {
-              try {
-                const ok = await autoReloginWithFacebookWeb(ctx, true); // true = skip current account
-                if (ok) {
-                  log.success("AUTO-LOGIN thành công sau checkpoint 049! Đang khởi động lại bot...");
-                  process.exit(1);
-                } else {
-                  log.error("AUTO-LOGIN thất bại sau checkpoint 049. Vui lòng kiểm tra lại tài khoản!");
-                  process.exit(1);
-                }
-              } catch (autoErr: any) {
-                log.error(`Lỗi khi auto login sau checkpoint 049: ${autoErr?.message || autoErr}`);
-                process.exit(1);
-              }
-            })();
-
             return false;
           } else {
-            log.success("Bypass checkpoint 049 thành công, sẽ tiếp tục reconnect MQTT...");
+            log.success("Bypass checkpoint thành công, sẽ tiếp tục reconnect MQTT...");
 
             const refreshedUserIDMatch = refreshedHtml.match(/\["CurrentUserInitialData",\[\],({.*?}),\d+\]/);
             if (refreshedUserIDMatch) {
               try {
                 const userData = JSON.parse(refreshedUserIDMatch[1]);
                 if (userData.USER_ID && userData.USER_ID === ctx.userID) {
-                  log.success("Tài khoản vẫn còn đăng nhập sau khi bypass 049, tiếp tục reconnect...");
+                  log.success("Tài khoản vẫn còn đăng nhập sau khi bypass, tiếp tục reconnect...");
                 }
               } catch { }
             }
           }
         } catch (refreshErr: any) {
-          log.warn(`Lỗi khi refresh sau bypass 049: ${refreshErr?.message || refreshErr}`);
+          log.warn(`Lỗi khi refresh sau bypass: ${refreshErr?.message || refreshErr}`);
         }
       } else {
-        log.error("Bypass checkpoint scraping warning 049 thất bại - đang auto đổi account & restart bot...");
         isReconnecting = false;
         ctx.isReconnecting = false;
         reconnectPromise = null;
-
-        (async () => {
-          try {
-            const ok = await autoReloginWithFacebookWeb(ctx, true);
-            if (ok) {
-              log.success("AUTO-LOGIN thành công sau checkpoint 049 (bypass thất bại)! Đang khởi động lại bot...");
-              process.exit(1);
-            } else {
-              log.error("AUTO-LOGIN thất bại sau checkpoint 049 (bypass thất bại). Vui lòng kiểm tra lại tài khoản!");
-              process.exit(1);
-            }
-          } catch (autoErr: any) {
-            log.error(`Lỗi khi auto login sau checkpoint 049 (bypass thất bại): ${autoErr?.message || autoErr}`);
-            process.exit(1);
-          }
-        })();
-
         return false;
       }
     }
@@ -360,7 +324,7 @@ export async function reconnectMqttHandler(
       // Thử auto-login khi phát hiện tài khoản không còn đăng nhập
       try {
         log.warn("Tài khoản đã bị logout hoặc cookie hết hạn. Đang thử AUTO-LOGIN trước khi reconnect MQTT...");
-        const ok = await autoReloginWithFacebookWeb(ctx);
+        const ok = await autoRelogin(ctx);
         if (ok) {
           log.success("AUTO-LOGIN thành công. Cookie đã được cập nhật, sẽ tiếp tục reconnect MQTT...");
         } else {

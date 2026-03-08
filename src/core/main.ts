@@ -27,11 +27,11 @@ import { createRefreshDataHandler } from "./handleEvents/handleRefresh";
 import type { HandlerEventArgs, HandlerHelpers } from "./handleEvents/modules/types";
 import createSchedule from "./handleEvents/Schedule";
 import logger from "./logger";
+import { storagePath } from "./storagePath";
 import { getCleanupManager } from "./managers/cleanupManager";
 import initHandleUpload from "./managers/handleUpload";
 import { getMemoryManager } from "./managers/memoryManager";
 import loadPlugins from "./pluginLoader";
-import { performanceMonitor } from "./monitor/Performance";
 const configInitPromise = (async () => {
   const configInitResult = await initConfigManager();
   if (!configInitResult.success) {
@@ -422,7 +422,7 @@ async function createMessageHandler({
             (async () => {
               try {
                 // Đọc file mỗi lần, không giữ cache trong global để giảm footprint lâu dài.
-                const iconPath = path.resolve(process.cwd(), "storage/other/iconUnsend.json");
+                const iconPath = storagePath("other", "iconUnsend.json");
                 let iconData: unknown = [];
                 try {
                   const raw = await fsPromises.readFile(iconPath, "utf-8");
@@ -502,33 +502,23 @@ const startAutoCleanup = () => {
 
   const getCleanupInterval = (): number => {
     const rssMB = process.memoryUsage().rss / 1024 / 1024;
-    // Tối ưu: Cleanup thường xuyên hơn, giảm ngưỡng từ 280MB xuống 250MB
-    if (rssMB > 300) return 20 * 1000; // 20 giây khi RSS rất cao (>300MB)
-    if (rssMB > 280) return 25 * 1000; // 25 giây khi RSS cao (>280MB)
-    if (rssMB > 250) return 30 * 1000; // 30 giây khi RSS tăng (>250MB)
-    if (rssMB > 200) return 40 * 1000; // 40 giây
-    if (rssMB > 150) return 50 * 1000; // 50 giây
-    if (rssMB > 100) return 1 * 60 * 1000; // 1 phút
-    return 1.5 * 60 * 1000; // 1.5 phút
+    // Cleanup thường xuyên hơn để realtime (realtime optimization)
+    if (rssMB > 280) return 30 * 1000; // 30 giây khi RSS rất cao
+    if (rssMB > 200) return 45 * 1000; // 45 giây
+    if (rssMB > 150) return 1 * 60 * 1000; // 1 phút
+    if (rssMB > 100) return 1.5 * 60 * 1000; // 1.5 phút
+    return 2 * 60 * 1000; // 2 phút
   };
 
-  // Tối ưu: Giảm MAX_AGE để cleanup nhanh hơn, giảm ngưỡng từ 280MB xuống 250MB
+  // Giảm MAX_AGE để cleanup nhanh hơn (realtime optimization)
   const getMaxAge = (rssMB: number): number => {
     // Cleanup nhanh hơn khi RSS cao
-    if (rssMB > 300) return 1 * 60 * 1000; // 1 phút khi RSS rất cao (>300MB)
-    if (rssMB > 280) return 1.5 * 60 * 1000; // 1.5 phút khi RSS cao (>280MB)
-    if (rssMB > 250) return 2 * 60 * 1000; // 2 phút khi RSS tăng (>250MB)
-    if (rssMB > 200) return 2.5 * 60 * 1000; // 2.5 phút
-    if (rssMB > 150) return 3 * 60 * 1000; // 3 phút
-    return 4 * 60 * 1000; // 4 phút
+    if (rssMB > 280) return 2 * 60 * 1000; // 2 phút khi RSS rất cao
+    if (rssMB > 200) return 3 * 60 * 1000; // 3 phút
+    if (rssMB > 150) return 4 * 60 * 1000; // 4 phút
+    return 5 * 60 * 1000; // 5 phút
   };
-  // Tối ưu: Giảm MAX_REPLY_AGE và MAX_REACT_AGE dựa trên RSS
-  const getMaxReplyAge = (rssMB: number): number => {
-    if (rssMB > 300) return 60 * 1000; // 1 phút khi RSS rất cao
-    if (rssMB > 280) return 90 * 1000; // 1.5 phút khi RSS cao
-    if (rssMB > 250) return 120 * 1000; // 2 phút khi RSS tăng
-    return 150 * 1000; // 2.5 phút bình thường
-  };
+  const MAX_REPLY_AGE = 2 * 60 * 1000; // 2 phút cho onReply (giảm từ 3 phút)
 
   const cleanup = async () => {
     const now = Date.now();
@@ -537,11 +527,9 @@ const startAutoCleanup = () => {
     const MAX_AGE = getMaxAge(rssMB); // Dynamic MAX_AGE based on RSS
     let cleanedCount = 0;
     const shouldCleanupNow = (size: number, maxSize: number): boolean => {
-      // Tối ưu: Aggressive cleanup khi RSS cao, giảm ngưỡng từ 280MB xuống 250MB
-      if (rssMB > 300) return size > maxSize * 0.3; // 30% khi RSS rất cao (>300MB)
-      if (rssMB > 280) return size > maxSize * 0.35; // 35% khi RSS cao (>280MB)
-      if (rssMB > 250) return size > maxSize * 0.4; // 40% khi RSS tăng (>250MB)
-      if (rssMB > 200) return size > maxSize * 0.5; // 50% khi RSS cao (>200MB)
+      // Aggressive cleanup khi RSS cao (realtime optimization)
+      if (rssMB > 280) return size > maxSize * 0.4; // 40% khi RSS rất cao
+      if (rssMB > 200) return size > maxSize * 0.5; // 50% khi RSS cao
       return size > maxSize * 0.6; // 60% khi RSS bình thường
     };
     const cdKeysToDelete: string[] = [];
@@ -572,9 +560,9 @@ const startAutoCleanup = () => {
     if (cdKeysToDelete.length > 0) {
       cdKeysToDelete.forEach(key => main.cd.delete(key));
     }
-    // Tối ưu onReact: cleanup theo TTL và size limit, giảm ngưỡng từ 280MB xuống 250MB
-    const MAX_REACT_ENTRIES = rssMB > 300 ? 8 : (rssMB > 280 ? 10 : (rssMB > 250 ? 12 : (rssMB > 200 ? 15 : (rssMB > 150 ? 20 : 30))));
-    const MAX_REACT_AGE = rssMB > 300 ? 60 * 1000 : (rssMB > 280 ? 90 * 1000 : (rssMB > 250 ? 120 * 1000 : 150 * 1000));
+    // Tối ưu onReact: cleanup theo TTL và size limit (realtime optimization)
+    const MAX_REACT_ENTRIES = rssMB > 280 ? 10 : (rssMB > 200 ? 15 : (rssMB > 150 ? 25 : 40));
+    const MAX_REACT_AGE = 2 * 60 * 1000; // 2 phút cho onReact (giảm từ 5 phút)
     const reactKeysToDelete: string[] = [];
 
     // Cleanup theo TTL trước (realtime optimization - cleanup entries cũ ngay)
@@ -635,9 +623,8 @@ const startAutoCleanup = () => {
     if (reactKeysToDelete.length > 0) {
       reactKeysToDelete.forEach(key => main.onReact.delete(key));
     }
-    // Tối ưu onReply: cleanup theo TTL và giảm size limit, giảm ngưỡng từ 280MB xuống 250MB
-    const MAX_REPLY_ENTRIES = rssMB > 300 ? 8 : (rssMB > 280 ? 10 : (rssMB > 250 ? 12 : (rssMB > 200 ? 15 : (rssMB > 150 ? 20 : 30))));
-    const MAX_REPLY_AGE = getMaxReplyAge(rssMB);
+    // Tối ưu onReply: cleanup theo TTL và giảm size limit (realtime optimization)
+    const MAX_REPLY_ENTRIES = rssMB > 280 ? 10 : (rssMB > 200 ? 15 : (rssMB > 150 ? 25 : 40));
     const replyKeysToDelete: string[] = [];
 
     // Fast path: chỉ iterate nếu có entries
@@ -699,14 +686,14 @@ const startAutoCleanup = () => {
     if (replyKeysToDelete.length > 0) {
       replyKeysToDelete.forEach(key => main.onReply.delete(key));
     }
-    // Tối ưu processData: cleanup theo TTL và size limit, giảm ngưỡng từ 280MB xuống 250MB
-    const MAX_PROCESS_DATA_ENTRIES = rssMB > 300 ? 8 : (rssMB > 280 ? 10 : (rssMB > 250 ? 12 : (rssMB > 200 ? 15 : (rssMB > 150 ? 20 : 30))));
+    // Tối ưu processData: cleanup theo TTL và size limit (realtime optimization)
+    const MAX_PROCESS_DATA_ENTRIES = rssMB > 280 ? 10 : (rssMB > 200 ? 15 : (rssMB > 150 ? 25 : 40));
     if (main.processData.size > 0 && (shouldCleanupNow(main.processData.size, MAX_PROCESS_DATA_ENTRIES) || main.processData.size > MAX_PROCESS_DATA_ENTRIES)) {
       const keysToDelete: string[] = [];
       const entriesWithTime: Array<[string, number]> = [];
       const processEntries = Array.from(main.processData.entries());
 
-      // Fast path: cleanup entries cũ trước và giải phóng Buffer/ArrayBuffer
+      // Fast path: cleanup entries cũ trước
       for (const [k, v] of processEntries) {
         if (typeof v === 'number') {
           if (now - v > MAX_AGE) {
@@ -717,18 +704,6 @@ const startAutoCleanup = () => {
           }
         } else {
           // Non-number entries: cleanup ngay (realtime optimization)
-          // Đặc biệt: nếu entry chứa Buffer/ArrayBuffer, giải phóng ngay để giảm external memory
-          if (v && typeof v === 'object') {
-            const obj = v as any;
-            // Kiểm tra và cleanup Buffer trong object
-            if (Buffer.isBuffer(obj.buffer) || Buffer.isBuffer(obj.data) || Buffer.isBuffer(obj)) {
-              // Buffer sẽ được GC sau khi reference bị xóa
-            }
-            // Kiểm tra ArrayBuffer
-            if (obj instanceof ArrayBuffer || (obj.buffer && obj.buffer instanceof ArrayBuffer)) {
-              // ArrayBuffer sẽ được GC sau khi reference bị xóa
-            }
-          }
           keysToDelete.push(k);
           cleanedCount++;
         }
@@ -753,29 +728,6 @@ const startAutoCleanup = () => {
           }
         }
       }
-    }
-
-    // Tối ưu: Cleanup ctx.tasks nếu có (MQTT tasks map)
-    try {
-      const ctx = (global as any).mqttContext;
-      if (ctx && ctx.tasks && ctx.tasks instanceof Map) {
-        const tasksMap = ctx.tasks as Map<string, any>;
-        const MAX_TASKS = rssMB > 300 ? 50 : (rssMB > 280 ? 80 : (rssMB > 250 ? 100 : 150));
-        if (tasksMap.size > MAX_TASKS) {
-          const taskEntries = Array.from(tasksMap.entries());
-          // Sort by timestamp nếu có, hoặc xóa entries cũ nhất
-          const toDelete = tasksMap.size - Math.floor(MAX_TASKS * 0.7);
-          if (toDelete > 0) {
-            // Xóa entries đầu tiên (giả định là cũ nhất nếu không có timestamp)
-            for (let i = 0; i < Math.min(toDelete, taskEntries.length); i++) {
-              tasksMap.delete(taskEntries[i][0]);
-              cleanedCount++;
-            }
-          }
-        }
-      }
-    } catch {
-      // Ignore errors khi cleanup ctx.tasks
     }
 
     // Cleanup temp files cũ (hơn 1 giờ)
@@ -816,51 +768,12 @@ const startAutoCleanup = () => {
       }
     }
 
-    // Cleanup Buffer/ArrayBuffer trong onReact và onReply khi RSS cao
-    if (rssMB > 250) {
-      let bufferCleaned = 0;
-      // Cleanup Buffer trong onReact
-      for (const [key, value] of main.onReact.entries()) {
-        const reactData = value as any;
-        if (reactData && typeof reactData === 'object') {
-          // Xóa Buffer references để giải phóng external memory
-          if (Buffer.isBuffer(reactData.buffer) || Buffer.isBuffer(reactData.data)) {
-            delete reactData.buffer;
-            delete reactData.data;
-            bufferCleaned++;
-          }
-        }
-      }
-      // Cleanup Buffer trong onReply
-      for (const [key, value] of main.onReply.entries()) {
-        const replyData = value as any;
-        if (replyData && typeof replyData === 'object') {
-          // Xóa Buffer references để giải phóng external memory
-          if (Buffer.isBuffer(replyData.buffer) || Buffer.isBuffer(replyData.data)) {
-            delete replyData.buffer;
-            delete replyData.data;
-            bufferCleaned++;
-          }
-        }
-      }
-      if (bufferCleaned > 0) {
-        log.info(`[Buffer Cleanup] Đã cleanup ${bufferCleaned} Buffer references để giải phóng external memory`);
-      }
-    }
-
     if (cleanedCount > 0) {
-      const memUsage = process.memoryUsage();
-      const externalMB = (memUsage.external / 1024 / 1024).toFixed(1);
-      log.info(`[Auto Cleanup] Đã xóa ${cleanedCount} entries cũ | RSS: ${rssMB.toFixed(1)}MB | External: ${externalMB}MB`);
+      log.info(`[Auto Cleanup] Đã xóa ${cleanedCount} entries cũ | RSS: ${rssMB.toFixed(1)}MB`);
     }
 
-    // Tối ưu: Cảnh báo sớm hơn khi RSS > 280MB và hiển thị external memory
-    if (rssMB > 280) {
-      const memUsage = process.memoryUsage();
-      const externalMB = (memUsage.external / 1024 / 1024).toFixed(1);
-      const severity = rssMB > 300 ? "RẤT CAO" : "CAO";
-      const externalInfo = parseFloat(externalMB) > 50 ? ` (External: ${externalMB}MB - có thể là nguyên nhân RSS không giảm)` : "";
-      log.warn(`RSS ${severity}: ${rssMB.toFixed(1)}MB${externalInfo} - Kiểm tra memory leaks hoặc giảm cache size`);
+    if (rssMB > 300) {
+      log.warn(`RSS cao: ${rssMB.toFixed(1)}MB - Kiểm tra memory leaks hoặc giảm cache size`);
     }
   };
 
@@ -1048,7 +961,6 @@ if (cleanupInterval) {
           log.success("Khởi tạo message handler thành công, bắt đầu listenMqtt...");
         } catch (handlerError) {
           log.error(`Không thể khởi tạo message handler: ${formatError(handlerError)}`);
-          performanceMonitor.trackError(handlerError);
           process.exit(1);
         }
         const messageHandler = async (eventErr: unknown, event?: BotEventType) => {
@@ -1110,12 +1022,9 @@ if (cleanupInterval) {
           }
           if (!event) return;
 
-          const start = Date.now();
           try {
             await handleMessage(event);
-            performanceMonitor.trackMessage(start);
           } catch (eventHandleError) {
-            performanceMonitor.trackError(eventHandleError);
             log.error(`Lỗi khi xử lý event: ${formatError(eventHandleError)}`);
           }
         };

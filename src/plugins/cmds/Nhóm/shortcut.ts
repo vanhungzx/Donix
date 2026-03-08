@@ -12,6 +12,8 @@ import path from 'path';
 import sharp from 'sharp';
 import { pipeline, Readable } from 'stream';
 import { promisify } from 'util';
+import path from "path";
+import { storagePath } from "../../../core/storagePath";
 import type {
   Command,
   CommandOnCallContext,
@@ -26,8 +28,8 @@ sharp.concurrency(Math.max(1, (os.cpus()?.length || 2) - 1));
 sharp.cache(false);
 
 // --- Paths
-const ShortFile = path.resolve(process.cwd(), 'src/storage/other', 'shortCutData.json');
-const MediaRoot = path.resolve(process.cwd(), 'src/storage/other/shortcutMedia');
+const ShortFile = storagePath("other", "shortCutData.json");
+const MediaRoot = storagePath("other", "shortcutMedia");
 const TempRoot = path.join(process.cwd(), 'src/temp');
 
 // Ensure dirs

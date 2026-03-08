@@ -4,6 +4,7 @@ import fs from "fs-extra";
 import Jimp from "jimp";
 import path from "path";
 import { fileURLToPath } from "url";
+import { STORAGE_FONT, storagePath } from "../../../core/storagePath";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -117,7 +118,7 @@ const command = {
       );
     }
 
-    const fontDir = path.join(__dirname, "../../../storage/font");
+    const fontDir = STORAGE_FONT();
     const fontPath = path.join(fontDir, "TUVBenchmark.ttf");
 
     // NOTE: Không tự tải font từ URL nữa. Nếu thiếu font thì sẽ fallback sang font mặc định.
@@ -313,7 +314,7 @@ const command = {
     ctx.imageSmoothingEnabled = true;
 
     // Load background from local storage
-    const bgDir = path.join(__dirname, "../../../storage/image/taoanhbox/bg");
+    const bgDir = storagePath("image", "taoanhbox", "bg");
     await fs.ensureDir(bgDir);
 
     // NOTE: Không tự tải background từ URL nữa, chỉ dùng file local trong thư mục bg/
@@ -432,7 +433,7 @@ const command = {
     // Load frames từ local (không tự tải URL nữa)
     let khungAvt: any;
     let khungAvtbox: any;
-    const frameDir = path.join(__dirname, "../../../storage/image/taoanhbox");
+    const frameDir = storagePath("image", "taoanhbox");
     await fs.ensureDir(frameDir);
 
     try {
@@ -886,36 +887,21 @@ const command = {
     );
 
 
-    // Tối ưu: Tạo buffer và cleanup canvas ngay sau khi dùng
-    let buffer: Buffer;
-    try {
-      buffer = canvas.toBuffer("image/png");
-    } catch (e: any) {
-      console.error(`❌ Lỗi khi tạo buffer từ canvas: ${e.message || e}`);
-      // Cleanup canvas reference
-      canvas = null as any;
-      return client.sendMessage(
-        `❌ Lỗi: Không thể tạo buffer từ canvas: ${e.message || e}`,
-        threadID,
-        messageID
-      );
-    }
-
+    const buffer = canvas.toBuffer("image/png");
     const fileSizeMB = (buffer.length / (1024 * 1024)).toFixed(2);
+
     console.log(`📊 Kích thước ảnh: ${buffer.length} bytes (${fileSizeMB} MB)`);
     console.log(`📐 Kích thước canvas: ${canvas.width} x ${canvas.height}px`);
 
-    // Cleanup canvas reference ngay sau khi đã tạo buffer để giúp GC
-    canvas = null as any; // Giải phóng canvas reference
 
     if (buffer.length === 0) {
-      buffer = null as any; // Cleanup buffer reference
       return client.sendMessage(
         "❌ Lỗi: Buffer ảnh rỗng",
         threadID,
         messageID
       );
     }
+
 
     const tempDir = path.join(process.cwd(), "src/temp");
     await fs.ensureDir(tempDir);
@@ -924,11 +910,8 @@ const command = {
     try {
       fs.writeFileSync(pathAVT, buffer);
       console.log(`💾 Đã lưu file tạm: ${pathAVT}`);
-      // Cleanup buffer reference sau khi đã ghi file
-      buffer = null as any;
     } catch (e: any) {
       console.error(`❌ Không thể lưu file tạm: ${e.message || e}`);
-      buffer = null as any; // Cleanup buffer reference trong catch
       return client.sendMessage(
         `❌ Lỗi: Không thể lưu file ảnh: ${e.message || e}`,
         threadID,

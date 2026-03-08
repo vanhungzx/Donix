@@ -1,7 +1,7 @@
 import type { Command, CommandOnCallContext, CommandOnReplyContext, ReplyData } from "@types";
 import axios from "axios";
-import fs from "fs-extra";
-import { createReadStream } from "fs";
+import fs from "fs";
+import type { Readable } from "node:stream";
 import path from "path";
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
@@ -19,7 +19,9 @@ interface VideoResult {
   url?: string;
   title: string;
   author?: string;
-  channel?: { name?: string };
+  channel?: {
+    name?: string;
+  };
   timestamp?: string;
   time?: string;
   seconds?: number;
@@ -30,12 +32,15 @@ interface VideoResult {
 
 interface SearchResult {
   videos: VideoResult[];
+  channels: Array<Record<string, string | number | boolean | null | undefined>>;
+  playlists: Array<Record<string, string | number | boolean | null | undefined>>;
   live: VideoResult[];
+  all: Array<VideoResult | Record<string, string | number | boolean | null | undefined>>;
 }
 
 interface AudioStream {
   url: string;
-  mimeType?: string;
+  mimeType: string;
   bitrate?: number;
   averageBitrate?: number;
   contentLength?: string;
@@ -44,7 +49,7 @@ interface AudioStream {
 
 interface ProgressiveStream {
   url: string;
-  mimeType?: string;
+  mimeType: string;
   qualityLabel?: string;
   audioQuality?: string;
   height?: string;
@@ -77,13 +82,13 @@ interface DownloadResult {
 }
 
 interface StreamResult {
-  stream: import("node:stream").Readable;
+  stream: Readable;
   size: number;
 }
 
 function tempRoot(): string {
   const p = path.join(process.cwd(), "temp");
-  fs.ensureDirSync(p);
+  if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
   return p;
 }
 
@@ -114,6 +119,7 @@ function extractVideoId(url: string): string | null {
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
     /^([a-zA-Z0-9_-]{11})$/,
   ];
+
   for (const pattern of patterns) {
     const m = String(url).match(pattern);
     if (m) return m[1] || m[0];
@@ -156,7 +162,7 @@ async function fetchYoutubePlayer(videoId: string): Promise<Manifest> {
         utcOffsetMinutes: 0,
       },
     },
-    videoId,
+    videoId: videoId,
     playbackContext: {
       contentPlaybackContext: {
         html5Preference: "HTML5_PREF_WANTS",
@@ -167,44 +173,125 @@ async function fetchYoutubePlayer(videoId: string): Promise<Manifest> {
     racyCheckOk: true,
   };
 
-  const res = await axios.post("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", data, { headers });
-  const streamingData = res.data.streamingData || {};
-  const audioStreams = (streamingData.adaptiveFormats || [])
-    .filter((f: Record<string, unknown>) => f.mimeType && typeof f.mimeType === "string" && (f.mimeType as string).startsWith("audio/"))
-    .map((f: Record<string, unknown>) => ({
-      ...f,
-      bitrateDiff: Math.abs(parseInt(String(f.averageBitrate || f.bitrate || 0)) - TARGET_BITRATE),
-    }))
-    .sort((a: AudioStream, b: AudioStream) => (a.bitrateDiff || 0) - (b.bitrateDiff || 0));
-  const bestAudio = audioStreams[0] as AudioStream | undefined;
+  try {
+    const res = await axios.post("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", data, { headers });
+    const streamingData = res.data.streamingData || {};
+    const audioStreams = (streamingData.adaptiveFormats || [])
+      .filter((f: Record<string, unknown>) => f.mimeType && typeof f.mimeType === "string" && f.mimeType.startsWith("audio/"))
+      .map((f: Record<string, unknown>) => ({
+        ...f,
+        bitrateDiff: Math.abs(parseInt(String(f.averageBitrate || f.bitrate || 0)) - TARGET_BITRATE),
+      }))
+      .sort((a: AudioStream, b: AudioStream) => {
+        return (a.bitrateDiff || 0) - (b.bitrateDiff || 0);
+      });
+    const bestAudio: AudioStream | undefined = audioStreams[0] as AudioStream | undefined;
+    const allProgressive = (streamingData.formats || []).filter(
+      (f: Record<string, unknown>) => f.url && f.qualityLabel && f.audioQuality
+    );
+    const bestProgressive: ProgressiveStream | undefined = [...allProgressive].sort(
+      (a: Record<string, unknown>, b: Record<string, unknown>) =>
+        parseInt(String(b.height || 0)) - parseInt(String(a.height || 0))
+    )[0] as ProgressiveStream | undefined;
+    const smallestProgressive: ProgressiveStream | undefined = [...allProgressive].sort(
+      (a: Record<string, unknown>, b: Record<string, unknown>) =>
+        parseInt(String(a.height || 0)) - parseInt(String(b.height || 0))
+    )[0] as ProgressiveStream | undefined;
+    const manifest: Manifest = {
+      info: {
+        title: res.data?.videoDetails?.title || null,
+        duration: res.data?.videoDetails?.lengthSeconds || null,
+        expiresInSeconds: res.data?.streamingData?.expiresInSeconds || null,
+        thumbnail: res.data?.videoDetails?.thumbnail?.thumbnails?.[0]?.url || null,
+        viewCount: res.data?.videoDetails?.viewCount || null,
+        keywords: res.data?.videoDetails?.keywords || null,
+        channel: res.data?.videoDetails?.author || null,
+        likes: res.data?.videoDetails?.likeCount || null,
+      },
+      bestAudio,
+      bestProgressive,
+      smallestProgressive,
+    };
+    return manifest;
+  } catch (err: unknown) {
+    const error = err as { response?: { status?: number; data?: unknown }; message?: string };
+    if (error.response) {
+      throw new Error(`YouTube API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+    }
+    throw new Error(`Request error: ${error.message || String(err)}`);
+  }
+}
 
-  const allProgressive = (streamingData.formats || []).filter(
-    (f: Record<string, unknown>) => f.url && f.qualityLabel && f.audioQuality
-  );
-  const bestProgressive = [...allProgressive].sort(
-    (a: Record<string, unknown>, b: Record<string, unknown>) =>
-      parseInt(String(b.height || 0)) - parseInt(String(a.height || 0))
-  )[0] as ProgressiveStream | undefined;
-  const smallestProgressive = [...allProgressive].sort(
-    (a: Record<string, unknown>, b: Record<string, unknown>) =>
-      parseInt(String(a.height || 0)) - parseInt(String(b.height || 0))
-  )[0] as ProgressiveStream | undefined;
-
-  return {
-    info: {
-      title: res.data?.videoDetails?.title || null,
-      duration: res.data?.videoDetails?.lengthSeconds || null,
-      expiresInSeconds: res.data?.streamingData?.expiresInSeconds || null,
-      thumbnail: res.data?.videoDetails?.thumbnail?.thumbnails?.[0]?.url || null,
-      viewCount: res.data?.videoDetails?.viewCount || null,
-      keywords: res.data?.videoDetails?.keywords || null,
-      channel: res.data?.videoDetails?.author || null,
-      likes: res.data?.videoDetails?.likeCount || null,
-    },
-    bestAudio,
-    bestProgressive,
-    smallestProgressive,
+async function getStreamAndSize(url: string, headers: Record<string, string> = {}): Promise<StreamResult> {
+  const requestHeaders = {
+    Range: "bytes=0-",
+    ...headers,
   };
+
+  const res = await axios.get(url, {
+    responseType: "stream",
+    headers: requestHeaders,
+    maxContentLength: Infinity,
+    maxBodyLength: Infinity,
+  });
+
+  const len = Number(res.headers["content-length"] || 0);
+  const cr = res.headers["content-range"];
+  const total = cr ? Number(String(cr).split("/").pop()) : len;
+
+  return { stream: res.data, size: total || len };
+}
+
+async function headTotal(url: string): Promise<number> {
+  try {
+    const headers = {
+      "User-Agent": "com.google.android.youtube/20.10.38 (Linux; U; Android 11) gzip",
+      Accept: "*/*",
+      Referer: "https://www.youtube.com/",
+      Range: "bytes=0-0",
+    };
+
+    const res = await axios.get(url, { responseType: "stream", headers });
+    const cr = res.headers["content-range"];
+    const total = cr ? Number(String(cr).split("/").pop()) : Number(res.headers["content-length"] || 0);
+    res.data.destroy();
+    return total || 0;
+  } catch {
+    return 0;
+  }
+}
+
+async function downloadAudio(audioUrl: string, outputPath: string): Promise<{ path: string; size: number }> {
+  const headers = {
+    "User-Agent": "com.google.android.youtube/20.10.38 (Linux; U; Android 11) gzip",
+    Accept: "*/*",
+    Referer: "https://www.youtube.com/",
+  };
+
+  const { stream, size } = await getStreamAndSize(audioUrl, headers);
+  const writeStream = fs.createWriteStream(outputPath);
+
+  await new Promise<void>((resolve, reject) => {
+    stream.pipe(writeStream);
+    writeStream.on("finish", () => {
+      // Cleanup streams ngay sau khi xong
+      stream.destroy();
+      writeStream.destroy();
+      resolve();
+    });
+    writeStream.on("error", (err: Error) => {
+      stream.destroy();
+      writeStream.destroy();
+      reject(err);
+    });
+    stream.on("error", (err: Error) => {
+      stream.destroy();
+      writeStream.destroy();
+      reject(err);
+    });
+  });
+
+  return { path: outputPath, size };
 }
 
 const YT_HEADERS = {
@@ -213,57 +300,33 @@ const YT_HEADERS = {
   Referer: "https://www.youtube.com/",
 };
 
-async function getStreamAndSize(url: string, headers: Record<string, string> = {}): Promise<StreamResult> {
-  const res = await axios.get(url, {
-    responseType: "stream",
-    headers: { Range: "bytes=0-", ...headers },
-    maxContentLength: Infinity,
-    maxBodyLength: Infinity,
-  });
-  const len = Number(res.headers["content-length"] || 0);
-  const cr = res.headers["content-range"];
-  const total = cr ? Number(String(cr).split("/").pop()) : len;
-  return { stream: res.data, size: total || len };
-}
-
-async function headTotal(url: string): Promise<number> {
-  try {
-    const res = await axios.get(url, { responseType: "stream", headers: { ...YT_HEADERS, "Range": "bytes=0-0" } });
-    const cr = res.headers["content-range"];
-    const total = cr ? Number(String(cr).split("/").pop()) : Number(res.headers["content-length"] || 0);
-    (res.data as import("node:stream").Readable).destroy();
-    return total || 0;
-  } catch {
-    return 0;
-  }
-}
-
 async function downloadToFile(url: string, outputPath: string): Promise<{ path: string; size: number }> {
   const { stream, size } = await getStreamAndSize(url, YT_HEADERS);
-  const readable = stream as import("node:stream").Readable;
   const writeStream = fs.createWriteStream(outputPath);
+
   await new Promise<void>((resolve, reject) => {
-    readable.pipe(writeStream);
+    stream.pipe(writeStream);
     writeStream.on("finish", () => {
-      readable.destroy();
+      stream.destroy();
       writeStream.destroy();
       resolve();
     });
     writeStream.on("error", (err: Error) => {
-      readable.destroy();
+      stream.destroy();
       writeStream.destroy();
       reject(err);
     });
-    readable.on("error", (err: Error) => {
-      readable.destroy();
+    stream.on("error", (err: Error) => {
+      stream.destroy();
       writeStream.destroy();
       reject(err);
     });
   });
+
   return { path: outputPath, size };
 }
 
-async function convertVideoToMp3(videoPath: string, mp3Path: string): Promise<void> {
+function convertVideoToMp3(videoPath: string, mp3Path: string): Promise<void> {
   return new Promise((resolve, reject) => {
     ffmpeg(videoPath)
       .noVideo()
@@ -276,7 +339,7 @@ async function convertVideoToMp3(videoPath: string, mp3Path: string): Promise<vo
   });
 }
 
-async function dlAudio(videoId: string, givenTitle = ""): Promise<DownloadResult> {
+async function dlAudio(videoId: string, givenTitle: string = ""): Promise<DownloadResult> {
   const manifest = await fetchYoutubePlayer(videoId);
   if (!manifest.info.title && !givenTitle) {
     throw new Error("Không thể lấy thông tin video");
@@ -291,7 +354,7 @@ async function dlAudio(videoId: string, givenTitle = ""): Promise<DownloadResult
   const base = path.join(tempRoot(), title);
   const outputPath = `${base}.mp3`;
 
-  // Try progressive (video) → ffmpeg convert first
+  // Thử tải progressive (video) rồi convert sang MP3 trước
   const progressiveStream = manifest.smallestProgressive || manifest.bestProgressive;
   if (progressiveStream?.url) {
     const videoPath = `${base}_video.mp4`;
@@ -299,34 +362,34 @@ async function dlAudio(videoId: string, givenTitle = ""): Promise<DownloadResult
       await downloadToFile(progressiveStream.url, videoPath);
       await convertVideoToMp3(videoPath, outputPath);
       try {
-        await fs.unlink(videoPath);
+        fs.unlinkSync(videoPath);
       } catch {
-        // Ignore
+        // ignore
       }
-      const stat = await fs.stat(outputPath);
+      const stat = fs.statSync(outputPath);
       if (stat.size > MAX_SIZE) {
         try {
-          await fs.unlink(outputPath);
+          fs.unlinkSync(outputPath);
         } catch {
-          // Ignore
+          // ignore
         }
         throw new Error(`File MP3 quá lớn (${(stat.size / 1024 / 1024).toFixed(2)}MB > 25MB)`);
       }
       return { path: outputPath, title, manifest, size: stat.size };
     } catch (err) {
       try {
-        await fs.unlink(videoPath).catch(() => {});
-        await fs.unlink(outputPath).catch(() => {});
+        fs.existsSync(videoPath) && fs.unlinkSync(videoPath);
+        fs.existsSync(outputPath) && fs.unlinkSync(outputPath);
       } catch {
-        // Ignore
+        // ignore
       }
-      throw err;
+      // Fall through to bestAudio path
     }
   }
 
-  // Fallback: direct audio stream
-  const audioStream = manifest.bestAudio;
-  if (!audioStream?.url) {
+  // Dùng stream audio trực tiếp (adaptive hoặc progressive)
+  const audioStream = manifest.bestAudio || manifest.bestProgressive;
+  if (!audioStream || !audioStream.url) {
     throw new Error("Không tìm thấy stream (video/audio)");
   }
 
@@ -340,12 +403,13 @@ async function dlAudio(videoId: string, givenTitle = ""): Promise<DownloadResult
     throw new Error(`File quá lớn (${(actualSize / 1024 / 1024).toFixed(2)}MB > 25MB)`);
   }
 
-  const downloadResult = await downloadToFile(audioStream.url, outputPath);
+  const downloadResult = await downloadAudio(audioStream.url, outputPath);
+
   if (downloadResult.size > MAX_SIZE) {
     try {
-      await fs.unlink(outputPath);
+      fs.unlinkSync(outputPath);
     } catch {
-      // Ignore
+      // ignore
     }
     throw new Error(`File quá lớn (${(downloadResult.size / 1024 / 1024).toFixed(2)}MB > 25MB)`);
   }
@@ -353,22 +417,31 @@ async function dlAudio(videoId: string, givenTitle = ""): Promise<DownloadResult
   return { path: outputPath, title, manifest, size: downloadResult.size };
 }
 
+/** Tải audio YouTube (videoId hoặc URL). Dùng chung cho bot AI và lệnh sing. */
+export async function downloadYoutubeAudio(
+  videoIdOrUrl: string,
+  givenTitle?: string
+): Promise<DownloadResult> {
+  const videoId = isYoutubeUrl(videoIdOrUrl) ? extractVideoId(videoIdOrUrl) : videoIdOrUrl;
+  if (!videoId) throw new Error("Không thể lấy Video ID");
+  return dlAudio(videoId, givenTitle || "");
+}
+
 const singCommand: Command = {
   name: "sing",
   alias: ["music", "musicapi", "musicyoutube"],
-  version: "2.0.0",
+  version: "1.0.0",
   role: 0,
   desc: "Nghe nhạc YouTube MP3 qua YouTube Player API",
   guide: "{pn} [từ khóa | link]",
   cd: 5,
   prefix: true,
-
   async onCall(ctx: CommandOnCallContext) {
     const { args, client, reply, event, api, main, commandName } = ctx;
 
     try {
-      if (!args?.length) {
-        await reply("❎ Vui lòng nhập từ khóa hoặc link YouTube!");
+      if (!args || !args.length) {
+        await reply({ body: "❎ Vui lòng nhập từ khóa hoặc link YouTube!" });
         return;
       }
 
@@ -377,78 +450,69 @@ const singCommand: Command = {
       if (isYoutubeUrl(key)) {
         const videoId = extractVideoId(key);
         if (!videoId) {
-          await reply("❎ Không thể lấy Video ID từ link!");
+          await reply({ body: "❎ Không thể lấy Video ID từ link!" });
           return;
         }
 
-        let noteMessageID: string | undefined;
-        try {
-          const noteResult = await reply("⬇️ Đang tải audio qua YouTube API...");
-          if (noteResult && typeof noteResult === "object" && "messageID" in noteResult) {
-            noteMessageID = String((noteResult as { messageID?: string }).messageID);
-          }
-        } catch {
-          // Ignore
-        }
+        const note = await reply({ body: "⬇️ Đang tải audio qua YouTube API..." });
 
         try {
           const r = await dlAudio(videoId);
           const info = r.manifest.info;
-          const body = `🎵 ${info.title || r.title}\n👤 ${info.channel || "Unknown"}\n⏱️ ${toTime(Number(info.duration || 0))}\n👀 ${info.viewCount ? Number(info.viewCount).toLocaleString("vi-VN") : "0"}`;
-          const readStream = createReadStream(r.path);
+          const body = `🎵 ${info.title || r.title}\n👤 ${info.channel || "Unknown"}\n⏱️ ${toTime(Number(info.duration || 0))}\n👀 ${info.viewCount ? Number(info.viewCount).toLocaleString() : "0"}`;
+          const readStream = fs.createReadStream(r.path);
+          const attachment = {
+            stream: readStream,
+            filename: "audio.mp3",
+            contentType: "audio/mpeg",
+          };
 
-          try {
-            await new Promise<void>((resolve, reject) => {
-              client.sendMessage(
-                { body, attachment: readStream },
-                event.threadID,
-                (err?: Error) => (err ? reject(err) : resolve()),
-                event.messageID
-              );
-            });
-          } finally {
-            readStream.destroy();
-            setTimeout(async () => {
+          await new Promise<void>((resolve, reject) => {
+            client.sendMessage(
+              { body, attachment },
+              event.threadID,
+              (err?: Error) => {
+                if (err) reject(err);
+                else resolve();
+              },
+              event.messageID
+            );
+          });
+
+          readStream.on("close", () => {
+            setTimeout(() => {
               try {
-                if (await fs.pathExists(r.path)) {
-                  await fs.unlink(r.path);
-                }
+                fs.unlinkSync(r.path);
               } catch {
-                // Ignore
+                // ignore
               }
-            }, 10000);
-          }
+            }, 30000);
+          });
 
-          if (noteMessageID) {
+          if (note?.messageID) {
             try {
-              await client.unsendMessage(noteMessageID, event.threadID);
-            } catch {
-              // Ignore
-            }
+              await client.unsendMessage(note.messageID, event.threadID);
+            } catch {}
           }
         } catch (e: unknown) {
-          const err = e instanceof Error ? e : new Error(String(e));
-          await reply(`❎ Lỗi: ${err.message}`);
-          if (noteMessageID) {
+          const error = e as { message?: string };
+          await reply({ body: `❎ Lỗi: ${error.message || String(e)}` });
+          if (note?.messageID) {
             try {
-              await client.unsendMessage(noteMessageID, event.threadID);
-            } catch {
-              // Ignore
-            }
+              await client.unsendMessage(note.messageID, event.threadID);
+            } catch {}
           }
         }
         return;
       }
-
-      // Search YouTube
-      const youtubeService = api?.youtube;
-      if (!youtubeService?.search) {
-        await reply("❌ Service YouTube chưa được load. Vui lòng kiểm tra lại!");
+      if (!api?.youtube?.search) {
+        await reply({ body: "❌ Service YouTube chưa được load. Vui lòng kiểm tra lại!" });
         return;
       }
 
-      const res: SearchResult = await youtubeService.search(key, { hl: "vi", gl: "VN" });
-      let list = [...(res.live || []), ...(res.videos || [])].slice(0, 6);
+      const res: SearchResult = await api.youtube.search(key, { hl: "vi", gl: "VN" });
+
+      let list: VideoResult[] = [...res.live, ...res.videos].slice(0, 6);
       list = list
         .filter((v) => {
           const s = v.seconds ?? parseTimeToSeconds(v.time);
@@ -457,7 +521,7 @@ const singCommand: Command = {
         .slice(0, 8);
 
       if (!list.length) {
-        await reply(`❎ Không có bài hát ≤ 15 phút cho "${key}"`);
+        await reply({ body: `❎ Không có bài hát ≤ 15 phút cho "${key}"` });
         return;
       }
 
@@ -465,65 +529,43 @@ const singCommand: Command = {
         .map((i, k) => `${k + 1}. ${i.title}\n⏳ ${i.timestamp || i.time} - 📺 ${i.author || i.channel?.name || ""}`)
         .join("\n\n");
 
-      await reply(
-        `🔍 Kết quả (≤15p):\n\n${msg}\n\n⩺ Reply số để tải audio qua YouTube API`,
-        (err: Error | null, info?: { messageID?: string }) => {
-          if (err || !info?.messageID) return;
-          if (!main?.onReply?.set) return;
-          main.onReply.set(info.messageID, {
-            commandName: commandName || "sing",
-            messageID: info.messageID,
-            author: String(event.senderID),
-            type: "SingSearch",
-            result: list,
-          } as unknown as ReplyData);
-        }
-      );
+      await reply(`🔍 Kết quả (≤15p):\n\n${msg}\n\n⩺ Reply số để tải audio qua YouTube API`, (err: Error | null, info?: { messageID?: string }) => {
+        if (err || !info?.messageID) return;
+        if (!main?.onReply?.set) return;
+        main.onReply.set(info.messageID, {
+          commandName: commandName || "sing",
+          messageID: info.messageID,
+          author: String(event.senderID),
+          type: "sing-select",
+          result: list,
+        } as unknown as ReplyData);
+      });
     } catch (e: unknown) {
-      console.error("[sing]", e);
-      const err = e instanceof Error ? e : new Error(String(e));
-      await reply(`❎ Lỗi: ${err.message}`);
+      console.error(e);
+      const error = e as { message?: string };
+      await reply({ body: `❎ Lỗi: ${error.message || String(e)}` });
     }
   },
 
   async onReply(ctx: CommandOnReplyContext) {
-    const { client, event, reply, main, Reply } = ctx;
-
+    const { client, event, reply, main, Reply, unsend } = ctx;
     try {
-      if (!Reply || event.senderID !== Reply.author) return;
-      if (Reply.type !== "SingSearch") return;
-
-      if (Reply.messageID) {
-        try {
-          await client.unsendMessage(Reply.messageID, event.threadID);
-        } catch {
-          // Ignore
-        }
-      }
-
+      if (!Reply || String(event.senderID) !== String(Reply.author)) return;
+      if (Reply.type !== "sing-select") return;
+      unsend(Reply.messageID);
       const idx = parseInt(String(event.body || "").trim(), 10) - 1;
       const result = Reply.result as unknown as VideoResult[] | undefined;
       if (isNaN(idx) || idx < 0 || !result || !Array.isArray(result) || idx >= result.length) {
         await reply("❎ Vui lòng chọn số hợp lệ!");
         return;
       }
-
-      const v = result[idx];
+      const v: VideoResult = result[idx];
       const videoId = v.videoId || v.id;
       if (!videoId) {
         await reply("❎ Không tìm thấy Video ID!");
         return;
       }
-
-      let noticeMessageID: string | undefined;
-      try {
-        const noticeResult = await reply(`⬇️ Đang tải audio qua YouTube API: "${v.title}"...`);
-        if (noticeResult && typeof noticeResult === "object" && "messageID" in noticeResult) {
-          noticeMessageID = String((noticeResult as { messageID?: string }).messageID);
-        }
-      } catch {
-        // Ignore
-      }
+      const notice = await reply(`⬇️ Đang tải audio qua YouTube API: "${v.title}"...`);
 
       try {
         const dur = v.seconds ?? parseTimeToSeconds(v.time);
@@ -534,53 +576,52 @@ const singCommand: Command = {
         const r = await dlAudio(videoId, v.title);
         const info = r.manifest.info;
         const body = `🎵 ${v.title}\n👤 ${v.author || v.channel?.name || info.channel || "Unknown"}\n⏱️ ${v.timestamp || v.time || toTime(Number(info.duration || 0))}`;
-        const readStream = createReadStream(r.path);
+        const readStream = fs.createReadStream(r.path);
+        const attachment = {
+          stream: readStream,
+          filename: "audio.mp3",
+          contentType: "audio/mpeg",
+        };
 
-        try {
-          await new Promise<void>((resolve, reject) => {
-            client.sendMessage(
-              { body, attachment: readStream },
-              event.threadID,
-              (err?: Error) => (err ? reject(err) : resolve()),
-              event.messageID
-            );
-          });
-        } finally {
-          readStream.destroy();
-          setTimeout(async () => {
+        await new Promise<void>((resolve, reject) => {
+          client.sendMessage(
+            { body, attachment },
+            event.threadID,
+            (err?: Error) => {
+              if (err) reject(err);
+              else resolve();
+            },
+            event.messageID
+          );
+        });
+
+        readStream.on("close", () => {
+          setTimeout(() => {
             try {
-              if (await fs.pathExists(r.path)) {
-                await fs.unlink(r.path);
-              }
-            } catch {
-              // Ignore
-            }
-          }, 10000);
-        }
+              fs.unlinkSync(r.path);
+            } catch {}
+          }, 30000);
+        });
       } catch (e: unknown) {
-        const err = e instanceof Error ? e : new Error(String(e));
-        await reply(`❎ Lỗi: ${err.message}`);
+        const err = e as { message?: string };
+        await reply(`❎ Lỗi: ${err.message || String(e)}`);
       }
 
-      if (noticeMessageID) {
+      if (notice?.messageID) {
         try {
-          await client.unsendMessage(noticeMessageID, event.threadID);
-        } catch {
-          // Ignore
-        }
+          await client.unsendMessage(notice.messageID, event.threadID);
+        } catch {}
       }
 
-      if (Reply.messageID && main.onReply?.delete) {
+      if (Reply.messageID && main?.onReply?.delete) {
         try {
           main.onReply.delete(Reply.messageID);
-        } catch {
-          // Ignore
-        }
+        } catch {}
       }
     } catch (e: unknown) {
-      console.error("[sing]", e);
-      const err = e instanceof Error ? e : new Error(String(e));
-      await reply(`❎ Lỗi: ${err.message}`);
+      console.error("[sing] onReply error:", e);
+      const err = e as { message?: string };
+      await reply(`❎ Lỗi: ${err.message || String(e)}`);
     }
   },
 };

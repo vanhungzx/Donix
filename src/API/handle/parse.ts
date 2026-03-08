@@ -42,6 +42,7 @@ const SKIP_DELTA_CLASSES = new Set([
 
 export default (def: DefaultFuncs, client: Client, ctx: Context, delta: any, callback: (err: any, msg?: any) => void): void => {
   const deltaClass = delta?.class;
+
   // Tối ưu: Bỏ qua các delta không cần thiết ngay từ đầu
   if (!deltaClass || SKIP_DELTA_CLASSES.has(deltaClass)) {
     return;

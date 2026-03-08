@@ -3,9 +3,10 @@ import path from "path";
 import sqlite3 from "sqlite3";
 import logger from "../../utils/log";
 import { retry } from "../../utils/retry";
+import { STORAGE_SQLITE, DB_PATH as getDbPath } from "../storagePath";
 
-const DB_DIR = path.join(process.cwd(), "storage", "sqlite");
-const DB_PATH = path.join(DB_DIR, "database.sqlite");
+const DB_DIR = STORAGE_SQLITE();
+const DB_PATH = getDbPath();
 
 if (!fs.existsSync(DB_DIR)) {
   fs.mkdirSync(DB_DIR, { recursive: true });

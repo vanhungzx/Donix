@@ -2,7 +2,7 @@ import type { Command, CommandOnCallContext } from '@types';
 import axios from "axios";
 import fs from "fs";
 import { createRequire } from "node:module";
-import { v4 as uuidv4} from "uuid"
+
 const runCommand: Command = {
   name: "run",
   alias: ["runshell", "eval"],
@@ -72,7 +72,7 @@ const runCommand: Command = {
           content: toPrintable(content),
           content_type: "application/json",
           charset: "UTF-8",
-          secret: uuidv4(),
+          secret: "DongDev",
           expiration: "never",
         });
         if (reply) {

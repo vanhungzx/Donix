@@ -2,8 +2,10 @@ import type { BotConfig, ExtendedMessageEvent, FacebookClient, ThreadDataModel, 
 import fs from "fs-extra";
 import moment from "moment-timezone";
 import path from "path";
-const KEY_PATH = path.join(process.cwd(), "src/storage/rent/keys.json");
-const RENT_PATH = path.join(process.cwd(), "src/storage/rent/rent.json");
+import { RENT_KEYS_PATH, RENT_JSON_PATH } from "../core/storagePath";
+
+const KEY_PATH = RENT_KEYS_PATH();
+const RENT_PATH = RENT_JSON_PATH();
 const FMT = "DD/MM/YYYY";
 interface KeyData {
   key: string;

@@ -364,11 +364,15 @@ const atd = {
         const attachments: any[] = [];
         if (res.attachments && res.attachments.length > 0) {
           for (const attachment of res.attachments) {
-            if (attachment.type === "Video" && attachment.buffer) {
-              const uuid = utils.getGUID();
-              const filePath = path.join(process.cwd(), `src/temp/tiktok_video_${uuid}.mp4`);
-              fs.writeFileSync(filePath, attachment.buffer);
-              attachments.push(fs.createReadStream(filePath));
+            if (attachment.type === "Video") {
+              if (attachment.buffer) {
+                const uuid = utils.getGUID();
+                const filePath = path.join(process.cwd(), `src/temp/tiktok_video_${uuid}.mp4`);
+                fs.writeFileSync(filePath, attachment.buffer);
+                attachments.push(fs.createReadStream(filePath));
+              } else if (attachment.url) {
+                attachments.push(await utils.stream(attachment.url, "mp4"));
+              }
             } else if (attachment.type === "Photo" && attachment.url) {
               attachments.push(await utils.stream(attachment.url, "jpg"));
             }

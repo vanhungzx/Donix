@@ -6,7 +6,7 @@ import type { Readable } from "node:stream";
 import { extractUserID } from "../../login/contextBuilder";
 import type { Context, DefaultFuncs } from "../../request/formatters/helpers";
 import uploadFbFactory from "./uploadFb";
-import autoReloginWithFacebookWeb from "../../../core/auth_login/auto_relogin";
+import autoRelogin from "../../../core/auth_login/auto_relogin";
 
 interface UploadIdResult {
   mediaId?: string | number;
@@ -320,9 +320,9 @@ export default function (
             if (!sessionStatus.cookieLive || sessionStatus.isLoggedOut) {
               try {
                 logger.warn(
-                  "[uploadAttachment] Cookie/session có vấn đề, đang thử AUTO-LOGIN bằng facebook_web..."
+                  "[uploadAttachment] Cookie/session có vấn đề, đang thử AUTO-LOGIN..."
                 );
-                const ok = await autoReloginWithFacebookWeb(ctx as any);
+                const ok = await autoRelogin(ctx as any);
                 if (ok) {
                   logger.success(
                     "[uploadAttachment] AUTO-LOGIN thành công. Cookie đã được cập nhật, vui lòng thử gửi lại file."

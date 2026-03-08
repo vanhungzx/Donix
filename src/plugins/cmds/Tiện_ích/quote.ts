@@ -56,7 +56,10 @@ const builtInQuotes: Record<string, string[]> = {
 };
 
 
-const quoteStoragePath = path.resolve(process.cwd(), "src/storage/other/daily_quotes.json");
+import path from "path";
+import { storagePath } from "../../../core/storagePath";
+
+const quoteStoragePath = storagePath("other", "daily_quotes.json");
 
 interface QuoteStorage {
   lastDate: string;

@@ -3,7 +3,9 @@ import { CanvasRenderingContext2D, createCanvas, loadImage, registerFont } from 
 import fs from "fs-extra";
 import path from "path";
 import { URLSearchParams } from "url";
-const FONT_DIR = path.join(process.cwd(), "storage", "font");
+import { STORAGE_FONT } from "../core/storagePath";
+
+const FONT_DIR = STORAGE_FONT();
 const F_INTER = path.join(FONT_DIR, "Inter-Variable.ttf");
 const F_MONO = path.join(FONT_DIR, "JetBrainsMono-Regular.ttf");
 const FONT_URL_INTER = "https://github.com/google/fonts/raw/main/ofl/inter/Inter-VariableFont_slnt,wght.ttf";

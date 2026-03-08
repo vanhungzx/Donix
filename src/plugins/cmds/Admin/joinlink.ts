@@ -2,9 +2,16 @@
 
 import type { Command, CommandOnCallContext } from "@types";
 import got from "got";
-import { getConfig } from "../../../core/configManager";
+import type { DonixGlobalState } from "../../../types/global";
 
-const getAccountState = () => getConfig().token.EAAD;
+const getDonixState = (): DonixGlobalState => {
+  if (!global.Donix) {
+    global.Donix = {} as DonixGlobalState;
+  }
+  return global.Donix;
+};
+
+const getAccountState = () => getDonixState().account;
 
 function pickLink(s: string | undefined | null): string | null {
   if (!s || typeof s !== "string") return null;
@@ -66,7 +73,11 @@ const joinLinkCommand: Command = {
         return;
       }
 
-      if (!getAccountState()) {
+      const account = getAccountState();
+      const token =
+        account?.token?.["EAAD"];
+
+      if (!token) {
         await client.sendMessage(
           "Thiếu OAuth token: config.token.EAAD hoặc FB_OAUTH.",
           tid,
@@ -81,7 +92,7 @@ const joinLinkCommand: Command = {
       try {
         const res = await got.post("https://messager-api.zerotwo.biz/api/v1/facebook/invite-link", {
           json: {
-            token: getAccountState(),
+            token,
             link_hash: link,
           },
           headers: {

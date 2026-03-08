@@ -5,6 +5,7 @@ import { createReadStream } from "fs";
 import fs from "fs-extra";
 import Jimp from "jimp";
 import path from "path";
+import { storagePath } from "../../../core/storagePath";
 
 const CONFIG = {
   MIN_BET: 1000,
@@ -15,7 +16,7 @@ const CONFIG = {
     3: 6,
   },
   TEMP_DIR: "./src/temp",
-  ASSETS_DIR: "src/storage/game/baucua/img",
+  get ASSETS_DIR() { return storagePath("game", "baucua", "img"); },
 } as const;
 
 interface Animal {
@@ -32,6 +33,37 @@ const ANIMALS: Record<string, Animal> = {
   cá: { name: "Cá", emoji: "🐟", file: "cá.jpg" },
   nai: { name: "Nai", emoji: "🦌", file: "nai.jpg" },
 };
+
+async function ensureAnimalAssets(): Promise<void> {
+  const assetsDir = CONFIG.ASSETS_DIR;
+  await fs.ensureDir(assetsDir);
+
+  // Tạo ảnh mặc định nếu thiếu để tránh lỗi ENOENT
+  await Promise.all(
+    Object.values(ANIMALS).map(async (animal) => {
+      const filePath = path.join(assetsDir, animal.file);
+      if (await fs.pathExists(filePath)) return;
+
+      const img = new Jimp(300, 300, 0x222222ff);
+      const font = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE);
+
+      img.print(
+        font,
+        0,
+        0,
+        {
+          text: `${animal.emoji}\n${animal.name}`,
+          alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+          alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE,
+        },
+        img.getWidth(),
+        img.getHeight()
+      );
+
+      await img.writeAsync(filePath);
+    })
+  );
+}
 
 function parseAmount(value: string | undefined): bigint | null {
   if (!value) return null;
@@ -101,17 +133,15 @@ function calculateBetAmount(
 
 async function createResultImage(results: string[]): Promise<string> {
   try {
+    await ensureAnimalAssets();
+
     const images = await Promise.all(
       results.map((animal) => {
         const animalData = ANIMALS[animal];
         if (!animalData) {
           throw new Error(`Animal ${animal} not found`);
         }
-        const imagePath = path.join(
-          process.cwd(),
-          CONFIG.ASSETS_DIR,
-          animalData.file
-        );
+        const imagePath = path.join(CONFIG.ASSETS_DIR, animalData.file);
         return Jimp.read(imagePath);
       })
     );

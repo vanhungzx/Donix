@@ -1,6 +1,12 @@
 "use strict";
 
-import type { Command, CommandOnCallContext, CommandOnReplyContext, MessageForm, UserDataModel } from "@types";
+import type {
+  Command,
+  CommandOnCallContext,
+  CommandOnReplyContext,
+  MessageForm,
+  UserDataModel,
+} from "@types";
 import axios from "axios";
 import fs from "node:fs";
 import path from "node:path";
@@ -88,10 +94,7 @@ interface AttachmentData {
   [key: string]: unknown;
 }
 
-async function getAtm(
-  attachments: Attachment[],
-  text: string
-): Promise<AttachmentData> {
+async function getAtm(attachments: Attachment[], text: string): Promise<AttachmentData> {
   const tempDir = path.join(__dirname, "../../../temp");
   if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
@@ -106,6 +109,7 @@ async function getAtm(
         const ext = a.type === "photo" ? "jpg" : a.type === "video" ? "mp4" : "mp3";
         const fileName = `reply_${ts}_${i}.${ext}`;
         const filePath = path.join(tempDir, fileName);
+
         const writer = fs.createWriteStream(filePath);
         res.data.pipe(writer);
 
@@ -117,7 +121,7 @@ async function getAtm(
         savedAttachments.push(fs.createReadStream(filePath));
         atmDir.push(filePath);
       } catch {
-
+        // ignore
       }
     }
   }
@@ -137,8 +141,20 @@ const sendNotiCommand: Command = {
 
   onReply: async function (rawCtx: CommandOnReplyContext): Promise<void> {
     const ctx = rawCtx as CommandOnReplyContext & {
-      client: { sendMessage: (form: unknown, threadID: string, callback?: (err?: Error, info?: MessageInfo) => void) => Promise<unknown> };
-      event: { threadID: string; messageID: string; senderID: string; body?: string; attachments?: Attachment[] };
+      client: {
+        sendMessage: (
+          form: unknown,
+          threadID: string,
+          callback?: (err?: Error, info?: MessageInfo) => void
+        ) => Promise<unknown>;
+      };
+      event: {
+        threadID: string;
+        messageID: string;
+        senderID: string;
+        body?: string;
+        attachments?: Attachment[];
+      };
       config: { BOX_ADMIN: string };
       userData: ExtendedUserDataModel;
       threadData: ExtendedThreadDataModel;
@@ -146,6 +162,7 @@ const sendNotiCommand: Command = {
       commandName: string;
       Reply: SendNotiReply;
     };
+
     const { client, event, config, userData, threadData, main, commandName } = ctx;
     const Reply = ctx.Reply;
     const { threadID, messageID, senderID, body } = event;
@@ -162,17 +179,17 @@ const sendNotiCommand: Command = {
         case "sendnoti": {
           const text = fmtUserFeedback(name, threadName, body || "(không có nội dung)");
           const attachments = (event.attachments || []) as Attachment[];
+
           const msgData: MessageForm = attachments.length
             ? await getAtm(attachments, text)
-            : { body: text };
+            : ({ body: text } as MessageForm);
 
           await new Promise<void>((resolve) => {
-            client.sendMessage(msgData, ADMIN_GROUP_ID, async (err?: Error, info?: unknown) => {
-              const infoMsg = info as MessageInfo | undefined;
+            client.sendMessage(msgData, ADMIN_GROUP_ID, async (err?: Error, infoMsg?: MessageInfo) => {
               try {
                 for (const p of atmDir) if (fs.existsSync(p)) await fs.promises.unlink(p);
               } catch {
-
+                // ignore
               }
               atmDir = [];
 
@@ -199,19 +216,20 @@ const sendNotiCommand: Command = {
           const adminName = (await userData.getName(senderID)) || "Admin";
           const text = fmtAdminReply(adminName, body || "(không có nội dung)");
           const attachments = (event.attachments || []) as Attachment[];
+
           const msgData: MessageForm = attachments.length
-            ? await getAtm(attachments, text) : { body: text };
+            ? await getAtm(attachments, text)
+            : ({ body: text } as MessageForm);
 
           await new Promise<void>((resolve) => {
             client.sendMessage(
               msgData,
               Reply.threadID,
-              async (err?: Error, info?: unknown) => {
-                const infoMsg = info as MessageInfo | undefined;
+              async (err?: Error, infoMsg?: MessageInfo) => {
                 try {
                   for (const p of atmDir) if (fs.existsSync(p)) await fs.promises.unlink(p);
                 } catch {
-
+                  // ignore
                 }
                 atmDir = [];
 
@@ -236,13 +254,21 @@ const sendNotiCommand: Command = {
         }
       }
     } catch {
-
+      // ignore
     }
   },
 
   onCall: async (rawCtx: CommandOnCallContext): Promise<void> => {
     const ctx = rawCtx as CommandOnCallContext & {
-      client: { sendMessage: (form: string | { body: string; attachment?: NodeJS.ReadableStream[]; mentions?: Array<{ id: string; tag: string }> }, threadID: string, callback?: (err?: Error, info?: MessageInfo) => void) => Promise<unknown> };
+      client: {
+        sendMessage: (
+          form:
+            | string
+            | { body: string; attachment?: NodeJS.ReadableStream[]; mentions?: Array<{ id: string; tag: string }> },
+          threadID: string,
+          callback?: (err?: Error, info?: MessageInfo) => void
+        ) => Promise<unknown>;
+      };
       event: { threadID: string; messageID: string; senderID: string; messageReply?: { attachments?: Attachment[] } };
       args: string[];
       threadData: ExtendedThreadDataModel;
@@ -251,6 +277,7 @@ const sendNotiCommand: Command = {
       commandName: string;
       userData: ExtendedUserDataModel;
     };
+
     const { client, event, args, threadData, config, main, commandName, userData } = ctx;
     const ADMIN_GROUP_ID = config.BOX_ADMIN;
 
@@ -258,22 +285,14 @@ const sendNotiCommand: Command = {
       const content = args.join(" ").trim();
 
       if (!content) {
-        await client.sendMessage(
-          "⚠️ Vui lòng nhập nội dung thông báo!",
-          event.threadID,
-          event.messageID
-        );
+        await client.sendMessage("⚠️ Vui lòng nhập nội dung thông báo!", event.threadID, event.messageID);
         return;
       }
 
       const allThreadIds = await threadData.idAll();
 
       if (!allThreadIds?.length) {
-        await client.sendMessage(
-          "❌ Không tìm thấy nhóm nào!",
-          event.threadID,
-          event.messageID
-        );
+        await client.sendMessage("❌ Không tìm thấy nhóm nào!", event.threadID, event.messageID);
         return;
       }
 
@@ -297,6 +316,7 @@ const sendNotiCommand: Command = {
               const ext = a.type === "photo" ? "jpg" : a.type === "video" ? "mp4" : "mp3";
               const fileName = `noti_${ts}_${i}.${ext}`;
               const filePath = path.join(tempDir, fileName);
+
               const writer = fs.createWriteStream(filePath);
               res.data.pipe(writer);
 
@@ -307,7 +327,7 @@ const sendNotiCommand: Command = {
 
               savedAttachments.push(filePath);
             } catch {
-
+              // ignore
             }
           }
         }
@@ -321,63 +341,23 @@ const sendNotiCommand: Command = {
 
       let successCount = 0;
       let failCount = 0;
+
       const adminName = (await userData.getName(event.senderID)) || "Admin";
       const bodyTemplate = fmtNoti(adminName, content);
 
       for (const tid of allThreadIds) {
         try {
-
-          let threadInfo: ThreadInfoWithAdmins | null = null;
-          try {
-            const thread = await threadData.get(tid);
-            threadInfo = (thread?.threadInfo as ThreadInfoWithAdmins) || null;
-          } catch {
-
-          }
-
-
-          const adminIDs: string[] = [];
-          const mentions: Array<{ id: string; tag: string }> = [];
-          let adminTagsText = "";
-
-          if (threadInfo?.adminIDs && Array.isArray(threadInfo.adminIDs) && threadInfo.adminIDs.length > 0) {
-            for (const admin of threadInfo.adminIDs) {
-              const adminID = String(typeof admin === "object" && admin !== null ? admin.id : admin);
-              if (adminID && !adminIDs.includes(adminID)) {
-                adminIDs.push(adminID);
-                try {
-                  const adminNameTag = (await userData.getName(adminID)) || `${adminID.slice(-4)}`;
-                  mentions.push({ id: adminID, tag: adminNameTag });
-                  adminTagsText += `@${adminNameTag} `;
-                } catch {
-
-                  mentions.push({ id: adminID, tag: `${adminID.slice(-4)}` });
-                  adminTagsText += `@Admin ${adminID.slice(-4)} `;
-                }
-              }
-            }
-          }
-
-
-          const finalBody = adminTagsText.trim()
-            ? `${adminTagsText.trim()}\n\n${bodyTemplate}`
-            : bodyTemplate;
-
-          const body: { body: string; attachment?: Readable[]; mentions?: Array<{ id: string; tag: string }> } = {
-            body: finalBody,
+          // ✅ XÓA TAG QTV NHÓM: không build mentions/adminTagsText nữa
+          const body: { body: string; attachment?: Readable[] } = {
+            body: bodyTemplate,
           };
-
-
-          if (mentions.length > 0) {
-            body.mentions = mentions;
-          }
 
           if (hasMedia && savedAttachments.length) {
             body.attachment = savedAttachments.map((p) => fs.createReadStream(p));
           }
 
           await new Promise<void>((resolve) => {
-            client.sendMessage(body, tid, (err?: Error, infoMsg?: MessageInfo) => {
+            client.sendMessage(body as any, tid, (err?: Error, infoMsg?: MessageInfo) => {
               if (err) {
                 failCount++;
               } else {
@@ -408,7 +388,7 @@ const sendNotiCommand: Command = {
           try {
             if (fs.existsSync(p)) fs.unlinkSync(p);
           } catch {
-
+            // ignore
           }
         }
       }
@@ -429,11 +409,7 @@ const sendNotiCommand: Command = {
       );
       return;
     } catch {
-      await client.sendMessage(
-        "❌ Đã xảy ra lỗi khi gửi thông báo!",
-        event.threadID,
-        event.messageID
-      );
+      await client.sendMessage("❌ Đã xảy ra lỗi khi gửi thông báo!", event.threadID, event.messageID);
       return;
     }
   },

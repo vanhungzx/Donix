@@ -1,12 +1,13 @@
 import logger from '@log';
 import utils from '../../../request/formatters/helpers.js';
 
+// Pre-compile type strings (realtime optimization)
 const EVENT_TYPE_SUBSCRIBE = 'event';
 const LOG_MESSAGE_TYPE_SUBSCRIBE = 'log:subscribe';
 
 export default (def: any, client: any, ctx: any, delta: any, globalCallback: (err: any, msg?: any) => void): void => {
   try {
-
+    // Fast path: cache property access
     const threadKey = delta.threadKey;
     const messageMetadata = delta.messageMetadata;
     const metaThreadKey = messageMetadata?.threadKey;
@@ -14,6 +15,8 @@ export default (def: any, client: any, ctx: any, delta: any, globalCallback: (er
     const threadID = utils.formatID(
       threadKey?.threadFbId || metaThreadKey?.threadFbId
     );
+
+    // Fast path: avoid toString() if already string
     const actorFbId = messageMetadata?.actorFbId;
     const author = actorFbId != null
       ? (typeof actorFbId === "string" ? actorFbId : actorFbId.toString())

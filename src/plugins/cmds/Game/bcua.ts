@@ -13,11 +13,13 @@ import { createReadStream } from "fs";
 import fs from "fs-extra";
 import Jimp from "jimp";
 import path from "path";
+import { storagePath } from "../../../core/storagePath";
 
-const dataPath = path.join(
-  process.cwd(),
-  "src/storage/game/baucua/hack-baucua.json"
-);
+const CONFIG = {
+  ASSETS_DIR: storagePath("game", "baucua", "img"),
+} as const;
+
+const dataPath = storagePath("game", "baucua", "hack-baucua.json");
 
 interface GameData {
   [threadID: string]: GameRoom;
@@ -42,21 +44,35 @@ interface CooldownData {
   t?: NodeJS.Timeout;
 }
 
+const DICE_NAMES = ["gà", "tôm", "bầu", "cua", "cá", "nai"] as const;
+
 let data: GameData = {};
 
 function save(): void {
-  fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+  fs.ensureDirSync(path.dirname(dataPath));
+  // Chỉ lưu dữ liệu thuần (không lưu Timeout, không lưu bigint trực tiếp)
+  const plain: Record<string, any> = {};
+
+  Object.entries(data).forEach(([threadID, room]) => {
+    plain[threadID] = {
+      author: room.author,
+      players: room.players.map((player) => ({
+        id: player.id,
+        select: player.select,
+        // bigint -> string để JSON.stringify không lỗi
+        bet_money: player.bet_money.toString(),
+      })),
+      playing: room.playing ?? false,
+      rolled: room.rolled ?? false,
+    };
+  });
+
+  fs.writeFileSync(dataPath, JSON.stringify(plain, null, 2), "utf-8");
 }
 
-if (fs.existsSync(dataPath)) {
-  try {
-    data = JSON.parse(fs.readFileSync(dataPath, "utf-8"));
-  } catch {
-    data = {};
-  }
-} else {
-  save();
-}
+// Không load phòng từ file khi khởi động: sau restart không thể khôi phục
+// setTimeout, nên luôn bắt đầu với data rỗng. File chỉ dùng để lưu trong phiên.
+fs.ensureDirSync(path.dirname(dataPath));
 
 declare global {
   var data_command_ban_bau_cua_tom_ca_ga_nai: CooldownData | undefined;
@@ -406,15 +422,15 @@ const bcuaCommand: Command = {
 
       const diing = await send("🪇 Bot đang lắc...");
 
-      const diceOptions = ["gà", "tôm", "bầu", "cua", "cá", "nai"];
+      const diceOptions = [...DICE_NAMES];
 
       const dices = Array.from({ length: 3 }, () =>
-        diceOptions[Math.floor(Math.random() * 6)]
+        diceOptions[Math.floor(Math.random() * diceOptions.length)]
       );
 
       const players = p.reduce(
         (acc, player) => {
-          if (dices.includes(player.select)) {
+          if ((dices as readonly string[]).includes(player.select)) {
             acc.win.push(player);
           } else {
             acc.lose.push(player);
@@ -432,13 +448,29 @@ const bcuaCommand: Command = {
         }
       });
 
+      // Đảm bảo thư mục và ảnh tồn tại trước khi đọc
+      await fs.ensureDir(CONFIG.ASSETS_DIR);
+
       const diceImageBuffers = await Promise.all(
         dices.map(async (dice) => {
-          const imagePath = path.join(
-            process.cwd(),
-            "src/storage/game/baucua/img",
-            `${dice}.jpg`
-          );
+          const imagePath = path.join(CONFIG.ASSETS_DIR, `${dice}.jpg`);
+          if (!(await fs.pathExists(imagePath))) {
+            const img = new Jimp(300, 300, 0x222222ff);
+            const font = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE);
+            img.print(
+              font,
+              0,
+              0,
+              {
+                text: String(dice),
+                alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+                alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE,
+              },
+              img.getWidth(),
+              img.getHeight()
+            );
+            await img.writeAsync(imagePath);
+          }
           return await Jimp.read(imagePath);
         })
       );

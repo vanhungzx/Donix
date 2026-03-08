@@ -10,8 +10,9 @@ import axios from "axios";
 import { createCanvas, loadImage } from "canvas";
 import fs from "fs-extra";
 import path from "path";
+import { STORAGE_GAME } from "../../../core/storagePath";
 
-const dirpath = path.join(process.cwd(), "src/storage/game/domin/");
+const dirpath = path.join(STORAGE_GAME(), "domin");
 
 const texthelp =
   "Hướng dẫn:\n" +

@@ -7,6 +7,7 @@ import crypto from "crypto";
 import { promises as fsPromises } from "fs";
 import fs from "fs-extra";
 import path from "path";
+import { STORAGE_GAME } from "../../../core/storagePath";
 
 
 interface HistoryEntry {
@@ -35,7 +36,7 @@ interface CoinState {
 }
 
 
-const dataDir = path.join(process.cwd(), "src/storage/game/socdia");
+const dataDir = path.join(STORAGE_GAME(), "socdia");
 const historyFilePath = path.join(dataDir, "history.json");
 const jackpotFilePath = path.join(dataDir, "group_jackpots.json");
 const streakFilePath = path.join(dataDir, "win_streaks.json");

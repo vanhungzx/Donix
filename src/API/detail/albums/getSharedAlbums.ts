@@ -1,13 +1,14 @@
 "use strict";
 
-import type { DefaultFuncs, MQTTContext } from "@core/types";
 import logger from "@log";
+import type { DefaultFuncs, MQTTContext } from "@core/types";
 import { generateOfflineThreadingID } from "../../request/formatters";
 
 const DEFAULT_APP_ID = "2220391788200892";
 const DEFAULT_VERSION_ID = "31104338375848389";
 const FETCH_LABEL = "676";
 const REQUEST_TYPE = 3;
+const TIMEOUT_MS = 12000;
 
 interface AlbumFetchPayload {
   next_page_cursor: string | null;
@@ -78,7 +79,7 @@ export default function (
         typeof callback === "function"
           ? callback
           : () => {
-
+            
           };
 
       if (!ctx.mqttClient || typeof ctx.mqttClient.publish !== "function") {
@@ -136,6 +137,21 @@ export default function (
         type: REQUEST_TYPE,
       };
 
+      let timeout: NodeJS.Timeout | null = setTimeout(() => {
+        timeout = null;
+        ctx.mqttClient?.removeListener("message", onMessage);
+        const err = new Error("getSharedAlbums timeout");
+        cb(err);
+        reject(err);
+      }, TIMEOUT_MS);
+
+      const clearTimeoutSafely = (): void => {
+        if (timeout) {
+          clearTimeout(timeout);
+          timeout = null;
+        }
+      };
+
       function onMessage(topic: string, message: Buffer): void {
         if (topic !== "/ls_resp") return;
 
@@ -150,6 +166,8 @@ export default function (
         }
 
         if (json.request_id !== reqId) return;
+
+        clearTimeoutSafely();
         ctx.mqttClient?.removeListener("message", onMessage);
 
         const result: GetSharedAlbumsResponse = {
@@ -168,6 +186,7 @@ export default function (
         { qos: 1, retain: false },
         (err?: Error) => {
           if (err) {
+            clearTimeoutSafely();
             ctx.mqttClient?.removeListener("message", onMessage);
             logger.error(`getSharedAlbums publish error: ${err.message}`);
             cb(err);

@@ -6,6 +6,7 @@ import { createCanvas, loadImage, registerFont } from "canvas";
 import { createReadStream } from "fs";
 import fs from "fs-extra";
 import path from "path";
+import { STORAGE_FONT } from "../../../core/storagePath";
 
 const locations: string[] = [
   "khu vực Cầu Giấy",
@@ -38,10 +39,7 @@ async function makeImage({
 
   await downloadAvatar(userId, avatarPath);
 
-  const fontPath = path.join(
-    process.cwd(),
-    "src/storage/font/TUVBenchmark.ttf"
-  );
+  const fontPath = path.join(STORAGE_FONT(), "TUVBenchmark.ttf");
 
   try {
     registerFont(fontPath, { family: "Rocliento" });

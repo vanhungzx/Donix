@@ -8,6 +8,7 @@ import ffmpeg from "fluent-ffmpeg";
 import * as fs from "fs";
 import * as path from "path";
 import sharp from "sharp";
+import { STORAGE_MEDIA } from "../../../core/storagePath";
 
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
@@ -45,7 +46,7 @@ const upCommand: Command = {
   onCall: async (ctx: CommandOnCallContext): Promise<void> => {
     const { client, event, args } = ctx;
 
-    const mediaFolder = path.join(process.cwd(), "src/storage/media");
+    const mediaFolder = STORAGE_MEDIA();
 
     const getStorageStats = async (): Promise<StorageStats> => {
       const stats: StorageStats = { total: 0, count: 0, folders: {} };

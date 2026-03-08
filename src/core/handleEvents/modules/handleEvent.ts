@@ -36,34 +36,22 @@ export const createHandleEvent =
       // Pre-compile event type check (realtime optimization)
       const eventTypeLower = eventType.toLowerCase();
 
-      // Tối ưu: iterate events map một lần, cache entries, tối ưu type matching
-      // Pre-compile eventType check để tránh repeated comparisons
+      // Fast path: iterate events map một lần, cache entries
       const eventEntries = Array.from(events.entries());
       const eventEntriesLen = eventEntries.length;
 
-      // Fast path: early return nếu không có entries
-      if (eventEntriesLen === 0) return;
-
       for (let i = 0; i < eventEntriesLen; i++) {
         const [k, v] = eventEntries[i];
-        // Tối ưu: cache type check, tránh array creation nếu không cần
-        const vType = v.type;
+        // Fast path: cache type check
+        const types = Array.isArray(v.type) ? v.type : [v.type];
         let matches = false;
-
-        if (Array.isArray(vType)) {
-          // Fast path: use for loop thay vì includes() để tránh function call overhead
-          const typesLen = vType.length;
-          for (let j = 0; j < typesLen; j++) {
-            if (vType[j] === eventType) {
-              matches = true;
-              break;
-            }
+        const typesLen = types.length;
+        for (let j = 0; j < typesLen; j++) {
+          if (types[j] === eventType) {
+            matches = true;
+            break;
           }
-        } else {
-          // Single type comparison - fastest path
-          matches = vType === eventType;
         }
-
         if (!matches) continue;
 
         const run = v; // Đã có v từ entries, không cần get lại

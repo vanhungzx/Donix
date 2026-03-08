@@ -116,29 +116,9 @@ async function renderCardsToFile(cards: Card[], baseDir: string, filePrefix: str
     baseDir,
     `${filePrefix}_${Date.now()}_${Math.random().toString(36).slice(2)}.png`,
   );
-
-  // Tối ưu: Tạo buffer và cleanup canvas ngay sau khi dùng
-  let buffer: Buffer;
-  try {
-    buffer = canvas.toBuffer("image/png");
-  } catch (e: any) {
-    console.error(`❌ Lỗi khi tạo buffer từ canvas: ${e.message || e}`);
-    canvas = null as any; // Cleanup canvas reference
-    throw e;
-  }
-
-  // Cleanup canvas reference ngay sau khi đã tạo buffer
-  canvas = null as any;
-
-  try {
-    await fs.writeFile(filePath, buffer);
-    // Cleanup buffer reference sau khi đã ghi file
-    buffer = null as any;
-    return filePath;
-  } catch (e: any) {
-    buffer = null as any; // Cleanup buffer reference trong catch
-    throw e;
-  }
+  const buffer = canvas.toBuffer("image/png");
+  await fs.writeFile(filePath, buffer);
+  return filePath;
 }
 
 function formatMoney(n: bigint | number | string): string {

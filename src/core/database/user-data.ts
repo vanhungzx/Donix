@@ -259,6 +259,10 @@ class UserDataModel {
       const now = new Date().toISOString();
       if (!cleanedData.createdAt) cleanedData.createdAt = now as any;
       if (!cleanedData.updatedAt) cleanedData.updatedAt = now as any;
+      // User.name is NOT NULL: ensure name is set when inserting new user
+      if (cleanedData.name === undefined || cleanedData.name === null || String(cleanedData.name).trim() === "") {
+        cleanedData.name = `User ${uid}`;
+      }
 
       for (const [key, value] of Object.entries(cleanedData)) {
         fields.push(key);

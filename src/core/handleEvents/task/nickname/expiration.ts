@@ -3,6 +3,8 @@ import path from "path";
 import type { Bot, Logger, BotThreadInfo, ThreadDataStore, UserDataStore } from "../types";
 import { remDays } from "../utils";
 import type { FacebookClient } from "../../../../types/client";
+import { RENT_JSON_PATH } from "../../../storagePath";
+
 export async function notifyExp(
   client: FacebookClient,
   logger: Logger | undefined,
@@ -11,7 +13,7 @@ export async function notifyExp(
 ): Promise<void> {
   try {
     const rent: Array<{ threadID?: string; endDate?: string }> =
-      (await fs.readJson(path.join(process.cwd(), "src/storage/rent/rent.json")).catch(() => [])) as any;
+      (await fs.readJson(RENT_JSON_PATH()).catch(() => [])) as any;
 
     const list = Array.isArray(rent)
       ? rent

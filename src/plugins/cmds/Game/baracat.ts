@@ -9,7 +9,7 @@ import path from "path";
 // ===== CẤU HÌNH HÌNH ẢNH LÁ BÀI =====
 // Bạn hãy tải thư mục `cards` từ repo:
 //   https://github.com/ntkhang03/poker-cards/tree/main/cards
-// và đặt vào: src/storage/game/baracat/cards
+// và đặt vào: storage/game/baracat/cards
 //
 // Repo đó dùng quy ước tên file dạng: 2C.png, AD.png, 10H.png, KS.png ...
 // rank: A, 2..10, J, Q, K
@@ -228,29 +228,9 @@ async function renderBaccaratResult(player: Hand, banker: Hand): Promise<string>
     CONFIG.TEMP_DIR,
     `baracat_${Date.now()}_${Math.random().toString(36).slice(2)}.png`
   );
-
-  // Tối ưu: Tạo buffer và cleanup canvas ngay sau khi dùng
-  let buffer: Buffer;
-  try {
-    buffer = canvas.toBuffer("image/png");
-  } catch (e: any) {
-    console.error(`❌ Lỗi khi tạo buffer từ canvas: ${e.message || e}`);
-    canvas = null as any; // Cleanup canvas reference
-    throw e;
-  }
-
-  // Cleanup canvas reference ngay sau khi đã tạo buffer
-  canvas = null as any;
-
-  try {
-    await fs.writeFile(outPath, buffer);
-    // Cleanup buffer reference sau khi đã ghi file
-    buffer = null as any;
-    return outPath;
-  } catch (e: any) {
-    buffer = null as any; // Cleanup buffer reference trong catch
-    throw e;
-  }
+  const buffer = canvas.toBuffer("image/png");
+  await fs.writeFile(outPath, buffer);
+  return outPath;
 }
 
 function whoWins(player: Hand, banker: Hand): Side {

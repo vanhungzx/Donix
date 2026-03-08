@@ -4,8 +4,9 @@ import type { Command, CommandOnCallContext } from '@types';
 import crypto from "crypto";
 import fs from "fs-extra";
 import path from "path";
+import { STORAGE_GAME } from "../../../core/storagePath";
 
-const dataDir = path.resolve(process.cwd(), "src/storage/game/slots");
+const dataDir = path.join(STORAGE_GAME(), "slots");
 const historyFilePath = path.join(dataDir, "history.json");
 const jackpotFilePath = path.join(dataDir, "group_jackpots.json");
 

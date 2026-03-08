@@ -2,8 +2,9 @@ import type { Command, CommandOnCallContext, CommandOnLoadContext } from "@types
 import fs from "fs";
 import moment from "moment-timezone";
 import path from "path";
+import { storagePath } from "../../../core/storagePath";
 
-const jobsFilePath = path.join(process.cwd(), "src/storage", "other", "working.json");
+const jobsFilePath = storagePath("other", "working.json");
 const cooldown = 300000;
 
 const formatCurrency = (amount: number | bigint | null | undefined): string => {

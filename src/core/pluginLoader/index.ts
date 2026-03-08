@@ -257,9 +257,7 @@ const loadModules = async (
     return { loadedCount: 0, loadedCategories: type === "commands" ? loadedCategories : undefined };
   }
 
-  // Tăng concurrency để preload plugins nhanh hơn (không lazy-load).
-  // Giá trị 50 được chọn cân bằng giữa tốc độ import và áp lực I/O/CPU.
-  const CONCURRENCY_LIMIT = 50;
+  const CONCURRENCY_LIMIT = 10;
   let currentIndex = 0;
 
   const loadNextBatch = async (): Promise<void> => {

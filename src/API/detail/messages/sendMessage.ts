@@ -1,7 +1,7 @@
 import log from "@log";
-import { getCleanupManager } from "../../../core/managers/cleanupManager";
-import { type Context, type DefaultFuncs } from "../../request/formatters/helpers";
 import { generateOfflineThreadingID } from "../../request/formatters/index";
+import { type Context, type DefaultFuncs } from "../../request/formatters/helpers";
+import { getCleanupManager } from "../../../core/managers/cleanupManager";
 import uploadFbFactory from "./uploadFb";
 
 interface ExtendedError extends Error {
@@ -81,21 +81,6 @@ const AVATAR_DEFAULT_FBIDS = {
 
 
 const SHARE = { APP_ID: "2220391788200892", VERSION: "7191105584331330" };
-
-const STATIC_LOCATION = {
-  APP_ID: "2220391788200892",
-  VERSION: "31104338375848389",
-  QUEUE_NAME: "static_location_send",
-  LABEL: "263"
-};
-
-const REVERSE_GEOCODE = {
-  APP_ID: "2220391788200892",
-  VERSION: "31104338375848389",
-  QUEUE_NAME: "location_reverse_geocode",
-  LABEL: "286",
-  CALLER_ID: "MESSENGER_ANDROID_LOCATION_SHARING"
-};
 
 const EFFECTS = {
   LOVE: 1,
@@ -222,22 +207,6 @@ const buildNavigationChain = (variant: "minimal" | "settings" | "default" | stri
     return [
       `MainActivity,thread_open:group,,${safe(mainTs)},${sessionId},,,,,${safe(mainTs + 3)}`,
       `ThreadSettingsActivity,messenger_thread_settings,from_other_app,${safe(settingsTs)},${settingsSession},,,,,${safe(settingsTs + 0.5)}`
-    ].join(";");
-  }
-  if (variant === "reshare") {
-    const mainTs = nowTs;
-    const broadcastTs = mainTs;
-    const moreTabTs = mainTs - 0.5;
-    const inboxTabTs = mainTs - 1.0;
-    const threadTs = mainTs - 2.0;
-    const settingsTs = mainTs - 3.0;
-    const settingsSession = 80000000 + Math.floor(Math.random() * 20000000);
-    return [
-      `BroadcastFlowActivity,messenger_broadcast_flow,,${safe(broadcastTs)},${sessionId},,,,,${safe(broadcastTs)}`,
-      `,tab_MORE,,${safe(moreTabTs)},,,,,${safe(moreTabTs)}`,
-      `,tab_INBOX,,${safe(inboxTabTs)},,,,,${safe(inboxTabTs)}`,
-      `MainActivity,thread_open:group,,${safe(threadTs)},${sessionId},,,,,${safe(threadTs)}`,
-      `ThreadSettingsActivity,messenger_thread_settings,from_other_app,${safe(threadTs)},${settingsSession},,,,,${safe(settingsTs)}`
     ].join(";");
   }
   const keyboardTs = nowTs;
@@ -410,223 +379,6 @@ const withRetry = async <T>(
   throw last;
 };
 
-type NormalizedStaticLocation = {
-  latitude: number;
-  longitude: number;
-  isCurrent: number;
-  placeId: string | number | null;
-};
-
-type ReverseGeocodeRequest = {
-  latitude: number;
-  longitude: number;
-  callerId: string;
-};
-
-const normalizeStaticLocations = (input: any): NormalizedStaticLocation[] => {
-  const list = Array.isArray(input) ? input : [input];
-  const normalized: NormalizedStaticLocation[] = [];
-  for (const raw of list) {
-    if (!raw || typeof raw !== "object") continue;
-    if (raw.live === true) continue;
-    const latitude = Number(raw.latitude);
-    const longitude = Number(raw.longitude);
-    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) continue;
-    const isCurrentRaw =
-      raw.is_current_location != null
-        ? Number(raw.is_current_location)
-        : raw.current
-          ? 1
-          : 0;
-    const placeId =
-      raw.placeId != null
-        ? raw.placeId
-        : raw.place_id != null
-          ? raw.place_id
-          : null;
-    normalized.push({
-      latitude,
-      longitude,
-      isCurrent: isCurrentRaw === 1 ? 1 : 0,
-      placeId
-    });
-  }
-  return normalized;
-};
-
-const normalizeReverseGeocode = (input: any): ReverseGeocodeRequest[] => {
-  const locs = normalizeStaticLocations(input);
-  return locs.map(loc => ({
-    latitude: loc.latitude,
-    longitude: loc.longitude,
-    callerId: REVERSE_GEOCODE.CALLER_ID
-  }));
-};
-
-const sendStaticLocation = (
-  ctx: any,
-  locations: NormalizedStaticLocation[],
-  threadID: any,
-  callback: ((err: any, data?: any) => void) | null
-) =>
-  withRetry(
-    () =>
-      new Promise((resolve, reject) => {
-        if (!locations.length) {
-          return reject(new Error("No static location data to send"));
-        }
-        if (!mqttOk(ctx)) {
-          const e: ExtendedError = new Error("MQTT client is not healthy");
-          e.retryable = true;
-          return reject(e);
-        }
-        const anyCtx = ctx as any;
-        const requestId = (anyCtx.wsReqNumber = (anyCtx.wsReqNumber || 0) + 1);
-        const tasks = locations.map(loc => {
-          const taskId = (anyCtx.wsTaskNumber = (anyCtx.wsTaskNumber || 0) + 1);
-          return {
-            failure_count: null as null | number,
-            label: STATIC_LOCATION.LABEL,
-            payload: JSON.stringify({
-              is_current_location: loc.isCurrent ? 1 : 0,
-              latitude: loc.latitude,
-              longitude: loc.longitude,
-              place_id: loc.placeId ?? null,
-              thread_key: toNum(threadID)
-            }),
-            queue_name: STATIC_LOCATION.QUEUE_NAME,
-            task_id: String(taskId)
-          };
-        });
-        const payload = {
-          epoch_id: generateOfflineThreadingID(),
-          tasks,
-          version_id: STATIC_LOCATION.VERSION
-        };
-        const form = {
-          app_id: STATIC_LOCATION.APP_ID,
-          payload: JSON.stringify(payload),
-          request_id: requestId,
-          type: 3
-        };
-
-        if (
-          !safePublish(
-            anyCtx.mqttClient,
-            CONSTANTS.MQTT_TOPIC,
-            JSON.stringify(form),
-            { qos: CONSTANTS.MQTT_QOS, retain: false },
-            (err: any) => {
-              if (err) {
-                err.retryable = true;
-                markError(threadID, err);
-                try {
-                  reject(err);
-                } catch { }
-              }
-            }
-          )
-        ) {
-          const e: ExtendedError = new Error(
-            "Failed to publish static location: MQTT client not ready"
-          );
-          e.retryable = true;
-          return reject(e);
-        }
-
-        const body = {
-          body: null,
-          messageID: payload.epoch_id,
-          threadID: String(threadID),
-          tasks: tasks.map(t => t.task_id),
-          type: "static_location"
-        };
-        markSuccess(threadID);
-        if (callback) callback(null, body);
-        resolve(body);
-      }),
-    1
-  );
-
-const sendReverseGeocode = (
-  ctx: any,
-  requests: ReverseGeocodeRequest[],
-  callback: ((err: any, data?: any) => void) | null
-) =>
-  withRetry(
-    () =>
-      new Promise((resolve, reject) => {
-        if (!requests.length) return reject(new Error("No reverse geocode data to send"));
-        if (!mqttOk(ctx)) {
-          const e: ExtendedError = new Error("MQTT client is not healthy");
-          e.retryable = true;
-          return reject(e);
-        }
-        const anyCtx = ctx as any;
-        const requestId = (anyCtx.wsReqNumber = (anyCtx.wsReqNumber || 0) + 1);
-        const tasks = requests.map(req => {
-          const taskId = (anyCtx.wsTaskNumber = (anyCtx.wsTaskNumber || 0) + 1);
-          return {
-            failure_count: null as null | number,
-            label: REVERSE_GEOCODE.LABEL,
-            payload: JSON.stringify({
-              caller_id: req.callerId,
-              latitude: req.latitude,
-              longitude: req.longitude,
-              reverse_geocode_request_id: generateOfflineThreadingID()
-            }),
-            queue_name: REVERSE_GEOCODE.QUEUE_NAME,
-            task_id: String(taskId)
-          };
-        });
-        const payload = {
-          epoch_id: generateOfflineThreadingID(),
-          tasks,
-          version_id: REVERSE_GEOCODE.VERSION
-        };
-        const form = {
-          app_id: REVERSE_GEOCODE.APP_ID,
-          payload: JSON.stringify(payload),
-          request_id: requestId,
-          type: 3
-        };
-        if (
-          !safePublish(
-            anyCtx.mqttClient,
-            CONSTANTS.MQTT_TOPIC,
-            JSON.stringify(form),
-            { qos: CONSTANTS.MQTT_QOS, retain: false },
-            (err: any) => {
-              if (err) {
-                err.retryable = true;
-                markError("reverse_geocode", err);
-                try {
-                  reject(err);
-                } catch { }
-              }
-            }
-          )
-        ) {
-          const e: ExtendedError = new Error(
-            "Failed to publish reverse geocode: MQTT client not ready"
-          );
-          e.retryable = true;
-          return reject(e);
-        }
-        const body = {
-          body: null,
-          messageID: payload.epoch_id,
-          threadID: null,
-          tasks: tasks.map(t => t.task_id),
-          type: "reverse_geocode"
-        };
-        markSuccess("reverse_geocode");
-        if (callback) callback(null, body);
-        resolve(body);
-      }),
-    1
-  );
-
 const normalizeEffect = (eff: any): { id: number; name: string } | null => {
   if (eff == null) return null;
   let name: string | null = null;
@@ -691,21 +443,11 @@ const validate = (msg: any): any => {
   const bad = Object.keys(msg).filter(k => !ALLOWED_PROPERTIES.has(k));
   if (bad.length) throw new Error(`Disallowed properties: ${bad.join(", ")}`);
   if (msg.location) {
-    const checkLoc = (loc: any, idx?: number) => {
-      if (!loc || typeof loc !== "object")
-        throw new Error(`Location ${idx ?? ""} must be an object`);
-      const { latitude, longitude } = loc;
-      if (latitude == null || longitude == null)
-        throw new Error("Location requires latitude and longitude");
-      if (typeof latitude !== "number" || typeof longitude !== "number")
-        throw new Error("Latitude/longitude must be numbers");
-    };
-    if (Array.isArray(msg.location)) {
-      if (!msg.location.length) throw new Error("Location array cannot be empty");
-      msg.location.forEach((loc: any, idx: number) => checkLoc(loc, idx));
-    } else {
-      checkLoc(msg.location);
-    }
+    const { latitude, longitude } = msg.location;
+    if (latitude == null || longitude == null)
+      throw new Error("Location requires latitude and longitude");
+    if (typeof latitude !== "number" || typeof longitude !== "number")
+      throw new Error("Latitude/longitude must be numbers");
   }
   if (msg.mentions && typeof msg.mentions !== "string" && !Array.isArray(msg.mentions))
     throw new Error("Mentions must be 'tag_thread' or an array");
@@ -723,30 +465,15 @@ const buildPayload = (msg: any, threadID: any, replyTo: any): { payload: Message
   if (msg.attachment) baseSendType = CONSTANTS.SEND_TYPES.ATTACHMENT;
   else if (msg.sticker) baseSendType = CONSTANTS.SEND_TYPES.STICKER;
   let text = typeof msg.body === "string" ? msg.body : null;
-  // Tìm URL đầu tiên trong body để kích hoạt link preview
-  const firstUrlMatch =
-    typeof msg.body === "string" ? msg.body.match(/https?:\/\/\S+/i) : null;
+  const bodyIsLink = typeof msg.body === "string" && /^https?:\/\/\S+$/i.test(msg.body);
   const previewLink =
-    typeof msg.url === "string" && msg.url
-      ? msg.url
-      : firstUrlMatch
-        ? firstUrlMatch[0]
-        : null;
-  const bodyIsLink =
-    typeof msg.body === "string" &&
-    previewLink != null &&
-    msg.body.trim() === previewLink;
+    typeof msg.url === "string" && msg.url ? msg.url : bodyIsLink ? msg.body : null;
   const wantPreview = !!previewLink;
   if (wantPreview) {
     text = text && text !== previewLink ? text + "\n" + previewLink : previewLink;
   }
   const eff = normalizeEffect(msg.effect);
   const isAvatarEffect = !!eff && /^AVATAR_/.test(eff.name);
-  const isPureLinkReshare =
-    bodyIsLink &&
-    (!msg.body || String(msg.body).trim() === String(previewLink)) &&
-    !msg.attachment &&
-    !msg.sticker;
 
   let meta: any;
   if (msg.sticker && !isAvatarEffect) {
@@ -776,9 +503,7 @@ const buildPayload = (msg: any, threadID: any, replyTo: any): { payload: Message
   const baseDataclassParams = {
     logging_metadata: {
       content_model: null,
-      feature_tags: isPureLinkReshare
-        ? ["THIRD_PARTY_RESHARE", "IS_NOT_DIALTONE"]
-        : ["IS_NOT_DIALTONE"]
+      feature_tags: ["IS_NOT_DIALTONE"]
     },
     send_instance_metadata: null,
     product_params: null
@@ -806,15 +531,7 @@ const buildPayload = (msg: any, threadID: any, replyTo: any): { payload: Message
       : null;
   const navigationChain =
     customNavigationChain ||
-    buildNavigationChain(
-      isReminder
-        ? "settings"
-        : hotEmojiSize != null
-          ? "minimal"
-          : isPureLinkReshare
-            ? "reshare"
-            : "default"
-    );
+    buildNavigationChain(isReminder ? "settings" : hotEmojiSize != null ? "minimal" : "default");
   const replyType =
     msg.replyType != null && Number.isFinite(Number(msg.replyType))
       ? Number(msg.replyType)
@@ -826,9 +543,7 @@ const buildPayload = (msg: any, threadID: any, replyTo: any): { payload: Message
       ? Number(msg.source)
       : isReminder
         ? 0
-        : isPureLinkReshare
-          ? 393219
-          : rs();
+        : rs();
 
   const computedMarkThreadRead =
     msg.markThreadRead != null ? msg.markThreadRead : 0;
@@ -969,14 +684,13 @@ const buildPayload = (msg: any, threadID: any, replyTo: any): { payload: Message
     }
   }
   if (msg.location) {
-    const loc = Array.isArray(msg.location) ? msg.location[0] : msg.location;
     payload.location_data = {
       coordinates: {
-        latitude: loc.latitude,
-        longitude: loc.longitude
+        latitude: msg.location.latitude,
+        longitude: msg.location.longitude
       },
-      is_current_location: loc.current ? 1 : 0,
-      is_live_location: loc.live ? 1 : 0
+      is_current_location: msg.location.current ? 1 : 0,
+      is_live_location: msg.location.live ? 1 : 0
     };
   }
   if (msg.sticker) payload.sticker_id = toNum(msg.sticker);
@@ -1134,6 +848,7 @@ const publishOnce = (
     if (!mqttOk(ctx)) {
       const e: ExtendedError = new Error("MQTT client is not healthy");
       e.retryable = true;
+      if (typeof ctx._triggerReconnect === "function") ctx._triggerReconnect();
       return reject(e);
     }
     const requestId = ctx.wsReqNumber = (ctx.wsReqNumber || 0) + 1;
@@ -1701,20 +1416,6 @@ export default function (_def: any, client: any, ctx: any) {
           );
           markSuccess(threadID);
           return result;
-        }
-        if (sMsg.location && !sMsg.location.live && options?.sendReverseGeocode !== false) {
-          const reverseGeocodeReqs = normalizeReverseGeocode(sMsg.location);
-          if (reverseGeocodeReqs.length > 0) {
-            await sendReverseGeocode(ctx, reverseGeocodeReqs, callback);
-          }
-        }
-        if (sMsg.location && !sMsg.location.live && options?.sendStaticLocation !== false) {
-          const normalizedLocations = normalizeStaticLocations(sMsg.location);
-          if (normalizedLocations.length > 0) {
-            const result = await sendStaticLocation(ctx, normalizedLocations, threadID, callback);
-            markSuccess(threadID);
-            return result;
-          }
         }
         if (sMsg.attachment) {
           const attachments = sMsg.attachment;

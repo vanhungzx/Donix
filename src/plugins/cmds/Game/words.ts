@@ -7,6 +7,7 @@ import type {
 } from "@types";
 import fs from "fs-extra";
 import path from "path";
+import { storagePath } from "../../../core/storagePath";
 
 const entryFee = 5000; 
 const minHintFee = 10000; 
@@ -48,11 +49,8 @@ const shuffle = (word: string): string => {
   return arr.join("");
 };
 
-const wordsFilePath = path.resolve(
-  process.cwd(),
-  "src/storage/game/words/words.json"
-);
-const gameDataPath = path.resolve(process.cwd(), "src/storage/game/words");
+const wordsFilePath = storagePath("game", "words", "words.json");
+const gameDataPath = storagePath("game", "words");
 const leaderboardPath = path.join(gameDataPath, "leaderboard.json");
 
 let wordsCache: string[] | null = null;

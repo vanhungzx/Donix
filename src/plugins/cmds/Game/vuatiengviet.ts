@@ -11,6 +11,7 @@ import type {
 import { createCanvas, loadImage } from "canvas";
 import fs from "fs-extra";
 import path from "path";
+import { storagePath } from "../../../core/storagePath";
 
 interface Question {
   word: string;
@@ -123,11 +124,7 @@ const MAX_PRIZE = 320000000n;
 const gameSessions = new Map<string, GameSession>();
 
 
-const questionsPath = path.join(
-  process.cwd(),
-  "src/storage/game/vuatv",
-  "questions.json"
-);
+const questionsPath = storagePath("game", "vuatv", "questions.json");
 
 
 let questionsCache: Question[] | null = null;
@@ -290,7 +287,7 @@ async function createGameImage(
   description?: string,
   board?: string[][]
 ): Promise<string> {
-  const vuatvDir = path.join(process.cwd(), "src/storage/game/vuatv");
+  const vuatvDir = storagePath("game", "vuatv");
   let bgImagePath = path.join(vuatvDir, "gheptu.jpg");
 
   if (!fs.existsSync(bgImagePath)) {
@@ -298,7 +295,7 @@ async function createGameImage(
   }
 
   if (!fs.existsSync(bgImagePath)) {
-    throw new Error(`Background image not found. Please place gheptu.jpg or gheptu.png in src/storage/game/vuatv/`);
+    throw new Error(`Background image not found. Please place gheptu.jpg or gheptu.png in storage/game/vuatv/`);
   }
 
   const bgImage = await loadImage(bgImagePath);
@@ -1162,7 +1159,7 @@ const vuatiengvietCommand: Command = {
     if (!(await initializeRound1(session, usedQuestions))) {
       await reply(
         "❌ Không có câu hỏi nào trong database!\n" +
-        "📝 Vui lòng thêm câu hỏi vào file: src/storage/game/vuatv/questions.json"
+        "📝 Vui lòng thêm câu hỏi vào file: storage/game/vuatv/questions.json"
       );
       return;
     }

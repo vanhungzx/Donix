@@ -6,11 +6,12 @@ import fs from "fs-extra";
 import Jimp from "jimp";
 import path from "path";
 import { fileURLToPath } from "url";
+import { storagePath } from "../../../core/storagePath";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const gameAssetsDir = path.join(__dirname, "../../../../src/storage/game/kbb/");
+const gameAssetsDir = storagePath("game", "kbb");
 
 const getImagePath = (filename: string): string => path.join(gameAssetsDir, filename);
 

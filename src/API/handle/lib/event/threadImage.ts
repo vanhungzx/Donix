@@ -28,19 +28,15 @@ export default (
   delta: unknown,
   globalCallback: GlobalCallback
 ): void => {
-  console.log('threadImage', delta);
   const d = (delta && typeof delta === "object" ? (delta as ThreadImageDelta) : null);
   const tid = d?.threadKey?.threadFbId;
   const mid = d?.messageId;
   if (!tid || !mid) return;
   const tidStr = toStringId(tid);
   if (!tidStr) return;
+
   const form = {
     av: ctx.userID,
-    __user: ctx.userID,
-    __a: "1",
-    __req: "3",
-    fb_dtsg: ctx.fb_dtsg,
     queries: JSON.stringify({
       o0: {
         doc_id: "2848441488556444",

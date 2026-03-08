@@ -55,12 +55,16 @@ const storyCommand: Command = {
   prefix: true,
 
   async onCall(rawCtx: CommandOnCallContext): Promise<void> {
-    const ctx = rawCtx as any;
-    const { event, bot, args, reply, config } = ctx;
+    const { event, client, args, reply, config } = rawCtx;
     const token = config?.token?.EAAD || process.env.FB_OAUTH;
 
     if (!token) {
       await reply("Thiếu OAuth token.");
+      return;
+    }
+
+    if (!client?.getCurrentUserID) {
+      await reply("❌ Lỗi: Không lấy được thông tin bot (client).");
       return;
     }
 
@@ -73,7 +77,7 @@ const storyCommand: Command = {
     try {
       let videoId: string | null = null;
       const a0 = (args[0] || "").trim();
-      const rep = event.messageReply as any;
+      const rep = event.messageReply as { attachments?: Array<{ url?: string }> } | undefined;
 
       const isId = /^\d{6,}$/.test(a0);
       const isUrl = /^https?:\/\/.+/.test(a0);
@@ -84,7 +88,7 @@ const storyCommand: Command = {
         let sourceUrl: string | null = null;
 
         if (isUrl) sourceUrl = a0;
-        else if ((rep?.attachments?.[0] as any)?.url) sourceUrl = (rep.attachments[0] as any).url;
+        else if (rep?.attachments?.[0]?.url) sourceUrl = rep.attachments[0].url;
 
         if (!sourceUrl) {
           await reply("Hãy nhập video_id, URL hoặc reply vào một video.");
@@ -157,7 +161,7 @@ const storyCommand: Command = {
         }
       }
 
-      const actorId = String(bot.getCurrentUserID());
+      const actorId = String(client.getCurrentUserID());
       const offlineId = String(generateOfflineThreadingID());
       const idemp = uuidv4();
       const clientMutationId = uuidv4();
@@ -256,8 +260,9 @@ const storyCommand: Command = {
 
       await reply(`❌ Không tạo được Story (${resGql.status}).`);
       return;
-    } catch (e: any) {
-      await reply(`❌ Lỗi: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      await reply(`❌ Lỗi: ${msg}`);
       return;
     }
   }

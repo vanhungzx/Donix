@@ -5,7 +5,7 @@ import { getSequenceIdFromHtml } from "./htmlSequenceId";
 import { reconnectMqtt } from "./reconnect";
 const { parseAndCheckLogin } = utils;
 
-export function handleAutoLogin(ctx: any, resData: any, retry = true, _defaultFuncs: any): void {
+export async function handleAutoLogin(ctx: any, resData: any, retry = true, _defaultFuncs: any): Promise<void> {
   const resStr = JSON.stringify(resData);
   if (resStr.includes("XCheckpointFBScrapingWarningController") || resStr.includes("601051028565049")) {
     throw { error: "Not logged in.", res: resData };
@@ -16,30 +16,58 @@ export function handleAutoLogin(ctx: any, resData: any, retry = true, _defaultFu
       console.error("Phiên đăng nhập hết hạn");
     }
   }
+
+  // Xử lý checkpoint 282 - tự động đổi acc
   if (resStr.includes("1501092823525282")) {
-    log.error("Bot bị checkpoint 282, đang tự động đăng nhập và đổi account...");
-    // Trigger auto login với skip current account
-    (async () => {
-      try {
-        const autoRelogin = (await import("../../../core/auth_login/auto_relogin")).default;
-        const ok = await autoRelogin(ctx, true); // true = skip current account
-        if (ok) {
-          log.success("AUTO-LOGIN thành công sau checkpoint 282! Đang khởi động lại bot...");
-          process.exit(1); // Exit code 1 để restart bot
-        } else {
-          log.error("AUTO-LOGIN thất bại sau checkpoint 282. Vui lòng kiểm tra lại tài khoản!");
-          process.exit(1); // Vẫn restart để thử lại
+    log.error("Bot bị checkpoint 282, đang tự động đổi tài khoản...");
+    try {
+      const { default: autoRelogin } = await import("../../../core/auth_login/auto_relogin");
+      const { reloadConfig } = await import("../../../core/configManager");
+      const ok = await autoRelogin(ctx);
+      if (ok) {
+        const reloadResult = await reloadConfig();
+        if (!reloadResult.success) {
+          log.warn(`Không thể reload config sau auto login: ${reloadResult.error || "Unknown error"}`);
         }
-      } catch (autoErr: any) {
-        log.error(`Lỗi khi auto login sau checkpoint 282: ${autoErr?.message || autoErr}`);
-        process.exit(1); // Vẫn restart để thử lại
+        log.success("AUTO-LOGIN thành công sau checkpoint 282! Đang khởi động lại...");
+        process.exit(1);
+      } else {
+        log.error("AUTO-LOGIN thất bại sau checkpoint 282. Vui lòng kiểm tra lại thông tin đăng nhập!");
+        process.exit(0);
       }
-    })();
-    return; // Không tiếp tục xử lý
+    } catch (autoErr: any) {
+      log.error(`Lỗi khi thực hiện AUTO-LOGIN sau checkpoint 282: ${autoErr?.message || autoErr}`);
+      process.exit(0);
+    }
+    return;
   }
+
+  // Xử lý checkpoint 956 - tự động đổi acc
   if (resStr.includes("828281030927956")) {
-    log.error("Bot bị checkpoint 956, vui lòng kiểm tra tài khoản!");
-  } else if (!ctx.auto_login && retry) {
+    log.error("Bot bị checkpoint 956, đang tự động đổi tài khoản...");
+    try {
+      const { default: autoRelogin } = await import("../../../core/auth_login/auto_relogin");
+      const { reloadConfig } = await import("../../../core/configManager");
+      const ok = await autoRelogin(ctx);
+      if (ok) {
+        const reloadResult = await reloadConfig();
+        if (!reloadResult.success) {
+          log.warn(`Không thể reload config sau auto login: ${reloadResult.error || "Unknown error"}`);
+        }
+        log.success("AUTO-LOGIN thành công sau checkpoint 956! Đang khởi động lại...");
+        process.exit(1);
+      } else {
+        log.error("AUTO-LOGIN thất bại sau checkpoint 956. Vui lòng kiểm tra lại thông tin đăng nhập!");
+        process.exit(0);
+      }
+    } catch (autoErr: any) {
+      log.error(`Lỗi khi thực hiện AUTO-LOGIN sau checkpoint 956: ${autoErr?.message || autoErr}`);
+      process.exit(0);
+    }
+    return;
+  }
+
+  if (!ctx.auto_login && retry) {
     ctx.auto_login = true;
     log.error("Auto login successful! Restarting...");
     ctx.auto_login = false;
@@ -135,8 +163,8 @@ export function createGetSeqID(
     return defaultFuncs
       .post("https://www.facebook.com/api/graphqlbatch/", ctx.jar, postData)
       .then(parseAndCheckLogin(ctx, defaultFuncs))
-      .then((resData: any) => {
-        handleAutoLogin(ctx, resData, false, defaultFuncs);
+      .then(async (resData: any) => {
+        await handleAutoLogin(ctx, resData, false, defaultFuncs);
         if (resData.includes("XCheckpointFBScrapingWarningController") || resData.includes("601051028565049")) {
           handleFBWarning(api, ctx, messageCleanupInterval);
           throw { error: "Not logged in.", res: resData };

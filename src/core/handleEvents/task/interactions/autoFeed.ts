@@ -5,10 +5,9 @@ import { v4 as uuidv4 } from "uuid";
 import type { FacebookClient } from "../../../../types/client";
 import { parseGraphql } from "../../../../utils";
 import { getConfig } from "../../../configManager";
+import { FEED_STATE_PATH } from "../../../storagePath";
 import type { Logger } from "../types";
 import { slp } from "../utils";
-import { get } from "../../../../API/request/index";
-import { getFrom } from "../../../../API/utils/htmlParser";
 
 type ReactionName = "LIKE" | "LOVE" | "CARE" | "HAHA" | "WOW" | "SAD" | "ANGRY";
 
@@ -96,7 +95,7 @@ type PersistState = {
   };
 };
 
-const STATE_PATH = path.join(process.cwd(), "src/storage/auto_interact/feed_state.json");
+const STATE_PATH = FEED_STATE_PATH();
 
 const HOME_FEED_INITIAL_VARS = {
   RELAY_INCREMENTAL_DELIVERY: true,
@@ -323,58 +322,6 @@ function pruneState(state: PersistState): PersistState {
   return { version: 1, seen, stats: state.stats || {} };
 }
 
-async function getTokensFromClient(
-  client: FacebookClient
-): Promise<{ fb_dtsg: string; jazoest: string; lsd: string }> {
-  const ctxAny = (client as any)?.ctx as
-    | { fb_dtsg?: string; jazoest?: string; lsd?: string; jar?: any; options?: any }
-    | undefined;
-
-  // Try to get from context first
-  if (ctxAny?.fb_dtsg && ctxAny?.jazoest && ctxAny?.lsd) {
-    return {
-      fb_dtsg: ctxAny.fb_dtsg,
-      jazoest: ctxAny.jazoest,
-      lsd: ctxAny.lsd,
-    };
-  }
-
-  // Fetch from Facebook homepage if not in context
-  if (!ctxAny?.jar) {
-    throw new Error("missing jar on client.ctx");
-  }
-
-  const html = await get("https://www.facebook.com/", ctxAny.jar, undefined, ctxAny.options, ctxAny, undefined).then(
-    (res) => (typeof res.data === "string" ? res.data : String(res.data || ""))
-  );
-
-  const fb_dtsg =
-    getFrom(html, '"DTSGInitData",[],{"token":"', '",') ||
-    html.match(/name="fb_dtsg"\s+value="([^"]+)"/)?.[1] ||
-    "";
-
-  const jazoest =
-    getFrom(html, 'name="jazoest" value="', '"') ||
-    getFrom(html, "jazoest=", '",') ||
-    html.match(/name="jazoest"\s+value="([^"]+)"/)?.[1] ||
-    "";
-
-  const lsd = getFrom(html, '["LSD",[],{"token":"', '"}') || html.match(/name="lsd"\s+value="([^"]+)"/)?.[1] || "";
-
-  if (!fb_dtsg || !jazoest || !lsd) {
-    throw new Error("Could not extract required tokens from Facebook");
-  }
-
-  // Update context with extracted tokens
-  if (ctxAny) {
-    ctxAny.fb_dtsg = fb_dtsg;
-    ctxAny.jazoest = jazoest;
-    ctxAny.lsd = lsd;
-  }
-
-  return { fb_dtsg, jazoest, lsd };
-}
-
 async function reactViaGraphql(
   client: FacebookClient,
   feedbackIdRaw: string,
@@ -389,15 +336,16 @@ async function reactViaGraphql(
     const cookieRaw = typeof cfg?.cookie === "string" ? cfg.cookie : "";
     if (!cookieRaw) return { ok: false, error: "missing config.cookie" };
 
-    // Get tokens from context or fetch from Facebook
-    let tokens: { fb_dtsg: string; jazoest: string; lsd: string };
-    try {
-      tokens = await getTokensFromClient(client);
-    } catch (e: any) {
-      return { ok: false, error: `failed to get tokens: ${e?.message || String(e)}` };
-    }
+    const ctxAny = (client as any)?.ctx as
+      | { fb_dtsg?: string; jazoest?: string; lsd?: string }
+      | undefined;
+    const fbDtsg = ctxAny?.fb_dtsg;
+    const jazoest = ctxAny?.jazoest;
+    const lsd = ctxAny?.lsd;
 
-    const { fb_dtsg: fbDtsg, jazoest, lsd } = tokens;
+    if (!fbDtsg || !jazoest || !lsd) {
+      return { ok: false, error: "missing fb_dtsg/jazoest/lsd on client.ctx" };
+    }
 
     const idReac = reactionToGraphqlReactionId(reaction);
     const feedbackId = normalizeFeedbackId(feedbackIdRaw);
@@ -498,15 +446,15 @@ async function createCommentViaGraphql(
     const cookieRaw = typeof cfg?.cookie === "string" ? cfg.cookie : "";
     if (!cookieRaw) return { ok: false, error: "missing config.cookie" };
 
-    // Get tokens from context or fetch from Facebook
-    let tokens: { fb_dtsg: string; jazoest: string; lsd: string };
-    try {
-      tokens = await getTokensFromClient(client);
-    } catch (e: any) {
-      return { ok: false, error: `failed to get tokens: ${e?.message || String(e)}` };
+    const ctxAny = (client as any)?.ctx as
+      | { fb_dtsg?: string; jazoest?: string; lsd?: string }
+      | undefined;
+    const fbDtsg = ctxAny?.fb_dtsg;
+    const jazoest = ctxAny?.jazoest;
+    const lsd = ctxAny?.lsd;
+    if (!fbDtsg || !jazoest || !lsd) {
+      return { ok: false, error: "missing fb_dtsg/jazoest/lsd on client.ctx" };
     }
-
-    const { fb_dtsg: fbDtsg, jazoest, lsd } = tokens;
 
     const feedbackId = normalizeFeedbackId(feedbackIdRaw);
     if (!feedbackId) return { ok: false, error: "missing feedbackId" };

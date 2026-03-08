@@ -2,6 +2,7 @@ import type { Command, CommandOnCallContext, CommandOnReplyContext } from '@type
 import axios from "axios";
 import fs from "fs";
 import path from "path";
+import { STORAGE_OTHER } from "../../../core/storagePath";
 
 interface PromptData {
   name: string;
@@ -54,7 +55,7 @@ const defaultPrompts: PromptsData = {
 };
 
 function getDataDir(): string {
-  const dataDir = path.join(process.cwd(), "src/storage", "other");
+  const dataDir = STORAGE_OTHER();
   if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
   }

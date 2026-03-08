@@ -1,6 +1,7 @@
 import fs from "fs-extra";
 import moment from "moment-timezone";
 import path from "path";
+import { STORAGE_BANK, STORAGE_BANK_DATA } from "../../../storagePath";
 import type { Logger, UserDataStore } from "../types";
 import { TZ } from "../utils";
 import { BANK, procAcc, type ProcAccResult } from "./processor";
@@ -9,8 +10,8 @@ export async function initBank(
   logger: Logger | undefined,
   userData: UserDataStore
 ): Promise<() => void> {
-  const accDir = path.join(process.cwd(), "src/storage/bank");
-  const metaDir = path.join(process.cwd(), "src/storage/bank/data");
+  const accDir = STORAGE_BANK();
+  const metaDir = STORAGE_BANK_DATA();
   const mark = path.join(metaDir, "last_update.json");
   const periodMs = Math.max(1, Number(BANK.H_PER_D || 24)) * 3600000;
   const maxSteps = Math.max(1, Number(BANK.MAX_STEPS || 14));

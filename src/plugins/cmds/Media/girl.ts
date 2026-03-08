@@ -3,6 +3,7 @@
 import type { Command, CommandOnCallContext } from '@types';
 import fs, { createReadStream } from "fs";
 import path from "path";
+import { storagePath } from "../../../core/storagePath";
 
 const girlCommand: Command = {
   name: "girl",
@@ -15,7 +16,7 @@ const girlCommand: Command = {
   prefix: true,
   async onCall({ reply }: CommandOnCallContext): Promise<void> {
     try {
-      const folderPath = path.join(process.cwd(), "src/storage/media/girl");
+      const folderPath = storagePath("media", "girl");
       const files = fs.readdirSync(folderPath);
       if (files.length === 0) {
         await reply("Không có ảnh nào trong thư mục");

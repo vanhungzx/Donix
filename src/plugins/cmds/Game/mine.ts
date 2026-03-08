@@ -9,6 +9,7 @@ import type {
 import axios from "axios";
 import fs from "fs-extra";
 import path from "path";
+import { storagePath } from "../../../core/storagePath";
 
 interface UserData {
   name: string;
@@ -61,19 +62,8 @@ function checkPath(
   type: number,
   senderID: string
 ): string | Item[] | UserData {
-  const pathItem = path.join(
-    process.cwd(),
-    "src/storage/game",
-    "mine",
-    "item.json"
-  );
-  const pathUser = path.join(
-    process.cwd(),
-    "src/storage/game",
-    "mine",
-    "datauser",
-    `${senderID}.json`
-  );
+  const pathItem = storagePath("game", "mine", "item.json");
+  const pathUser = storagePath("game", "mine", "datauser", `${senderID}.json`);
 
   if (type == 1) return pathItem;
   if (type == 2) {
@@ -165,7 +155,7 @@ async function downloadImage(link: string): Promise<fs.ReadStream[]> {
 
   const pathImage = path.join(
     process.cwd(),
-    "src/storage/game/mine/cache",
+    "storage/game/mine/cache",
     `${Date.now()}.jpg`
   );
 
@@ -213,13 +203,13 @@ async function getSubnauticaImage(): Promise<fs.ReadStream[]> {
   ).data;
 
   fs.writeFileSync(
-    path.join(process.cwd(), "src/storage/game/mine/cache/minecraft.png"),
+    path.join(storagePath("game", "mine", "cache"), "minecraft.png"),
     Buffer.from(download, "utf-8")
   );
 
   images.push(
     fs.createReadStream(
-      path.join(process.cwd(), "src/storage/game/mine/cache/minecraft.png")
+      path.join(storagePath("game", "mine", "cache"), "minecraft.png")
     )
   );
 
@@ -251,9 +241,9 @@ const mineCommand: Command = {
   prefix: true,
 
   onLoad: async (_ctx: CommandOnLoadContext) => {
-    const dir = path.join(process.cwd(), "src/storage/game/mine/");
-    const dirCache = path.join(process.cwd(), "src/storage/game/mine/cache/");
-    const dirData = path.join(process.cwd(), "src/storage/game/mine/datauser/");
+    const dir = storagePath("game", "mine");
+    const dirCache = storagePath("game", "mine", "cache");
+    const dirData = storagePath("game", "mine", "datauser");
 
     if (!fs.existsSync(dir)) {
       await fs.ensureDir(dir);
@@ -300,7 +290,7 @@ const mineCommand: Command = {
 
     const pathData = path.join(
       process.cwd(),
-      "src/storage/game",
+      "storage/game",
       "mine",
       "datauser",
       `${senderID}.json`
@@ -665,7 +655,7 @@ const mineCommand: Command = {
     ): Promise<string | number> {
       const pathItem = path.join(
         process.cwd(),
-        "src/storage/game/mine/item.json"
+        "storage/game/mine/item.json"
       );
       if (!fs.existsSync(pathItem)) return "";
       const data = JSON.parse(fs.readFileSync(pathItem, "utf-8")) as Item[];
@@ -909,7 +899,7 @@ const mineCommand: Command = {
       case "location": {
         const dataPath = path.join(
           process.cwd(),
-          "src/storage/game/mine/data.json"
+          "storage/game/mine/data.json"
         );
         if (!fs.existsSync(dataPath)) {
           await api.sendMessage(

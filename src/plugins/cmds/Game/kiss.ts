@@ -6,6 +6,7 @@ import { createReadStream } from "fs";
 import fs from "fs-extra";
 import Jimp from "jimp";
 import path from "path";
+import { STORAGE_IMAGE } from "../../../core/storagePath";
 
 const formatCurrency = (amount: bigint | number | null | undefined): string => {
   if (amount === null || amount === undefined) return "";
@@ -38,9 +39,7 @@ interface MakeImageParams {
 }
 
 async function makeImage({ one, two }: MakeImageParams): Promise<string> {
-  const __root = path.resolve(
-    path.join(process.cwd(), "src/storage/image")
-  );
+  const __root = path.resolve(STORAGE_IMAGE());
   const hon_img = await Jimp.read(path.join(__root, "kiss.jpg"));
   const pathImg = path.join(__root, `hon_${one}_${two}.png`);
   const avatarOnePath = path.join(__root, `avt_${one}.png`);

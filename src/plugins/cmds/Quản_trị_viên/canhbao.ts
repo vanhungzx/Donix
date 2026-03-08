@@ -4,6 +4,7 @@ import type { Command, CommandOnCallContext } from "@types";
 import fs from "fs-extra";
 import path from "path";
 import { fileURLToPath } from "url";
+import { storagePath, STORAGE_OTHER } from "../../../core/storagePath";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,8 +36,8 @@ interface CanhBaoData {
   [key: string]: UserWarnData | Record<string, GroupSettings> | Record<string, Record<string, BanInfo>> | undefined | any;
 }
 
-const dataPath = path.resolve(__dirname, "../../../storage/other/canhbao.json");
-const dataDir = path.resolve(__dirname, "../../../storage/other");
+const dataPath = storagePath("other", "canhbao.json");
+const dataDir = STORAGE_OTHER();
 
 function loadData(): CanhBaoData {
   if (!fs.existsSync(dataDir)) {

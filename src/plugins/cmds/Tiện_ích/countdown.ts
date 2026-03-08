@@ -16,7 +16,26 @@ interface Countdown {
   active: boolean;
 }
 
-const countdownStoragePath = path.resolve(process.cwd(), "src/storage/other/countdowns.json");
+"use strict";
+
+import type { Command, CommandOnCallContext, FacebookClient, UserDataModel } from "@types";
+import fs from "fs-extra";
+import path from "path";
+import { storagePath } from "../../../core/storagePath";
+import { getCleanupManager } from "../../../core/managers/cleanupManager";
+
+interface Countdown {
+  id: string;
+  threadID: string;
+  userID: string;
+  userName: string;
+  eventName: string;
+  targetDate: number;
+  createdAt: number;
+  active: boolean;
+}
+
+const countdownStoragePath = storagePath("other", "countdowns.json");
 
 let countdowns: Countdown[] = [];
 let checkInterval: NodeJS.Timeout | null = null;

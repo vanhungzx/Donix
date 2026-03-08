@@ -1,6 +1,7 @@
 import type { Command, CommandOnCallContext } from "@types";
 import fs from "fs";
 import path from "path";
+import { DB_PATH } from "../../../core/storagePath";
 import { checkDatabaseHealth, getDbMetrics, getDbPromisified } from "../../../core/database/schema";
 import { getThreadData } from "../../../core/database/thread-data";
 import { getUserData } from "../../../core/database/user-data";
@@ -18,8 +19,7 @@ const formatNumber = (num: number): string => {
 };
 
 const getDbFilePath = (): string => {
-  // Keep consistent with `src/core/database/schema.ts` (DB_DIR = storage/sqlite)
-  return path.join(process.cwd(), "storage", "sqlite", "database.sqlite");
+  return DB_PATH();
 };
 
 const parseMaybeJSON = (v: any): any => {

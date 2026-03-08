@@ -1,7 +1,7 @@
-import logger from '@log';
-import { _formatAttachment } from '../../../request/formatters/data/formatAttachment';
-import utils, { type Client, type Context, type DefaultFuncs } from '../../../request/formatters/helpers';
-import { decodeClientPayload } from '../../../request/formatters/index';
+import logger from "@log";
+import { _formatAttachment } from "../../../request/formatters/data/formatAttachment";
+import utils, { type Client, type Context, type DefaultFuncs } from "../../../request/formatters/helpers";
+import { decodeClientPayload } from "../../../request/formatters/index";
 const markDelivery = utils.markDelivery;
 
 type IdLike = string | number | bigint;
@@ -18,6 +18,14 @@ function toStringId(value: unknown): string {
   return "";
 }
 
+function asLong(v: unknown): string | number | undefined {
+  if (v == null) return undefined;
+  if (typeof v === "string" || typeof v === "number") return v;
+  const r = asRecord(v);
+  if (r && (typeof r.asLong === "string" || typeof r.asLong === "number")) return r.asLong as string | number;
+  return undefined;
+}
+
 interface ThreadKey {
   threadFbId?: IdLike;
   otherUserFbId?: IdLike;
@@ -28,6 +36,8 @@ interface MessageMetadata {
   messageId: string;
   actorFbId: IdLike;
   timestamp: string;
+  // ✅ new format can appear here
+  data?: unknown;
 }
 
 interface MercuryAttachment {
@@ -40,7 +50,7 @@ interface ReplyToMessageId {
 }
 
 interface ReplyMessage {
-  data?: { prng?: string };
+  data?: { prng?: unknown };
   body?: string;
   messageMetadata: MessageMetadata;
   attachments?: MercuryAttachment[];
@@ -116,38 +126,152 @@ interface MessageReplyCallbackData {
 
 type ContextWithGlobalOptions = Context & { globalOptions?: Context["options"] };
 
-function extractMentions(prngData: unknown, body: string): Record<string, string> {
-  // Fast path: early return if no data
-  if (typeof prngData !== "string" || !prngData || prngData.length === 0) return {};
+/* -------------------- Gb mentions (new format) -------------------- */
 
-  let mdata: unknown;
-  try {
-    mdata = JSON.parse(prngData);
-  } catch {
-    return {};
+function findGbContainer(obj: unknown, depth = 0): RecordUnknown | null {
+  if (depth > 4) return null;
+  const r = asRecord(obj);
+  if (!r) return null;
+
+  const Gb = asRecord(r.Gb);
+  const asMap = asRecord(Gb?.asMap);
+  const data = asRecord(asMap?.data);
+  if (data) return r;
+
+  for (const k in r) {
+    if (!Object.prototype.hasOwnProperty.call(r, k)) continue;
+    const found = findGbContainer(r[k], depth + 1);
+    if (found) return found;
   }
-  if (!Array.isArray(mdata) || mdata.length === 0) return {};
+  return null;
+}
 
+function parseGbRanges(gbRoot: RecordUnknown): Array<{ i: string; o: number; l: number }> {
+  const out: Array<{ i: string; o: number; l: number }> = [];
+  const Gb = asRecord(gbRoot.Gb);
+  const asMap = asRecord(Gb?.asMap);
+  const data = asRecord(asMap?.data);
+  if (!data) return out;
+
+  for (const key in data) {
+    if (!Object.prototype.hasOwnProperty.call(data, key)) continue;
+    const item = asRecord(data[key]);
+    const itemAsMap = asRecord(item?.asMap);
+    const itemData = asRecord(itemAsMap?.data);
+    if (!itemData) continue;
+
+    const id = asLong(itemData.id);
+    const offset = asLong(itemData.offset);
+    const length = asLong(itemData.length);
+    if (id == null || offset == null || length == null) continue;
+
+    const o = Number(offset);
+    const l = Number(length);
+    if (!Number.isFinite(o) || !Number.isFinite(l)) continue;
+
+    out.push({ i: String(id), o, l });
+  }
+  return out;
+}
+
+function extractMentionsFromGb(message: unknown, body: string): Record<string, string> {
+  const mentions: Record<string, string> = {};
+  const text = body || "";
+  const textLen = text.length;
+  if (!textLen) return mentions;
+
+  const msgRec = asRecord(message);
+  const md = asRecord(msgRec?.messageMetadata);
+  const mdData = md?.data;
+
+  // likely path: message.messageMetadata.data.data.Gb...
+  const c0 = mdData;
+  const c1 = asRecord(mdData)?.data;
+  const c2 = asRecord(asRecord(mdData)?.data)?.data;
+
+  const candidates: unknown[] = [c2, c1, c0, message];
+
+  for (let idx = 0; idx < candidates.length; idx++) {
+    const c = candidates[idx];
+    if (!c) continue;
+
+    const gbContainer = findGbContainer(c);
+    if (!gbContainer) continue;
+
+    const ranges = parseGbRanges(gbContainer);
+    if (!ranges.length) continue;
+
+    for (let i = 0; i < ranges.length; i++) {
+      const { i: id, o: offset, l: length } = ranges[i];
+      if (offset >= 0 && length > 0 && offset + length <= textLen) {
+        mentions[id] = text.substring(offset, offset + length);
+      }
+    }
+
+    if (Object.keys(mentions).length) return mentions;
+  }
+
+  return mentions;
+}
+
+/* -------------------- prng mentions (legacy) -------------------- */
+
+function extractMentionsFromPrng(prngData: unknown, body: string): Record<string, string> {
   const mentions: Record<string, string> = {};
   const bodyStr = body || "";
   const bodyLen = bodyStr.length;
+  if (!bodyLen || !prngData) return mentions;
 
-  // Fast path: cache array length, bounds check for substring
-  const mdataLen = mdata.length;
-  for (let i = 0; i < mdataLen; i++) {
-    const item = asRecord(mdata[i]);
-    if (!item) continue;
+  let parsed: unknown = prngData;
 
-    const id = toStringId(item.i);
-    const offset = typeof item.o === "number" ? item.o : -1;
-    const length = typeof item.l === "number" ? item.l : -1;
-    // Bounds check to avoid substring errors
-    if (!id || offset < 0 || length <= 0 || offset + length > bodyLen) continue;
+  try {
+    if (typeof parsed === "string") {
+      const s = parsed.trim();
+      if (!s) return mentions;
+      parsed = JSON.parse(s);
+    }
 
-    mentions[id] = bodyStr.substring(offset, offset + length);
+    let arr: unknown[] = [];
+    if (Array.isArray(parsed)) arr = parsed;
+    else {
+      const r = asRecord(parsed);
+      if (r) {
+        if (Array.isArray(r.data)) arr = r.data as unknown[];
+        else if (Array.isArray(r.mentions)) arr = r.mentions as unknown[];
+      }
+    }
+
+    for (let i = 0; i < arr.length; i++) {
+      const item = asRecord(arr[i]);
+      if (!item) continue;
+
+      const id = toStringId(item.i);
+      const offset = typeof item.o === "number" ? item.o : Number(item.o);
+      const length = typeof item.l === "number" ? item.l : Number(item.l);
+      if (!id || !Number.isFinite(offset) || !Number.isFinite(length)) continue;
+      if (offset < 0 || length <= 0 || offset + length > bodyLen) continue;
+
+      mentions[id] = bodyStr.substring(offset, offset + length);
+    }
+  } catch {
+    return mentions;
   }
+
   return mentions;
 }
+
+/**
+ * ✅ Unified mentions:
+ * - Gb first (new format)
+ * - prng fallback (legacy)
+ */
+function extractMentions(prngData: unknown, body: string, message?: unknown): Record<string, string> {
+  const fromGb = message ? extractMentionsFromGb(message, body) : {};
+  if (Object.keys(fromGb).length) return fromGb;
+  return extractMentionsFromPrng(prngData, body);
+}
+
+/* -------------------- misc helpers -------------------- */
 
 function getThreadId(threadKey: ThreadKey): string {
   return toStringId(threadKey.threadFbId ?? threadKey.otherUserFbId);
@@ -159,17 +283,15 @@ const ATTACHMENT_TYPE_UNKNOWN = "unknown";
 function processReplyAttachments(attachments: unknown): unknown[] {
   if (!Array.isArray(attachments) || attachments.length === 0) return [];
 
-  // Fast path: pre-allocate array with known length
   const attachmentsLen = attachments.length;
   const result: unknown[] = new Array(attachmentsLen);
 
   for (let i = 0; i < attachmentsLen; i++) {
     const att = asRecord(attachments[i]) ?? {};
-    const mercuryJSON = typeof att.mercuryJSON === "string" && att.mercuryJSON.length > 0
-      ? att.mercuryJSON
-      : null;
+    const mercuryJSON =
+      typeof att.mercuryJSON === "string" && att.mercuryJSON.length > 0 ? att.mercuryJSON : null;
+
     try {
-      // Fast path: avoid JSON.parse if empty
       const mercury = mercuryJSON ? (JSON.parse(mercuryJSON) as unknown) : null;
       const merged: RecordUnknown = { ...att, ...(asRecord(mercury) ?? {}) };
       result[i] = _formatAttachment(merged as never);
@@ -181,9 +303,16 @@ function processReplyAttachments(attachments: unknown): unknown[] {
   return result;
 }
 
-function processRepliedMessage(repliedMessage: ReplyMessage): ProcessedRepliedMessage {
-  const mentions = extractMentions(repliedMessage.data?.prng, repliedMessage.body || "");
-  const participants = Array.isArray(repliedMessage.participants) ? repliedMessage.participants : [];
+function processRepliedMessage(
+  repliedMessage: ReplyMessage,
+  fallbackParticipants?: Array<string | number>
+): ProcessedRepliedMessage {
+  const mentions = extractMentions(repliedMessage.data?.prng, repliedMessage.body || "", repliedMessage);
+
+  const participantsRaw =
+    Array.isArray(repliedMessage.participants) && repliedMessage.participants.length
+      ? repliedMessage.participants
+      : fallbackParticipants || [];
 
   return {
     type: "Message",
@@ -196,7 +325,7 @@ function processRepliedMessage(repliedMessage: ReplyMessage): ProcessedRepliedMe
     isGroup: Boolean(repliedMessage.messageMetadata.threadKey.threadFbId),
     mentions,
     timestamp: parseInt(repliedMessage.messageMetadata.timestamp, 10),
-    participantIDs: participants.map((e) => toStringId(e)).filter(Boolean),
+    participantIDs: participantsRaw.map((e) => toStringId(e)).filter(Boolean)
   };
 }
 
@@ -207,46 +336,56 @@ async function fetchRepliedMessage(
   messageId: string
 ): Promise<void> {
   try {
-    const response = await defaultFuncs.post('https://www.facebook.com/api/graphqlbatch/', ctx.jar, {
-      av: ctx.userID,
-      queries: JSON.stringify({
-        o0: {
-          doc_id: '2848441488556444',
-          query_params: {
-            thread_and_message_id: {
-              thread_id: callbackData.threadID,
-              message_id: messageId
+    const response = await defaultFuncs.post(
+      "https://www.facebook.com/api/graphqlbatch/",
+      ctx.jar,
+      {
+        av: ctx.userID,
+        queries: JSON.stringify({
+          o0: {
+            doc_id: "2848441488556444",
+            query_params: {
+              thread_and_message_id: {
+                thread_id: callbackData.threadID,
+                message_id: messageId
+              }
             }
           }
-        }
-      })
-    });
+        })
+      }
+    );
 
     const resDataUnknown = (await utils.parseAndCheckLogin(ctx, defaultFuncs)(response)) as unknown;
     const resData = Array.isArray(resDataUnknown) ? resDataUnknown : [];
     const last = resData.length ? asRecord(resData[resData.length - 1]) : null;
+
     const errorResults = typeof last?.error_results === "number" ? last.error_results : 0;
     const successResults = typeof last?.successful_results === "number" ? last.successful_results : 0;
 
     const first = resData.length ? asRecord(resData[0]) : null;
     const o0 = first ? asRecord(first.o0) : null;
 
-    if (errorResults > 0) {
-      throw o0?.errors ?? new Error("forcedFetch: graphqlbatch errors");
-    }
-    if (successResults === 0) {
-      throw new Error("forcedFetch: no successful_results");
-    }
+    if (errorResults > 0) throw o0?.errors ?? new Error("forcedFetch: graphqlbatch errors");
+    if (successResults === 0) throw new Error("forcedFetch: no successful_results");
 
     const data = o0 ? asRecord(o0.data) : null;
     const message = data ? asRecord(data.message) : null;
-    if (!message) {
-      throw new Error("forcedFetch: missing message data");
-    }
+    if (!message) throw new Error("forcedFetch: missing message data");
 
     const fetchData = message;
-    const mentions: Record<string, string> = {};
+
     const fetchDataMessage = asRecord(fetchData.message);
+    const text = fetchDataMessage && typeof fetchDataMessage.text === "string" ? fetchDataMessage.text : "";
+    const mentions: Record<string, string> = {};
+
+    const addRange = (id: string | number, offset: number, length: number) => {
+      const o = Number(offset);
+      const l = Number(length);
+      if (!text || !Number.isFinite(o) || !Number.isFinite(l)) return;
+      if (o >= 0 && l > 0 && o + l <= text.length) mentions[String(id)] = text.substring(o, o + l);
+    };
+
+    // 1) canonical ranges
     const ranges = fetchDataMessage?.ranges;
     if (Array.isArray(ranges)) {
       for (const r of ranges) {
@@ -254,25 +393,44 @@ async function fetchRepliedMessage(
         if (!range) continue;
         const entity = asRecord(range.entity);
         const entityId = entity ? toStringId(entity.id) : "";
-        const offset = typeof range.offset === "number" ? range.offset : -1;
-        const length = typeof range.length === "number" ? range.length : -1;
-        const text = fetchDataMessage && typeof fetchDataMessage.text === "string" ? fetchDataMessage.text : "";
-        if (!entityId || offset < 0 || length <= 0) continue;
-        mentions[entityId] = text.substr(offset, length);
+        const offset = typeof range.offset === "number" ? range.offset : Number(range.offset);
+        const length = typeof range.length === "number" ? range.length : Number(range.length);
+        if (!entityId || !Number.isFinite(offset) || !Number.isFinite(length)) continue;
+        addRange(entityId, offset, length);
+      }
+    }
+
+    // 2) fallback variants (schema-dependent)
+    if (Object.keys(mentions).length === 0 && fetchDataMessage) {
+      const msgAny = fetchDataMessage as any;
+      const altRanges =
+        msgAny?.messageEntityRanges ||
+        msgAny?.text_ranges ||
+        msgAny?.entity_ranges ||
+        msgAny?.ranges_v2 ||
+        msgAny?.entityRanges;
+
+      if (Array.isArray(altRanges)) {
+        for (const r of altRanges) {
+          const id = r?.entity?.id ?? r?.id ?? r?.entity_id;
+          const offset = r?.offset ?? r?.o;
+          const length = r?.length ?? r?.l;
+          if (id == null || offset == null || length == null) continue;
+          addRange(id, offset, length);
+        }
       }
     }
 
     callbackData.messageReply = {
-      type: 'Message',
+      type: "Message",
       threadID: callbackData.threadID,
       messageID: toStringId(fetchData.message_id),
       senderID: toStringId(asRecord(fetchData.message_sender)?.id),
-      attachments:
-        Array.isArray(fetchDataMessage?.blob_attachment)
-          ? fetchDataMessage!.blob_attachment.map((att) => _formatAttachment({ blob_attachment: att } as never))
-          : [],
-      args: (fetchDataMessage && typeof fetchDataMessage.text === "string" ? fetchDataMessage.text : "").trim().split(/\s+/),
-      body: fetchDataMessage && typeof fetchDataMessage.text === "string" ? fetchDataMessage.text : "",
+      attachments: Array.isArray(fetchDataMessage?.blob_attachment)
+        ? fetchDataMessage!.blob_attachment.map((att) => _formatAttachment({ blob_attachment: att } as never))
+        : [],
+      args: text.trim().split(/\s+/),
+      body: text,
       isGroup: callbackData.isGroup,
       mentions,
       timestamp: parseInt(toStringId(fetchData.timestamp_precise), 10),
@@ -312,16 +470,17 @@ export default function (
   const payload = deltaRec?.payload;
   const clientPayload = decodeClientPayload(payload as never) as unknown as DecodedClientPayload;
   if (!clientPayload?.deltas || !Array.isArray(clientPayload.deltas)) return;
+
   // Pre-compile type strings (realtime optimization)
-  const MESSAGE_REACTION_TYPE = 'message_reaction';
-  const MESSAGE_UNSEND_TYPE = 'message_unsend';
+  const MESSAGE_REACTION_TYPE = "message_reaction";
+  const MESSAGE_UNSEND_TYPE = "message_unsend";
 
   const deltas = clientPayload.deltas;
   const deltasLen = deltas.length;
 
-  // Fast path: cache array length
   for (let i = 0; i < deltasLen; i++) {
     const currentDelta = deltas[i];
+
     if (currentDelta.deltaMessageReaction) {
       const reaction = currentDelta.deltaMessageReaction;
       globalCallback(null, {
@@ -347,6 +506,7 @@ export default function (
       });
       continue;
     }
+
     if (currentDelta.deltaMessageReply) {
       handleMessageReply(currentDelta, ctx, def, client, globalCallback);
     }
@@ -362,55 +522,67 @@ function handleMessageReply(
 ): void {
   const reply = delta.deltaMessageReply;
   if (!reply) return;
+
   const message = reply.message;
   if (!message) return;
-  const reqCtx = (delta.requestContext || reply.requestContext || message.requestContext || {});
-  let via = null;
+
+  const reqCtx = delta.requestContext || reply.requestContext || message.requestContext || {};
+  let via: string | undefined = undefined;
+
   const reqCtxApiArgs = asRecord(reqCtx)?.apiArgs;
   let apiArgsString = typeof reqCtxApiArgs === "string" ? reqCtxApiArgs : null;
+
   if (!apiArgsString) {
     const rawReq = message?.messageReplyRawRequestContext?.apiArgs;
     if (typeof rawReq === "string") apiArgsString = rawReq;
   }
+
   if (apiArgsString) {
     try {
       const srcMatch = apiArgsString.match(/Send(\w+)Message/);
       via = srcMatch ? srcMatch[1].toLowerCase() : undefined;
-    } catch { }
+    } catch {}
   }
-  let breadcrumbsInfo;
+
+  let breadcrumbsInfo: string | undefined;
   if (message.breadcrumbs) {
     try {
       if (/Send(\w+)Message/.test(message.breadcrumbs)) {
         breadcrumbsInfo = RegExp.$1.toLowerCase();
       }
-    } catch { }
+    } catch {}
   }
+
   const participants = Array.isArray(message.participants)
     ? message.participants.map((e) => toStringId(e)).filter(Boolean)
     : [];
-  const mentions = extractMentions(message.data?.prng, message.body ?? "");
+
+  // ✅ mentions: Gb (new) -> prng (legacy)
+  const mentions = extractMentions(message.data?.prng, message.body ?? "", message);
+
   const callbackData: MessageReplyCallbackData = {
-    type: 'message_reply',
+    type: "message_reply",
     threadID: getThreadId(message.messageMetadata.threadKey),
     messageID: message.messageMetadata.messageId,
     senderID: toStringId(message.messageMetadata.actorFbId),
     attachments: processReplyAttachments(message.attachments),
-    args: (message.body || '').trim().split(/\s+/),
-    body: message.body || '',
+    args: (message.body || "").trim().split(/\s+/),
+    body: message.body || "",
     isGroup: !!message.messageMetadata.threadKey.threadFbId,
     mentions,
     timestamp: parseInt(message.messageMetadata.timestamp ?? "0", 10),
     participantIDs: participants,
-    sentFrom: via || breadcrumbsInfo || '',
+    sentFrom: via || breadcrumbsInfo || ""
   };
+
   if (reply.repliedToMessage) {
-    callbackData.messageReply = processRepliedMessage(reply.repliedToMessage);
+    callbackData.messageReply = processRepliedMessage(reply.repliedToMessage, message.participants);
     finalizeCallback(ctx, api, globalCallback, callbackData);
   } else if (reply.replyToMessageId) {
-    fetchRepliedMessage(defaultFuncs, ctx, callbackData, reply.replyToMessageId.id)
-      .finally(() => finalizeCallback(ctx, api, globalCallback, callbackData));
+    fetchRepliedMessage(defaultFuncs, ctx, callbackData, reply.replyToMessageId.id).finally(() =>
+      finalizeCallback(ctx, api, globalCallback, callbackData)
+    );
   } else {
     finalizeCallback(ctx, api, globalCallback, callbackData);
   }
-};
+}

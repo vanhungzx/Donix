@@ -11,18 +11,15 @@ interface TaskPayload {
 }
 
 interface Task {
-  failure_count: string | null;
+  failure_count: null;
   label: string;
   payload: string; // JSON stringified TaskPayload
   queue_name: string;
-  task_id: string | number;
-  task_stats?: {
-    queue_latency: number;
-  };
+  task_id: number;
 }
 
 interface Payload {
-  epoch_id: string | number;
+  epoch_id: string;
   tasks: Task[];
   version_id: string;
 }
@@ -94,17 +91,14 @@ export default function (
           epoch_id: generateOfflineThreadingID(),
           tasks: [
             {
-              failure_count: "0",
+              failure_count: null,
               label: "44",
               payload: JSON.stringify(taskPayload),
               queue_name: "thread_participant_nickname",
-              task_id: String(taskID),
-              task_stats: {
-                queue_latency: 0,
-              },
+              task_id: taskID,
             },
           ],
-          version_id: "31104338375848389",
+          version_id: "8798795233522156",
         };
 
         const request: RequestForm = {

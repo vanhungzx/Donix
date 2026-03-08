@@ -10,6 +10,7 @@ import type {
 import { CanvasRenderingContext2D, createCanvas, loadImage } from "canvas";
 import fs from "fs-extra";
 import path from "path";
+import { storagePath } from "../../../core/storagePath";
 
 const moneydown = 5000000;
 
@@ -26,13 +27,7 @@ function tmp(name: string): string {
   );
 }
 
-const logoPath = path.join(
-  process.cwd(),
-  "src/storage",
-  "game",
-  "altp",
-  "logo.png"
-);
+const logoPath = storagePath("game", "altp", "logo.png");
 
 function equi(level: number): number {
   const money = [
@@ -73,13 +68,7 @@ interface QuestionFile {
 }
 
 async function getQuestion(level: number): Promise<Question> {
-  const filePath = path.join(
-    process.cwd(),
-    "src/storage",
-    "game",
-    "altp",
-    `cauhoi${level}.json`
-  );
+  const filePath = storagePath("game", "altp", `cauhoi${level}.json`);
   const data: QuestionFile = JSON.parse(
     await fs.readFile(filePath, "utf8")
   );
@@ -476,29 +465,7 @@ async function sendCanvas(
   afterSend?: (messageID: string) => void
 ): Promise<void> {
   const filePath = tmp("img");
-
-  // Tối ưu: Tạo buffer và cleanup canvas ngay sau khi dùng
-  let buffer: Buffer;
-  try {
-    buffer = canvas.toBuffer();
-  } catch (e: any) {
-    console.error(`❌ Lỗi khi tạo buffer từ canvas: ${e.message || e}`);
-    canvas = null as any; // Cleanup canvas reference
-    throw e;
-  }
-
-  // Cleanup canvas reference ngay sau khi đã tạo buffer
-  canvas = null as any;
-
-  try {
-    await fs.writeFile(filePath, buffer);
-    // Cleanup buffer reference sau khi đã ghi file
-    buffer = null as any;
-  } catch (e: any) {
-    buffer = null as any; // Cleanup buffer reference trong catch
-    throw e;
-  }
-
+  await fs.writeFile(filePath, canvas.toBuffer());
   const stream = fs.createReadStream(filePath);
 
   client.sendMessage({ body, attachment: stream }, threadID, (_err: Error | undefined, info?: { messageID?: string }) => {

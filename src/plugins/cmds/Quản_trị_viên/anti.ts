@@ -10,6 +10,7 @@ import type {
   FacebookClient,
   Logger,
   MainData,
+  MessageForm,
   ThreadDataModel,
   UserDataModel
 } from "@types";
@@ -17,6 +18,7 @@ import axios from "axios";
 import fs from "fs-extra";
 import path from "path";
 import type { Readable } from "stream";
+import { STORAGE_ANTI } from "../../../core/storagePath";
 import { getConfig } from "../../../core/configManager";
 type ThreadID = string;
 
@@ -53,6 +55,7 @@ interface ThemeEntry {
 type ToggleMap = Record<ThreadID, boolean>;
 type EmojiMap = Record<ThreadID, EmojiEntry>;
 type ThemeMap = Record<ThreadID, ThemeEntry>;
+type TrustedQtvMap = Record<ThreadID, string[]>;
 
 type AntiDataMap = {
   boxname: BoxNameEntry[];
@@ -67,25 +70,45 @@ type AntiDataMap = {
   unsend: ToggleMap;
   tagall: ToggleMap;
   link: ToggleMap;
+  antikickqtv: ToggleMap;
+  trustedqtv: TrustedQtvMap;
 };
 
 type AntiDataKey = keyof AntiDataMap;
 
+type AdminIDEntry = string | { id: string } | { id: string;[key: string]: unknown };
+
 type ThreadInfoRecord = {
   threadID?: string;
   threadName?: string;
-  adminIDs: Array<{ id: string } | { id: string;[key: string]: unknown }>;
+  adminIDs?: string[] | AdminIDEntry[];
   imageSrc?: string;
   [key: string]: unknown;
 };
 
-type MessagePayload = Parameters<FacebookClient["sendMessage"]>[0];
+type MessagePayload = MessageForm;
 
 type SendMessageInfoLite = {
   messageID?: string;
   threadID?: string;
   timestamp?: number;
   [key: string]: string | number | undefined;
+};
+
+// Helper function để extract ID từ admin entry
+// Hỗ trợ cả mảng string thuần: ['502275138', '1631016269', ...]
+// Và mảng object: [{id: '502275138'}, {id: '1631016269'}, ...]
+const extractAdminID = (admin: AdminIDEntry): string => {
+  // Nếu là string (mảng string thuần) → return luôn
+  if (typeof admin === 'string') {
+    return admin;
+  }
+  // Nếu là object có thuộc tính id → lấy id
+  if (typeof admin === 'object' && admin !== null && 'id' in admin) {
+    return String(admin.id);
+  }
+  // Fallback: convert sang string
+  return String(admin);
 };
 
 const isBotPrivileged = (userID: string, config?: BotConfig): boolean => {
@@ -100,6 +123,31 @@ const isBotPrivileged = (userID: string, config?: BotConfig): boolean => {
       ? [String(config.OWNER)]
       : [];
   return adminBot.includes(userID) || ownerList.includes(userID);
+};
+
+const isPrivilegedUser = (
+  userID: string,
+  threadInfo: ThreadInfoRecord,
+  config: BotConfig,
+  botID: string
+): boolean => {
+  const userIDStr = String(userID);
+
+  // Check Owner & Admin Bot (Giữ nguyên logic của mày)
+  const owners = Array.isArray(config.OWNER) ? config.OWNER.map(String) : [String(config.OWNER)];
+  const admins = Array.isArray(config.ADMIN) ? config.ADMIN.map(String) : [String(config.ADMIN)];
+
+  if (owners.includes(userIDStr) || admins.includes(userIDStr) || userIDStr === botID) return true;
+
+  // Check QTV nhóm - Fix ở đây
+  if (Array.isArray(threadInfo.adminIDs)) {
+    return threadInfo.adminIDs.some((admin: AdminIDEntry) => {
+      const targetID = extractAdminID(admin);
+      return targetID === userIDStr;
+    });
+  }
+
+  return false;
 };
 
 const logError = (logger: Logger | undefined, message: string, error?: unknown): void => {
@@ -119,7 +167,7 @@ class AntiDataManager {
   files: Record<AntiDataKey, string>;
 
   constructor() {
-    this.dataDir = path.resolve(process.cwd(), "src/storage/anti");
+    this.dataDir = STORAGE_ANTI();
     this.files = {
       boxname: path.join(this.dataDir, "boxname.json"),
       boximage: path.join(this.dataDir, "boximage.json"),
@@ -132,7 +180,9 @@ class AntiDataManager {
       spam: path.join(this.dataDir, "spam.json"),
       unsend: path.join(this.dataDir, "unsend.json"),
       tagall: path.join(this.dataDir, "tagall.json"),
-      link: path.join(this.dataDir, "link.json")
+      link: path.join(this.dataDir, "link.json"),
+      antikickqtv: path.join(this.dataDir, "antikickqtv.json"),
+      trustedqtv: path.join(this.dataDir, "trustedqtv.json")
     };
     this.initializeFiles();
   }
@@ -151,7 +201,9 @@ class AntiDataManager {
       spam: {},
       unsend: {},
       tagall: {},
-      link: {}
+      link: {},
+      antikickqtv: {},
+      trustedqtv: {}
     };
     (Object.entries(this.files) as Array<[AntiDataKey, string]>).forEach(([key, filePath]) => {
       if (!fs.existsSync(filePath)) {
@@ -203,6 +255,8 @@ class AntiDataManager {
     antiunsend: AntiDataMap["unsend"];
     antitagall: AntiDataMap["tagall"];
     antilink: AntiDataMap["link"];
+    antikickqtv: AntiDataMap["antikickqtv"];
+    trustedqtv: AntiDataMap["trustedqtv"];
   } {
     return {
       boxname: this.readData("boxname"),
@@ -216,7 +270,9 @@ class AntiDataManager {
       antispam: this.readData("spam"),
       antiunsend: this.readData("unsend"),
       antitagall: this.readData("tagall"),
-      antilink: this.readData("link")
+      antilink: this.readData("link"),
+      antikickqtv: this.readData("antikickqtv"),
+      trustedqtv: this.readData("trustedqtv")
     };
   }
 }
@@ -255,9 +311,10 @@ async function unSend({
   event,
   client,
   userData,
-  threadData: _threadData,
+  threadData,
   dataManager: _dataManager,
-  logger
+  logger,
+  config
 }: {
   event: ExtendedMessageEvent;
   client: FacebookClient;
@@ -265,17 +322,27 @@ async function unSend({
   threadData: ThreadDataModel;
   dataManager: AntiDataManager;
   logger: Logger;
+  config?: BotConfig;
 }): Promise<void> {
   const { messageID, senderID, threadID, body, type, attachments } = event;
-  const botID = String(client.getCurrentUserID());
+  const getCurrentUserID = (client as { getCurrentUserID?: () => string }).getCurrentUserID;
+  const botID = getCurrentUserID ? String(getCurrentUserID()) : String((client as { id?: string }).id || "");
   const senderIDStr = String(senderID);
   if (senderIDStr === botID) return;
+
+  // Kiểm tra nếu là QTV, admin bot, hoặc owner thì bỏ qua
+  if (config && threadID) {
+    const threadInfo = (await threadData.get(threadID))?.threadInfo as ThreadInfoRecord | undefined;
+    if (threadInfo && isPrivilegedUser(senderIDStr, threadInfo, config, botID)) {
+      return;
+    }
+  }
   const g = global as Record<string, unknown>;
   if (!g.logMessage) {
     g.logMessage = new Map<string, unknown>();
   }
   const logMessage = g.logMessage as Map<string, unknown>;
-  if (type !== "message_unsend") {
+  if (type === "message" || type === "message_reply") {
     try {
       const msgData: {
         msgBody: string;
@@ -322,7 +389,9 @@ async function unSend({
             body: `⚠️ ${senderName} đã gỡ một tin nhắn:\n\n${message.msgBody}`,
             mentions
           };
-          await client.sendMessage(notifyMsg, threadID);
+          if (client.sendMessage) {
+            await client.sendMessage(notifyMsg, threadID);
+          }
         } catch (error) {
           console.log(error);
           logError(logger, "[Anti-Unsend] Lỗi khi gửi tin nhắn text:", error as Error);
@@ -351,7 +420,9 @@ async function unSend({
           body: msgBody,
           attachment: msgAttachment
         };
-        await client.sendMessage(notifyMsg, threadID);
+        if (client.sendMessage) {
+          await client.sendMessage(notifyMsg, threadID);
+        }
       } catch (error) {
         logError(logger, "[Anti-Unsend] Lỗi khi gửi tin nhắn:", error);
       }
@@ -363,7 +434,7 @@ async function unSend({
   }
 }
 
-type ToggleOnlyKey = "antiout" | "qtv" | "join" | "spam" | "unsend" | "tagall" | "link";
+type ToggleOnlyKey = "antiout" | "qtv" | "join" | "spam" | "unsend" | "tagall" | "link" | "antikickqtv";
 
 async function handleAnti(
   option: string,
@@ -379,12 +450,7 @@ async function handleAnti(
     client: FacebookClient;
     event: ExtendedMessageEvent;
     dataManager: AntiDataManager;
-    threadInfo: {
-      threadID?: string;
-      threadName?: string;
-      adminIDs: Array<{ id: string } | { id: string;[key: string]: unknown }>;
-      [key: string]: unknown;
-    };
+    threadInfo: ThreadInfoRecord;
     permssion: number;
     collectResult?: boolean;
     privileged?: boolean;
@@ -393,11 +459,17 @@ async function handleAnti(
   const { threadID, messageID } = event;
   const senderIDStr = String(event.senderID);
   const isThreadAdmin = Array.isArray(threadInfo.adminIDs)
-    ? threadInfo.adminIDs.some((item) => String(item.id) === senderIDStr)
+    ? threadInfo.adminIDs.some((item: AdminIDEntry) => {
+      const id = extractAdminID(item);
+      return id === senderIDStr;
+    })
     : false;
-  const adminCheck = threadInfo.adminIDs.some(
-    (item) => String(item.id) === String(client.getCurrentUserID())
-  );
+  const getCurrentUserID = (client as { getCurrentUserID?: () => string }).getCurrentUserID;
+  const botID = getCurrentUserID ? String(getCurrentUserID()) : String((client as { id?: string }).id || "");
+  const adminIDs = Array.isArray(threadInfo.adminIDs)
+    ? threadInfo.adminIDs.map((admin: AdminIDEntry) => extractAdminID(admin))
+    : [];
+  const adminCheck = adminIDs.includes(botID);
   const sendNoPermission = async (): Promise<{ message: string; hasChange: boolean } | void> => {
     const message = "⚠️ Không đủ quyền hạn!";
     if (collectResult) {
@@ -465,7 +537,8 @@ async function handleAnti(
     "9": "spam",
     "10": "unsend",
     "11": "tagall",
-    "12": "link"
+    "12": "link",
+    "13": "antikickqtv"
   };
   for (const [num, key] of Object.entries(boolFeatures)) {
     if (option === num || option === key.replace("anti", "")) {
@@ -533,7 +606,12 @@ const antiCommand = {
     "9. Anti spam: Chống spam tin nhắn\n" +
     "10. Anti unsend: Chống gỡ tin nhắn\n" +
     "11. Anti tagall: Chống tag all\n" +
-    "12. Anti link: Chống gửi link\n\n" +
+    "12. Anti link: Chống gửi link\n" +
+    "13. Anti kick qtv: Chống kick quản trị viên\n\n" +
+    "Quản lý QTV tin tưởng:\n" +
+    "- {pn} trustedqtv - Xem danh sách QTV tin tưởng\n" +
+    "- {pn} trustedqtv add @tag - Thêm QTV tin tưởng (QTV tin tưởng sẽ không bị kick khi kick QTV khác)\n" +
+    "- {pn} trustedqtv remove @tag - Xóa QTV tin tưởng\n\n" +
     "Cách dùng: {pn} anti [số/tên] hoặc reply tin nhắn theo số/tên để bật/tắt",
   cd: 5,
   prefix: true,
@@ -554,8 +632,10 @@ const antiCommand = {
     const utilsCtx = ctx.utils as { stream?: (url: string, ext: string) => Promise<unknown> };
     const dataManager = new AntiDataManager();
     const dataAnti = dataManager.getAllData();
+    const config = ctx.config || getConfig();
     if (dataAnti.antiunsend?.[threadID]) {
-      await unSend({ event: ctx.event, client, threadData, userData, dataManager, logger });
+      const messageEvent = ctx.event as ExtendedMessageEvent;
+      await unSend({ event: messageEvent, client, threadData, userData, dataManager, logger, config });
     }
     if (!ctx.event.logMessageBody) return;
     const botID = String(client.getCurrentUserID());
@@ -563,10 +643,7 @@ const antiCommand = {
     if (!dataThread) return;
     const logData = (logMessageData || {}) as Record<string, unknown>;
     const authorStr = String(author);
-    const authorIsThreadAdmin = Array.isArray(dataThread.adminIDs)
-      ? dataThread.adminIDs.some((admin: { id: string }) => String(admin.id) === authorStr)
-      : false;
-    const isAdminAuthor = authorStr === botID || authorIsThreadAdmin;
+    const isAdminAuthor = isPrivilegedUser(authorStr, dataThread, config, botID);
     const handlers: Record<string, () => Promise<void>> = {
       "log:thread-name": async () => {
         const boxnameData = dataManager.readData("boxname");
@@ -605,44 +682,238 @@ const antiCommand = {
         }
       },
       "log:unsubscribe": async () => {
-        const antioutData = dataManager.readData("antiout");
-        if (!antioutData[threadID]) return;
         const id = String(logData.leftParticipantFbId || "");
         const authorStr = String(author);
         const botIDStr = String(botID);
+
+        // Xử lý anti kick qtv
+        const antikickqtvData = dataManager.readData("antikickqtv");
+        if (antikickqtvData[threadID]) {
+          // Kiểm tra nếu người rời là admin
+          const leftUserIsAdmin = Array.isArray(dataThread.adminIDs)
+            ? dataThread.adminIDs.some((admin: AdminIDEntry) => {
+              const adminId = extractAdminID(admin);
+              return adminId === id;
+            })
+            : false;
+
+          // Kiểm tra nếu author (người kick) là admin và khác với người bị kick
+          const authorIsAdmin = Array.isArray(dataThread.adminIDs)
+            ? dataThread.adminIDs.some((admin: AdminIDEntry) => {
+              const adminId = extractAdminID(admin);
+              return adminId === authorStr;
+            })
+            : false;
+
+          if (leftUserIsAdmin && authorIsAdmin && authorStr !== id && id !== botIDStr && authorStr !== botIDStr) {
+            // Kiểm tra QTV tin tưởng
+            const trustedQtvData = dataManager.readData("trustedqtv");
+            const trustedQtvs = trustedQtvData[threadID] || [];
+            const isKickerTrustedQtv = trustedQtvs.includes(authorStr);
+            const isKickedTrustedQtv = trustedQtvs.includes(id);
+
+            // Kiểm tra bot có phải là admin không
+            const botIsAdmin = Array.isArray(dataThread.adminIDs)
+              ? dataThread.adminIDs.some((admin: AdminIDEntry) => {
+                const adminId = extractAdminID(admin);
+                return adminId === botIDStr;
+              })
+              : false;
+
+            // Tìm một admin khác (không phải author, không phải bot, không phải người bị kick)
+            const otherAdmins = Array.isArray(dataThread.adminIDs)
+              ? dataThread.adminIDs
+                .map((admin: AdminIDEntry) => extractAdminID(admin))
+                .filter((adminId: string) => adminId !== authorStr && adminId !== botIDStr && adminId !== id)
+              : [];
+
+            // Bot có thể thực hiện nếu bot là admin, hoặc có admin khác
+            if (botIsAdmin || otherAdmins.length > 0) {
+              const getName = userData.getName;
+              const kickedName = getName
+                ? ((await getName(id).catch(() => "Người dùng")) as string) || "Người dùng"
+                : "Người dùng";
+              const kickerName = getName
+                ? ((await getName(authorStr).catch(() => "Người dùng")) as string) || "Người dùng"
+                : "Người dùng";
+
+              try {
+                // Mời lại người bị kick trước
+                const addUserToGroup = (client as { addUserToGroup?: (userID: string, threadID: string) => Promise<void> }).addUserToGroup;
+                if (addUserToGroup) {
+                  await addUserToGroup(id, threadID);
+                }
+
+                // Nếu người bị kick là QTV tin tưởng và người kick không phải QTV tin tưởng → kick người kick
+                if (isKickedTrustedQtv && !isKickerTrustedQtv && botIsAdmin) {
+                  const removeUserFromGroup = (client as { removeUserFromGroup?: (userID: string, threadID: string) => Promise<void> }).removeUserFromGroup;
+                  if (removeUserFromGroup) {
+                    await removeUserFromGroup(authorStr, threadID);
+                  }
+
+                  if (client.sendMessage) {
+                    await client.sendMessage(
+                      `⚠️ Đã phát hiện ${kickerName} kick QTV tin tưởng ${kickedName}.\n` +
+                      `Đã tự động kick ${kickerName} và mời lại ${kickedName}.`,
+                      threadID
+                    );
+                  }
+                }
+                // Nếu người kick là QTV tin tưởng → chỉ mời lại người bị kick, không kick người kick
+                else if (isKickerTrustedQtv) {
+                  if (client.sendMessage) {
+                    await client.sendMessage(
+                      `⚠️ ${kickerName} (QTV tin tưởng) đã kick quản trị viên ${kickedName}.\n` +
+                      `Đã mời lại ${kickedName}.`,
+                      threadID
+                    );
+                  }
+                }
+                // Nếu cả hai đều không phải QTV tin tưởng → kick người kick và mời lại người bị kick
+                else if (botIsAdmin) {
+                  const removeUserFromGroup = (client as { removeUserFromGroup?: (userID: string, threadID: string) => Promise<void> }).removeUserFromGroup;
+                  if (removeUserFromGroup) {
+                    await removeUserFromGroup(authorStr, threadID);
+                  }
+
+                  if (client.sendMessage) {
+                    await client.sendMessage(
+                      `⚠️ Đã phát hiện ${kickerName} kick quản trị viên ${kickedName}.\n` +
+                      `Đã tự động kick ${kickerName} và mời lại ${kickedName}.`,
+                      threadID
+                    );
+                  }
+                } else {
+                  // Nếu bot không phải admin, chỉ mời lại người bị kick
+                  if (client.sendMessage) {
+                    await client.sendMessage(
+                      `⚠️ Đã phát hiện ${kickerName} kick quản trị viên ${kickedName}.\n` +
+                      `Đã mời lại ${kickedName}. Bot cần quyền admin để kick ${kickerName}.`,
+                      threadID
+                    );
+                  }
+                }
+              } catch (error) {
+                logError(logger, `[Anti-Kick-QTV] Lỗi khi xử lý kick qtv:`, error);
+                console.error(`[Anti-Kick-QTV] Lỗi khi xử lý kick qtv:`, error);
+              }
+            }
+            return; // Không xử lý antiout nếu đã xử lý antikickqtv
+          }
+        }
+
+        // Bảo vệ QTV tin tưởng - tự động mời lại nếu bị kick và kick người kick nếu không phải QTV tin tưởng
+        const trustedQtvData = dataManager.readData("trustedqtv");
+        const trustedQtvs = trustedQtvData[threadID] || [];
+        const isKickedUserTrustedQtv = trustedQtvs.includes(id);
+        const isKickerTrustedQtv = trustedQtvs.includes(authorStr);
+
+        if (isKickedUserTrustedQtv && id !== botIDStr && authorStr !== id) {
+          // QTV tin tưởng bị kick, tự động mời lại
+          try {
+            const getName = userData.getName;
+            const kickedName = getName
+              ? ((await getName(id).catch(() => "Người dùng")) as string) || "Người dùng"
+              : "Người dùng";
+            const kickerName = getName
+              ? ((await getName(authorStr).catch(() => "Người dùng")) as string) || "Người dùng"
+              : "Người dùng";
+
+            const addUserToGroup = (client as { addUserToGroup?: (userID: string, threadID: string) => Promise<void> }).addUserToGroup;
+            if (addUserToGroup) {
+              await addUserToGroup(id, threadID);
+            }
+
+            // Nếu người kick không phải QTV tin tưởng và bot là admin → kick người kick
+            if (!isKickerTrustedQtv) {
+              const botIsAdmin = Array.isArray(dataThread.adminIDs)
+                ? dataThread.adminIDs.some((admin: AdminIDEntry) => {
+                  const adminId = extractAdminID(admin);
+                  return adminId === botIDStr;
+                })
+                : false;
+
+              if (botIsAdmin) {
+                const removeUserFromGroup = (client as { removeUserFromGroup?: (userID: string, threadID: string) => Promise<void> }).removeUserFromGroup;
+                if (removeUserFromGroup) {
+                  await removeUserFromGroup(authorStr, threadID);
+                }
+
+                if (client.sendMessage) {
+                  await client.sendMessage(
+                    `🛡️ ${kickedName} là QTV tin tưởng, đã tự động mời lại nhóm.\n` +
+                    `⚠️ Đã kick ${kickerName} vì kick QTV tin tưởng.`,
+                    threadID
+                  );
+                }
+              } else {
+                if (client.sendMessage) {
+                  await client.sendMessage(
+                    `🛡️ ${kickedName} là QTV tin tưởng, đã tự động mời lại nhóm.\n` +
+                    `⚠️ Bot cần quyền admin để kick ${kickerName}.`,
+                    threadID
+                  );
+                }
+              }
+            } else {
+              // Người kick là QTV tin tưởng → chỉ mời lại, không kick
+              if (client.sendMessage) {
+                await client.sendMessage(
+                  `🛡️ ${kickedName} là QTV tin tưởng, đã tự động mời lại nhóm.`,
+                  threadID
+                );
+              }
+            }
+          } catch (error) {
+            logError(logger, `[Anti-QTV-Trusted] Lỗi khi mời lại QTV tin tưởng:`, error);
+          }
+          return; // Không xử lý antiout cho QTV tin tưởng
+        }
+
+        // Xử lý antiout (giữ nguyên logic cũ)
+        const antioutData = dataManager.readData("antiout");
+        if (!antioutData[threadID]) return;
+        // Kiểm tra nếu author là QTV, admin bot, hoặc owner thì bỏ qua
+        if (isAdminAuthor) return;
         if (authorStr !== id || id === botIDStr) return;
-        const name =
-          ((await userData.getName(id).catch(() => "Người dùng")) as string) ||
-          "Người dùng";
+        const getName = userData.getName;
+        const name = getName
+          ? ((await getName(id).catch(() => "Người dùng")) as string) || "Người dùng"
+          : "Người dùng";
         try {
-          await client.addUserToGroup(id, threadID);
-          client.sendMessage(
-            `⚠️ Đã thêm lại ${name}`,
-            threadID,
-            (err?: Error, info?: SendMessageInfoLite) => {
-              if (!err && info?.messageID) {
+          const addUserToGroup = (client as { addUserToGroup?: (userID: string, threadID: string) => Promise<void> }).addUserToGroup;
+          if (addUserToGroup) {
+            await addUserToGroup(id, threadID);
+          }
+          if (client.sendMessage) {
+            const sendResult = await client.sendMessage(`⚠️ Đã thêm lại ${name}`, threadID);
+            const info = sendResult as SendMessageInfoLite | undefined;
+            if (info?.messageID) {
+              const unsendMessage = (client as { unsendMessage?: (messageID: string, threadID: string) => Promise<void> }).unsendMessage;
+              if (unsendMessage) {
                 setTimeout(
-                  () => client.unsendMessage(info.messageID || "", threadID).catch(() => { }),
+                  () => unsendMessage(info.messageID || "", threadID).catch(() => { }),
                   60000
                 );
               }
             }
-          );
+          }
         } catch (error) {
           logError(logger, `[Anti-Out] Không thể thêm lại ${name}:`, error);
-          client.sendMessage(
-            `⚠️ Không thể thêm lại ${name}`,
-            threadID,
-            (err?: Error, info?: SendMessageInfoLite) => {
-              const msgId = info?.messageID;
-              if (!err && msgId) {
+          if (client.sendMessage) {
+            const sendResult = await client.sendMessage(`⚠️ Không thể thêm lại ${name}`, threadID);
+            const info = sendResult as SendMessageInfoLite | undefined;
+            const msgId = info?.messageID;
+            if (msgId) {
+              const unsendMessage = (client as { unsendMessage?: (messageID: string, threadID: string) => Promise<void> }).unsendMessage;
+              if (unsendMessage) {
                 setTimeout(
-                  () => client.unsendMessage(msgId, threadID).catch(() => { }),
+                  () => unsendMessage(msgId, threadID).catch(() => { }),
                   60000
                 );
               }
             }
-          );
+          }
         }
       },
       "log:thread-color": async () => {
@@ -703,9 +974,21 @@ const antiCommand = {
         const authorStr = String(author);
         const botIDStr = String(botID);
         if (authorStr === botIDStr) return;
+        // Kiểm tra nếu author là QTV, admin bot, hoặc owner thì bỏ qua
+        if (isAdminAuthor) return;
         try {
           const qtvData = dataManager.readData("qtv");
           if (qtvData && qtvData[threadID] === true) {
+            // Kiểm tra nếu author là QTV tin tưởng thì bỏ qua (cho phép thêm/xóa admin)
+            const trustedQtvData = dataManager.readData("trustedqtv");
+            const trustedQtvs = trustedQtvData[threadID] || [];
+            const isTrustedQtv = trustedQtvs.includes(authorStr);
+
+            if (isTrustedQtv) {
+              // QTV tin tưởng có thể thêm/xóa admin mà không bị ảnh hưởng
+              return;
+            }
+
             if (
               logData.ADMIN_EVENT === "add_admin" ||
               logData.ADMIN_EVENT === "remove_admin"
@@ -839,23 +1122,35 @@ const antiCommand = {
       },
       "log:tagall": async () => {
         const tagallData = dataManager.readData("tagall");
-        if (!tagallData[threadID] || isAdminAuthor) return;
+        if (!tagallData[threadID]) return;
         const authorStr = String(author);
-        const name =
-          ((await userData.getName(authorStr).catch(() => "Người dùng")) as string) ||
-          "Người dùng";
+
+        // Kiểm tra nếu là QTV, admin bot, hoặc owner thì bỏ qua
+        if (isPrivilegedUser(authorStr, dataThread, config, botID)) return;
+
+        const getName = userData.getName;
+        const name = getName
+          ? ((await getName(authorStr).catch(() => "Người dùng")) as string) || "Người dùng"
+          : "Người dùng";
         const threadName = dataThread.threadName || "Nhóm";
-        const messageBody = ctx.event.body || "không có nội dung";
+        const messageBody = "body" in ctx.event ? ctx.event.body : "không có nội dung";
         try {
-          await client.sendMessage(
-            `⚠️ Người dùng ${name} đã tagall nhóm ${threadName} với tin nhắn: ${messageBody}\n\nNgười dùng sẽ bị kick ngay lập tức`,
-            threadID
-          );
-          await client.removeUserFromGroup(authorStr, threadID);
-          await client.sendMessage(
-            `⚠️ Đã kick thành viên ${name} do tag all`,
-            threadID
-          );
+          if (client.sendMessage) {
+            await client.sendMessage(
+              `⚠️ Người dùng ${name} đã tagall nhóm ${threadName} với tin nhắn: ${messageBody}\n\nNgười dùng sẽ bị kick ngay lập tức`,
+              threadID
+            );
+          }
+          const removeUserFromGroup = (client as { removeUserFromGroup?: (userID: string, threadID: string) => Promise<void> }).removeUserFromGroup;
+          if (removeUserFromGroup) {
+            await removeUserFromGroup(authorStr, threadID);
+          }
+          if (client.sendMessage) {
+            await client.sendMessage(
+              `⚠️ Đã kick thành viên ${name} do tag all`,
+              threadID
+            );
+          }
         } catch (error) {
           logError(logger, `[Anti-Tagall] Lỗi khi xử lý tagall:`, error);
           console.error(`[Anti-Tagall] Lỗi khi xử lý tagall:`, error);
@@ -966,8 +1261,7 @@ const antiCommand = {
         try {
           const data = (await threadData.get(threadID))?.threadInfo as ThreadInfoRecord | undefined;
           if (data) {
-            const adminIDs =
-              data.adminIDs?.map((admin: { id: string }) => String(admin.id)) || [];
+            const adminIDs = data.adminIDs?.map((admin: AdminIDEntry) => extractAdminID(admin)) || [];
             const adminBot = Array.isArray(config.ADMIN)
               ? config.ADMIN.map(String)
               : config.ADMIN
@@ -1038,7 +1332,7 @@ const antiCommand = {
       try {
         const data = (await threadData.get(threadID))?.threadInfo as ThreadInfoRecord | undefined;
         if (!data) return;
-        const adminIDs = data.adminIDs?.map((admin: { id: string }) => String(admin.id)) || [];
+        const adminIDs = data.adminIDs?.map((admin: AdminIDEntry) => extractAdminID(admin)) || [];
         const adminBot = Array.isArray(config.ADMIN)
           ? config.ADMIN.map(String)
           : config.ADMIN
@@ -1106,11 +1400,13 @@ const antiCommand = {
     args,
     event,
     threadData,
+    userData,
     config,
     main,
     commandName
   }: CommandOnCallContext & {
     threadData: ThreadDataModel;
+    userData: UserDataModel;
     config: BotConfig;
     main: MainData;
   }) {
@@ -1132,6 +1428,113 @@ const antiCommand = {
       const permValue = privileged ? 2 : permssion;
       if (args.length > 0) {
         const option = String(args[0]).toLowerCase();
+
+        // Xử lý lệnh trustedqtv
+        if (option === "trustedqtv" || option === "trustqtv") {
+          if (permValue < 1 && !privileged) {
+            await client.sendMessage("⚠️ Chỉ quản trị viên mới có thể sử dụng lệnh này!", threadID, messageID);
+            return;
+          }
+
+          const trustedQtvData = dataManager.readData("trustedqtv");
+          const threadIDStr = String(threadID);
+          const trustedList = trustedQtvData[threadIDStr] || [];
+
+          if (args.length === 1) {
+            // Hiển thị danh sách QTV tin tưởng
+            if (trustedList.length === 0) {
+              await client.sendMessage("📋 Danh sách QTV tin tưởng trống.", threadID, messageID);
+            } else {
+              const names = await Promise.all(
+                trustedList.map(async (uid: string) => {
+                  try {
+                    const userInfo = await userData.get(uid);
+                    return `${userInfo?.name || uid} (${uid})`;
+                  } catch {
+                    return uid;
+                  }
+                })
+              );
+              await client.sendMessage(
+                `📋 Danh sách QTV tin tưởng:\n${names.map((n, i) => `${i + 1}. ${n}`).join("\n")}`,
+                threadID,
+                messageID
+              );
+            }
+            return;
+          }
+
+          const action = String(args[1]).toLowerCase();
+
+          if (action === "add") {
+            // Thêm QTV tin tưởng
+            const mentions = "mentions" in event ? event.mentions : {};
+            const mentionedIDs = Object.keys(mentions || {});
+
+            if (mentionedIDs.length === 0) {
+              await client.sendMessage("⚠️ Vui lòng tag người cần thêm vào danh sách QTV tin tưởng!", threadID, messageID);
+              return;
+            }
+
+            let addedCount = 0;
+            for (const uid of mentionedIDs) {
+              const uidStr = String(uid);
+              if (!trustedList.includes(uidStr)) {
+                trustedList.push(uidStr);
+                addedCount++;
+              }
+            }
+
+            if (addedCount > 0) {
+              dataManager.writeData("trustedqtv", {
+                ...trustedQtvData,
+                [threadIDStr]: trustedList
+              });
+              await client.sendMessage(`✅ Đã thêm ${addedCount} QTV vào danh sách tin tưởng.`, threadID, messageID);
+            } else {
+              await client.sendMessage("⚠️ Tất cả người được tag đã có trong danh sách QTV tin tưởng.", threadID, messageID);
+            }
+            return;
+          } else if (action === "remove" || action === "del") {
+            // Xóa QTV tin tưởng
+            const mentions = "mentions" in event ? event.mentions : {};
+            const mentionedIDs = Object.keys(mentions || {});
+
+            if (mentionedIDs.length === 0) {
+              await client.sendMessage("⚠️ Vui lòng tag người cần xóa khỏi danh sách QTV tin tưởng!", threadID, messageID);
+              return;
+            }
+
+            let removedCount = 0;
+            const newList = trustedList.filter((uid: string) => {
+              const shouldRemove = mentionedIDs.includes(String(uid));
+              if (shouldRemove) removedCount++;
+              return !shouldRemove;
+            });
+
+            if (removedCount > 0) {
+              dataManager.writeData("trustedqtv", {
+                ...trustedQtvData,
+                [threadIDStr]: newList
+              });
+              await client.sendMessage(`✅ Đã xóa ${removedCount} QTV khỏi danh sách tin tưởng.`, threadID, messageID);
+            } else {
+              await client.sendMessage("⚠️ Không tìm thấy người được tag trong danh sách QTV tin tưởng.", threadID, messageID);
+            }
+            return;
+          } else {
+            await client.sendMessage(
+              "⚠️ Cách dùng:\n" +
+              "- `anti trustedqtv` - Xem danh sách QTV tin tưởng\n" +
+              "- `anti trustedqtv add @tag` - Thêm QTV tin tưởng\n" +
+              "- `anti trustedqtv remove @tag` - Xóa QTV tin tưởng",
+              threadID,
+              messageID
+            );
+            return;
+          }
+        }
+
         await handleAnti(option, {
           client,
           event: event as ExtendedMessageEvent,
@@ -1155,6 +1558,7 @@ const antiCommand = {
       const unsendData = dataManager.readData("unsend");
       const tagallData = dataManager.readData("tagall");
       const linkData = dataManager.readData("link");
+      const antikickqtvData = dataManager.readData("antikickqtv");
       const threadStatuses: Record<string, boolean> = {
         boxname: boxnameData.some((item: { threadID: string | number }) => item.threadID === threadID),
         boximage: boximageData.some((item: { threadID: string | number }) => item.threadID === threadID),
@@ -1167,7 +1571,8 @@ const antiCommand = {
         antiSpam: spamData[threadID] || false,
         antiUnsend: unsendData[threadID] || false,
         antiTagall: tagallData[threadID] || false,
-        antilink: linkData[threadID] || false
+        antilink: linkData[threadID] || false,
+        antikickqtv: antikickqtvData[threadID] || false
       };
       const statusList = Object.entries(threadStatuses).map(
         ([key, value], index: number) => {

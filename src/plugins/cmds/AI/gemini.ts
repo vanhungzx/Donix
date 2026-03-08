@@ -16,6 +16,7 @@ import axios from "axios";
 import cheerio from "cheerio";
 import fs from "fs";
 import path from "path";
+import { STORAGE_GEMINI } from "../../../core/storagePath";
 
 const API_KEYS = [
   { key: "AIzaSyA4TdYmWcBDoSC722ievzkYJ3e8AnUtNFA", requestsLeft: 60 },
@@ -44,15 +45,15 @@ function hasAvailableKey() {
   );
 }
 
-function pickKey(): { key: string; index: number } {
+function pickKey() {
   if (!hasAvailableKey() && Date.now() - lastResetTime > RESET_INTERVAL) {
     resetKeys();
   }
   if (process.env.GEMINI_API_KEY) {
-    return { key: process.env.GEMINI_API_KEY, index: -1 };
+    return process.env.GEMINI_API_KEY;
   }
   if (process.env.GOOGLE_API_KEY) {
-    return { key: process.env.GOOGLE_API_KEY, index: -1 };
+    return process.env.GOOGLE_API_KEY;
   }
   if (!API_KEYS.length) throw new Error("NO_GOOGLE_API_KEYS");
   const currentKey = API_KEYS[currentKeyIndex];
@@ -77,20 +78,7 @@ function pickKey(): { key: string; index: number } {
     finalKey.requestsLeft - 1
   );
   triedKeys.add(currentKeyIndex);
-  return { key: finalKey.key, index: currentKeyIndex };
-}
-
-function removeLeakedKey(keyInfo: { key: string; index: number } | null | undefined) {
-  if (!keyInfo || keyInfo.index < 0) return;
-  if (keyInfo.index >= 0 && keyInfo.index < API_KEYS.length) {
-    console.log(`Removing leaked API key at index ${keyInfo.index}: ${keyInfo.key.substring(0, 20)}...`);
-    API_KEYS.splice(keyInfo.index, 1);
-    // Reset currentKeyIndex if it's out of bounds
-    if (currentKeyIndex >= API_KEYS.length) {
-      currentKeyIndex = 0;
-    }
-    triedKeys.clear();
-  }
+  return finalKey.key;
 }
 
 function rotateKeyOnFail() {
@@ -106,11 +94,11 @@ function rotateKeyOnFail() {
   currentKeyIndex = 0;
 }
 
-const DATA_BASE = path.join(process.cwd(), "src/storage/gemini");
+const DATA_BASE = STORAGE_GEMINI();
 const TEXT_BASE = path.join(DATA_BASE, "gemini_text");
 const FILE_BASE = path.join(DATA_BASE, "gemini1.5", "files");
 const SETTINGS_BASE = path.join(DATA_BASE, "settings");
-const INLINE_IMAGE_LIMIT_BYTES = 18 * 1024 * 1024;
+const INLINE_IMAGE_LIMIT_BYTES = 18 * 1024 * 1024; 
 
 const safetySettings = [
   {
@@ -242,7 +230,7 @@ async function waitForFileActive(ai: GoogleGenAI, fileName: string, maxRetries =
       if (state === "ACTIVE") return true;
       if (state === "FAILED") return false;
     } catch {
-
+      
     }
     await new Promise((r) => setTimeout(r, 4000));
   }
@@ -334,49 +322,31 @@ async function summarizeIfNeeded(
 
   const sumPrompt = `${summarySeed}Hãy tóm tắt ngắn gọn hội thoại sau, lưu ý sở thích, bối cảnh, nhiệm vụ, thông tin cần nhớ. Dài tối đa ${maxSummaryChars} ký tự.\n===\n${textBundle}`;
 
-  let apiKeyInfo: { key: string; index: number } | null = null;
-  try {
-    apiKeyInfo = pickKey();
-    const ai = new GoogleGenAI({ apiKey: apiKeyInfo.key });
-    const systemInstruction = buildSystemInstruction(persona, state.summary);
+  const apiKey = pickKey();
+  const ai = new GoogleGenAI({ apiKey });
+  const systemInstruction = buildSystemInstruction(persona, state.summary);
 
-    const res = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: sumPrompt,
-      config: {
-        systemInstruction: systemInstruction || undefined,
-        safetySettings,
-        thinkingConfig: { thinkingBudget: 0 },
-        maxOutputTokens: 2048,
-      },
-    } as any);
+  const res = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: sumPrompt,
+    config: {
+      systemInstruction: systemInstruction || undefined,
+      safetySettings,
+      thinkingConfig: { thinkingBudget: 0 },
+      maxOutputTokens: 2048,
+    },
+  } as any);
 
-    const text =
-      (typeof (res as any)?.text === "function"
-        ? (res as any).text()
-        : (res as any)?.text || "")
-        ?.trim() || "";
+  const text =
+    (typeof (res as any)?.text === "function"
+      ? (res as any).text()
+      : (res as any)?.text || "")
+      ?.trim() || "";
 
-    state.summary = text.slice(0, maxSummaryChars);
-    state.history = recent;
+  state.summary = text.slice(0, maxSummaryChars);
+  state.history = recent;
 
-    saveState(uid, state);
-  } catch (e: any) {
-    const status = e?.status ?? e?.response?.status;
-    const msg = String(e?.message || "").toLowerCase();
-    const isLeakedKey =
-      status === 403 &&
-      (msg.includes("leaked") ||
-       msg.includes("reported as leaked") ||
-       msg.includes("please use another api key"));
-
-    if (isLeakedKey && apiKeyInfo) {
-      // key bị leak: xóa luôn key khỏi danh sách
-      removeLeakedKey(apiKeyInfo);
-    }
-    // Nếu có lỗi khi summarize, giữ nguyên state và không throw
-    console.log("Error summarizing:", e?.message || e);
-  }
+  saveState(uid, state);
 }
 
 async function downloadFile(url: string): Promise<Buffer> {
@@ -486,8 +456,8 @@ async function getAnswer({
   if (!prompt || !String(prompt).trim()) prompt = "Xin chào";
 
   const state = loadState(uid);
-  const apiKeyInfo = pickKey();
-  const ai = new GoogleGenAI({ apiKey: apiKeyInfo.key });
+  const apiKey = pickKey();
+  const ai = new GoogleGenAI({ apiKey });
   const systemInstruction = buildSystemInstruction(persona, state.summary);
   let files: any[] = [];
 
@@ -571,13 +541,6 @@ async function getAnswer({
 
     return text;
   } catch (e: any) {
-    const status = e?.status ?? e?.response?.status;
-    const msg = String(e?.message || "").toLowerCase();
-    const isLeakedKey =
-      status === 403 &&
-      (msg.includes("leaked") ||
-       msg.includes("reported as leaked") ||
-       msg.includes("please use another api key"));
     const isRateLimit =
       e?.status === 429 ||
       String(e?.message || "")
@@ -587,11 +550,6 @@ async function getAnswer({
         .toLowerCase()
         .includes("quota") ||
       e?.code === "RESOURCE_EXHAUSTED";
-
-    if (isLeakedKey) {
-      // key bị leak: xóa luôn key khỏi danh sách
-      removeLeakedKey(apiKeyInfo);
-    }
 
     if (isRateLimit && retry < API_KEYS.length * 2) {
       rotateKeyOnFail();

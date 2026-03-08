@@ -103,13 +103,7 @@ const botEvent: BotEventDefinition = {
     if (!task) return;
 
     const cachedInfo = (await threadData.get(t))?.threadInfo || {};
-    let fallbackName: string | undefined;
-    try {
-      fallbackName = await threadData.getName(t);
-    } catch (error) {
-      // Thread name not found in database, use fallback
-      fallbackName = undefined;
-    }
+    const fallbackName = await threadData.getName(t);
     const threadName =
       (cachedInfo as any).threadName ||
       (cachedInfo as any).name ||

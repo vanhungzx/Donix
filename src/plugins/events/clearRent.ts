@@ -1,9 +1,10 @@
 import type { EventContext } from "@types";
 import fs from "fs-extra";
 import path from "path";
+import { RENT_JSON_PATH, RENT_KEYS_PATH } from "../../core/storagePath";
 
-const RENT_PATH = path.join(process.cwd(), "src/storage/rent/rent.json");
-const KEYS_PATH = path.join(process.cwd(), "src/storage/rent/keys.json");
+const RENT_PATH = RENT_JSON_PATH();
+const KEYS_PATH = RENT_KEYS_PATH();
 
 const clearRentEvent = {
   name: "cleanRent",

@@ -3,6 +3,8 @@ import path from "path";
 import type { Bot, Logger, ThreadDataStore, Config } from "../types";
 import { slp, remDays, nicknameFor } from "../utils";
 import type { FacebookClient } from "../../../../types/client";
+import { RENT_JSON_PATH } from "../../../storagePath";
+
 export async function updNick(
   client: FacebookClient,
   logger: Logger | undefined,
@@ -12,7 +14,7 @@ export async function updNick(
   const skip = new Set(["8302766259746371", "9425058504221272", "6978344125578487"]);
   let rent: Array<{ threadID?: string; endDate?: string }> = [];
   try {
-    const p = path.join(process.cwd(), "src/storage/rent/rent.json");
+    const p = RENT_JSON_PATH();
     const dir = path.dirname(p);
 
 

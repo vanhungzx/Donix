@@ -7,7 +7,7 @@ import got from "got";
 import stream from "node:stream";
 import path from "path";
 import { URL } from "url";
-import autoReloginWithFacebookWeb from "../../../core/auth_login/auto_relogin";
+import autoRelogin from "../../../core/auth_login/auto_relogin";
 import { getConfig } from "../../../core/configManager";
 import logger from "../../../core/logger";
 import { extractUserID } from "../../login/contextBuilder";
@@ -677,9 +677,9 @@ export default function ruploadAttachmentModule(
             if (!sessionStatus.cookieLive || sessionStatus.isLoggedOut) {
               try {
                 logger.warn(
-                  "[ruploadAttachment] Cookie/session có vấn đề, đang thử AUTO-LOGIN bằng facebook_web..."
+                  "[ruploadAttachment] Cookie/session có vấn đề, đang thử AUTO-LOGIN..."
                 );
-                const ok = await autoReloginWithFacebookWeb(ctx as any);
+                const ok = await autoRelogin(ctx as any);
                 if (ok) {
                   logger.success(
                     "[ruploadAttachment] AUTO-LOGIN thành công. Cookie đã được cập nhật, vui lòng thử gửi lại file."
@@ -711,12 +711,6 @@ export default function ruploadAttachmentModule(
         if (!mediaId) {
           logger.warn(
             `[ruploadAttachment] No mediaId extracted from response for ${mediaType}. Status: ${response.statusCode}. Response keys: ${parsed && typeof parsed === "object" ? Object.keys(parsed).join(", ") : "N/A"}. Response preview: ${typeof parsed === "string" ? parsed.slice(0, 200) : JSON.stringify(parsed).slice(0, 200)}`
-          );
-        } else {
-          logger.success(
-            `[ruploadAttachment] Lấy mediaId thành công cho ${mediaType}: ${String(mediaId)} (uploadId=${String(
-              uploadId ?? ""
-            )})`
           );
         }
 
@@ -776,9 +770,9 @@ export default function ruploadAttachmentModule(
           if (!sessionStatus.cookieLive || sessionStatus.isLoggedOut) {
             try {
               logger.warn(
-                "[ruploadAttachment] Cookie/session có vấn đề, đang thử AUTO-LOGIN bằng facebook_web..."
+                "[ruploadAttachment] Cookie/session có vấn đề, đang thử AUTO-LOGIN..."
               );
-              const ok = await autoReloginWithFacebookWeb(ctx as any);
+              const ok = await autoRelogin(ctx as any);
               if (ok) {
                 logger.success(
                   "[ruploadAttachment] AUTO-LOGIN thành công. Cookie đã được cập nhật, vui lòng thử gửi lại file."
@@ -809,8 +803,3 @@ export default function ruploadAttachmentModule(
     }
   };
 }
-
-export type {
-  AttachmentSource,
-  RuploadInvocationOptions, RuploadResult, RuploadTask
-};

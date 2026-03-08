@@ -5,7 +5,7 @@
   "type": "module",
   "main": "index.ts",
   "scripts": {
-    "start": "tsx src/index.ts",
+    "start": "node --import tsx src/index.ts",
     "start:prod": "node --expose-gc --max-old-space-size=384 --optimize-for-size --gc-interval=100 --import tsx src/index.ts",
     "start:dev": "node --expose-gc --import tsx --watch src/index.ts",
     "type-check": "tsc --noEmit",

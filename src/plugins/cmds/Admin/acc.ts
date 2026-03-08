@@ -1,7 +1,7 @@
 import type { Command } from "@types";
 import fs from "node:fs";
 import path from "node:path";
-import loginWeb from "../../../core/auth_login/facebook_web";
+import { login as loginMessengerApp } from "../../../core/auth_login/messenger_app";
 
 const configPath = path.resolve(process.cwd(), "src/core/config/config.json");
 
@@ -110,48 +110,37 @@ async function performLoginWithMethod(
     return;
   }
 
-  // Dùng chung một phương thức chính: facebook_web
-  await reply(`⏳ Đang đăng nhập lại acc #${idx + 1} bằng phương thức web (facebook_web)...`);
+  const normalized = (method || "msg").toLowerCase();
 
-  try {
-    const result = await loginWeb({ email, password, secret2FA });
+  await reply(`⏳ Đang đăng nhập acc #${idx + 1} bằng messenger...`);
 
-    if (result.status !== "success") {
-      if (result.checkpointCode === "282" || result.checkpointCode === "956") {
-        reply(
-          `❌ Đăng nhập web thất bại: tài khoản bị checkpoint ${result.checkpointCode}` +
-          (result.checkpointReason ? ` - ${result.checkpointReason}` : "")
-        );
-      } else {
-        reply(
-          `❌ Đăng nhập web thất bại: ${result.error || result.status || "Không rõ lỗi"}`
-        );
-      }
+  let cookie: string | null = null;
+
+  if (["msg", "messenger", "messenger_app"].includes(normalized)) {
+    const result = await loginMessengerApp(email, password, secret2FA || "");
+    if (!result.success) {
+      reply(`❌ Đăng nhập bằng Messenger thất bại: ${result.message}`);
       return;
     }
-
-    const cookie = result.cookie;
-    if (!cookie || typeof cookie !== "string" || !cookie.includes("c_user=")) {
-      reply("❌ Đăng nhập thất bại: cookie trả về không hợp lệ hoặc thiếu c_user.");
-      return;
-    }
-
-    applyCookieToConfigAndGlobal(cookie, idx, cfg);
-
-    const uid = extractUserIdFromCookie(cookie);
-    reply(
-      `✅ Đăng nhập thành công bằng web.\n` +
-      (uid ? `➡️ UID: ${uid}\n` : "") +
-      "Cookie & acc active đã được cập nhật vào config.\n🔄 Đang khởi động lại bot..."
-    );
-
-    setTimeout(() => {
-      process.exit(1);
-    }, 1500);
-  } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : String(e);
-    reply(`❌ Lỗi khi đăng nhập web: ${message}`);
+    cookie = result.cookies || null;
+  } else {
+    reply("Phương thức login không hợp lệ. Chỉ hỗ trợ: msg.");
+    return;
   }
+
+  if (!cookie || typeof cookie !== "string" || !cookie.includes("c_user=")) {
+    reply("❌ Đăng nhập thất bại: cookie trả về không hợp lệ hoặc thiếu c_user.");
+    return;
+  }
+
+  applyCookieToConfigAndGlobal(cookie, idx, cfg);
+
+  const uid = extractUserIdFromCookie(cookie);
+  reply(
+    `✅ Đăng nhập thành công bằng phương thức ${normalized}.\n` +
+    (uid ? `➡️ UID: ${uid}\n` : "") +
+    "Cookie & acc active đã được cập nhật vào config."
+  );
 }
 
 const command: Command = {
@@ -161,7 +150,7 @@ const command: Command = {
   guide:
     "{p}acc list\n" +
     "{p}acc use <index>\n" +
-    "{p}acc login <index>\n" +
+    "{p}acc login <index> [msg]\n" +
     "{p}acc disable <index>\n" +
     "{p}acc enable <index>",
   prefix: true,
@@ -238,6 +227,9 @@ const command: Command = {
         return;
       }
 
+      const methodRaw = (args[2] || "msg").toLowerCase();
+      const method = methodRaw;
+
       const email: string | undefined = acc.email;
       const password: string | undefined = acc.password;
 
@@ -247,11 +239,11 @@ const command: Command = {
       }
 
       try {
-        await performLoginWithMethod(idx, "web", acc, cfg, reply);
+        await performLoginWithMethod(idx, method, acc, cfg, reply);
         return;
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : String(e);
-        reply(`❌ Lỗi khi login acc (web): ${message}`);
+        reply(`❌ Lỗi khi login acc (${method}): ${message}`);
         return;
       }
     }
@@ -348,10 +340,49 @@ const command: Command = {
           return;
         }
 
-        reply(
+        client.sendMessage(
           `Đã chọn acc #${stt} (${acc.email || "no-email"}).\n` +
-          "Dùng lệnh: fbacc login " + stt + " để đăng nhập bằng phương thức web (facebook_web)."
+          "Chọn phương thức login: msg\n" +
+          "👉 Reply: msg",
+          event.threadID,
+          (_: unknown, info: { messageID?: string } | undefined) => {
+            if (!info?.messageID) return;
+            if (!main || !main.onReply || typeof main.onReply.set !== "function") {
+              reply("⚠️ Hệ thống không hỗ trợ onReply. Vui lòng dùng lệnh login trực tiếp.");
+              return;
+            }
+            main.onReply.set(info.messageID, {
+              commandName,
+              messageID: info.messageID,
+              type: "acc-select-method",
+              author: String(event.senderID),
+              accIndex: idx,
+            });
+          }, event.messageID
         );
+        return;
+      }
+
+      if (type === "acc-select-method") {
+        const method = body.toLowerCase();
+        const cfg = loadFreshConfig();
+        const accounts = Array.isArray(cfg.fbAccounts) ? cfg.fbAccounts : [];
+        if (!accounts.length) {
+          reply("Chưa có fbAccounts trong config.");
+          return;
+        }
+        const idx = typeof accIndex === "number" ? accIndex : -1;
+        if (idx < 0 || idx >= accounts.length) {
+          reply("Dữ liệu acc không hợp lệ, vui lòng list lại.");
+          return;
+        }
+        const acc = accounts[idx];
+        if (!acc || acc.disabled) {
+          reply("Tài khoản này đang bị disable hoặc chưa cấu hình đúng.");
+          return;
+        }
+
+        await performLoginWithMethod(idx, method, acc, cfg, reply);
         return;
       }
 

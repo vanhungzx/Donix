@@ -9,6 +9,7 @@ import type {
 import axios from "axios";
 import fs from "fs-extra";
 import path from "path";
+import { storagePath } from "../../../core/storagePath";
 
 interface Gun {
   name: string;
@@ -125,10 +126,7 @@ async function getZombie(
   currentHour: number,
   currentMonth: number
 ): Promise<Zombie[]> {
-  const dataPath = path.join(
-    process.cwd(),
-    "src/storage/game/zwar/data.json"
-  );
+  const dataPath = storagePath("game", "zwar", "data.json");
 
   if (!fs.existsSync(dataPath)) {
     return [];
@@ -162,7 +160,7 @@ const zwarCommand: Command = {
   prefix: true,
 
   onLoad: async () => {
-    const dirMaterial = path.join(process.cwd(), "src/storage/game/zwar/");
+    const dirMaterial = storagePath("game", "zwar");
 
     if (!fs.existsSync(dirMaterial)) {
       await fs.ensureDir(dirMaterial);
@@ -251,10 +249,7 @@ const zwarCommand: Command = {
     const replyData = Reply as unknown as ZwarReplyData | undefined;
     if (!replyData || replyData.author !== event.senderID) return;
 
-    const gunDataPath = path.join(
-      process.cwd(),
-      "src/storage/game/zwar/gun.json"
-    );
+    const gunDataPath = storagePath("game", "zwar", "gun.json");
     if (!fs.existsSync(gunDataPath)) {
       await client.sendMessage(
         "[ ERROR ] - Không tìm thấy dữ liệu súng!",

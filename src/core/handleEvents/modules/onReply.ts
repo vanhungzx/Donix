@@ -1,4 +1,4 @@
-import type { CommandContextBase, CommandMessenger, CommandOnReplyContext, EditMessenger, ExtendedMessageEvent, MessageForm, ReplyData, UnsendMessenger } from "@types";
+import type { Command, CommandContextBase, CommandMessenger, CommandOnReplyContext, EditMessenger, ExtendedMessageEvent, MessageForm, ReplyData, UnsendMessenger } from "@types";
 import { checkAdminBox } from "../../../utils/admin";
 import { checkBanned } from "../../../utils/banned";
 import { rent } from "../../../utils/rent";

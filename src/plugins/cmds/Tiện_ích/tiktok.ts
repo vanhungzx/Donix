@@ -319,13 +319,17 @@ export default {
         try {
           const chosenVideo = Reply.result[choose - 1];
           const attachments: any[] = [];
-          if (chosenVideo.type === "Video" && chosenVideo.vdbuffer) {
-            const uuid = utils.getGUID();
-            const filePath = path.join(
-              process.cwd(), `src/temp/tiktok_video_${uuid}.mp4`
-            );
-            fs.writeFileSync(filePath, chosenVideo.vdbuffer);
-            attachments.push(fs.createReadStream(filePath));
+          if (chosenVideo.type === "Video") {
+            if (chosenVideo.vdbuffer) {
+              const uuid = utils.getGUID();
+              const filePath = path.join(
+                process.cwd(), `src/temp/tiktok_video_${uuid}.mp4`
+              );
+              fs.writeFileSync(filePath, chosenVideo.vdbuffer);
+              attachments.push(fs.createReadStream(filePath));
+            } else if (chosenVideo.play) {
+              attachments.push(await utils.stream(chosenVideo.play, "mp4"));
+            }
           } else if (
             chosenVideo.type === "Photo" &&
             Array.isArray(chosenVideo.url)

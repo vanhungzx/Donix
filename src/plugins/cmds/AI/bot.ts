@@ -12,7 +12,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import { database } from "../../../core/AI-Database";
-import { generateAIThemesFromPrompt } from "../../../API/detail/AI/generateAIThemes";
 
 import type { ServicesMap } from "../../../types/api";
 
@@ -39,6 +38,8 @@ function tmpPath(ext?: string) {
     `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext || "bin"}`
   );
 }
+
+
 
 const EXT_BY_MIME: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -413,43 +414,28 @@ async function fetchWeatherSummary(location: string) {
 async function generateRoast(target: string, allowToxic: boolean) {
   const safeTarget = target || "người này";
   const picked = pickKeyForModel("flash");
-  try {
-    const ai = new GoogleGenAI({ apiKey: picked.key }) as unknown as GenAIModels;
-    const r = await ai.models.generateContent({
-      model: picked.modelName,
-      contents: [{ role: "user", parts: [{ text: `Roast ${safeTarget} nhé.` }] }],
-      config: {
-        safetySettings,
-        thinkingConfig: { thinkingBudget: 0 },
-        systemInstruction: `Bạn là Hương, genZ, biết cà khịa. Viết đoạn chửi/roast ngắn gọn bằng tiếng Việt, hài hước, không xúc phạm nhóm yếu thế, không đe dọa bạo lực. ${allowToxic
-          ? "Có thể dùng từ lóng, chửi nhẹ nhưng tránh quá đà."
-          : "Giữ mức độ mỉa mai nhẹ, tránh tục tĩu vì chế độ chửi đang tắt."
-          }`
-      }
-    });
-    markRequestSuccess(picked);
-    const text =
-      typeof r?.text === "function"
-        ? r.text()
-        : r?.text ||
-        r?.response?.text?.() ||
-        r?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text).filter(Boolean).join(" ") ||
-        "Im speechless luôn.";
-    return text.trim();
-  } catch (e: any) {
-    const status = e?.status ?? e?.response?.status;
-    const msg = String(e?.message || "").toLowerCase();
-    const isLeakedKey =
-      status === 403 &&
-      (msg.includes("leaked") ||
-        msg.includes("reported as leaked") ||
-        msg.includes("please use another api key"));
-    if (isLeakedKey) {
-      // key bị leak: xóa luôn key khỏi danh sách
-      removeLeakedKey(picked);
+  const ai = new GoogleGenAI({ apiKey: picked.key }) as unknown as GenAIModels;
+  const r = await ai.models.generateContent({
+    model: picked.modelName,
+    contents: [{ role: "user", parts: [{ text: `Roast ${safeTarget} nhé.` }] }],
+    config: {
+      safetySettings,
+      thinkingConfig: { thinkingBudget: 0 },
+      systemInstruction: `Bạn là Hương, genZ, biết cà khịa. Viết đoạn chửi/roast ngắn gọn bằng tiếng Việt, hài hước, không xúc phạm nhóm yếu thế, không đe dọa bạo lực. ${allowToxic
+        ? "Có thể dùng từ lóng, chửi nhẹ nhưng tránh quá đà."
+        : "Giữ mức độ mỉa mai nhẹ, tránh tục tĩu vì chế độ chửi đang tắt."
+        }`
     }
-    throw e;
-  }
+  });
+  markRequestSuccess(picked);
+  const text =
+    typeof r?.text === "function"
+      ? r.text()
+      : r?.text ||
+      r?.response?.text?.() ||
+      r?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text).filter(Boolean).join(" ") ||
+      "Im speechless luôn.";
+  return text.trim();
 }
 
 const topicMemories = database.createCollection("topic_memories");
@@ -473,12 +459,10 @@ type ApiKeyState = {
   remaining: Record<ModelKind, number>;
 };
 
-const QUOTA_STATE_FILE = path.join(
-  process.cwd(),
-  "src/storage",
-  "gemini",
-  "api-quota.json"
-);
+import { STORAGE_GEMINI } from "../../../core/storagePath";
+import { downloadYoutubeAudio } from "../Tiện_ích/sing";
+
+const QUOTA_STATE_FILE = path.join(STORAGE_GEMINI(), "api-quota.json");
 
 const API_KEYS: ApiKeyState[] = [
   {
@@ -784,19 +768,6 @@ function markKeyRateLimited(picked: PickedKey | null | undefined) {
   k.remaining.flash = 0;
   k.remaining.lite = 0;
   saveQuotaToFile();
-}
-
-function removeLeakedKey(picked: PickedKey | null | undefined) {
-  if (!picked || picked.index < 0) return;
-  if (picked.index >= 0 && picked.index < API_KEYS.length) {
-    console.log(`Removing leaked API key at index ${picked.index}: ${picked.key.substring(0, 20)}...`);
-    API_KEYS.splice(picked.index, 1);
-    // Reset currentKeyIndex if it's out of bounds
-    if (currentKeyIndex >= API_KEYS.length) {
-      currentKeyIndex = 0;
-    }
-    saveQuotaToFile();
-  }
 }
 
 const safetySettings = [
@@ -1595,7 +1566,6 @@ interface Manifest {
 }
 
 const MAX_DURATION = 15 * 60;
-const MAX_SIZE_AUDIO = 25 * 1024 * 1024; // 25MB audio
 const MAX_SIZE_VIDEO = 25 * 1024 * 1024; // 25MB video
 const TARGET_BITRATE = 128000; // 128kbps
 
@@ -1716,55 +1686,6 @@ async function dlVideo(url: string, q: number = 360, givenTitle: string = ""): P
 
   const downloadResult = await downloadStream(stream.url, outputPath);
   return { path: downloadResult.path, title };
-}
-
-async function dlAudio(url: string, givenTitle: string = ""): Promise<{ path: string; title: string }> {
-  const videoId = extractVideoId(url);
-  if (!videoId) throw new Error("Không thể lấy Video ID");
-
-  const manifest = await fetchYoutubePlayer(videoId);
-  const title = sanitize(givenTitle || manifest.info.title || `audio_${Date.now()}`);
-  const duration = Number(manifest.info.duration || manifest.info.lengthSeconds || 0);
-
-  if (duration > MAX_DURATION) {
-    throw new Error("Video dài quá 15 phút");
-  }
-
-  const audioStream = manifest.bestAudio || manifest.bestProgressive;
-  if (!audioStream || !audioStream.url) {
-    throw new Error("Không tìm thấy audio stream");
-  }
-
-  const estimatedSize = Number(audioStream.contentLength || 0);
-  if (estimatedSize > MAX_SIZE_AUDIO) {
-    throw new Error(`File quá lớn (${(estimatedSize / 1024 / 1024).toFixed(2)}MB > 25MB)`);
-  }
-
-  const actualSize = await headTotal(audioStream.url);
-  if (actualSize > 0 && actualSize > MAX_SIZE_AUDIO) {
-    throw new Error(`File quá lớn (${(actualSize / 1024 / 1024).toFixed(2)}MB > 25MB)`);
-  }
-
-  const base = path.join(tempRoot(), title);
-  const ext = audioStream.mimeType.includes("webm")
-    ? "webm"
-    : audioStream.mimeType.includes("mp4")
-      ? "m4a"
-      : "mp3";
-  const outputPath = `${base}.${ext}`;
-
-  const downloadResult = await downloadStream(audioStream.url, outputPath);
-
-  if (downloadResult.size > MAX_SIZE_AUDIO) {
-    try {
-      fs.unlinkSync(outputPath);
-    } catch {
-      // Ignore
-    }
-    throw new Error(`File quá lớn (${(downloadResult.size / 1024 / 1024).toFixed(2)}MB > 25MB)`);
-  }
-
-  return { path: outputPath, title };
 }
 
 function tempRoot(): string {
@@ -2301,10 +2222,9 @@ function formatEventsForPrompt(ctx: any) {
 }
 
 async function askGeminiForInfo(question: string, useSearch = false) {
-  let picked: PickedKey | null | undefined;
   const timeoutMs = 10000;
   try {
-    picked = pickKeyForModel("flash");
+    const picked = pickKeyForModel("flash");
     const helperAI = new GoogleGenAI({ apiKey: picked.key }) as unknown as GenAIModels;
     const helperPrompt = `Bạn là một trợ lý thông minh. Hãy cung cấp thông tin ngắn gọn, chính xác về câu hỏi sau (tối đa 200 từ, bằng tiếng Việt, tự nhiên như đang trò chuyện với bạn thân):
 
@@ -2345,17 +2265,6 @@ Yêu cầu:
         : response?.text || "";
     return answer.trim() || null;
   } catch (e: any) {
-    const status = e?.status ?? e?.response?.status;
-    const msg = String(e?.message || "").toLowerCase();
-    const isLeakedKey =
-      status === 403 &&
-      (msg.includes("leaked") ||
-        msg.includes("reported as leaked") ||
-        msg.includes("please use another api key"));
-    if (isLeakedKey) {
-      // key bị leak: xóa luôn key khỏi danh sách
-      removeLeakedKey(picked);
-    }
     console.log("Error asking Gemini for info:", e?.message || e);
     return null;
   }
@@ -4081,24 +3990,8 @@ ${geminiAnswer}`;
           throw new Error("Not a valid array");
         }
       } catch {
-        // Nếu rawText trông giống JSON (bắt đầu bằng [ hoặc {), không gửi ra ngoài
-        const trimmed = rawText?.trim() || "";
-        if (trimmed && (trimmed.startsWith("[") || trimmed.startsWith("{"))) {
-          // Cố gắng parse lại một lần nữa với các cách khác
-          try {
-            // Thử parse với các dấu ngoặc đơn thay vì ngoặc kép
-            const fixed = trimmed.replace(/'/g, '"');
-            parsed = JSON.parse(fixed);
-            if (!Array.isArray(parsed)) {
-              throw new Error("Not a valid array");
-            }
-          } catch {
-            // Nếu vẫn không được, không gửi JSON string ra ngoài
-            parsed = [];
-          }
-        } else if (trimmed) {
-          // Chỉ gửi nếu không phải JSON string
-          parsed = [{ type: "chat", content: trimmed }];
+        if (rawText && rawText.trim()) {
+          parsed = [{ type: "chat", content: rawText.trim() }];
         } else {
           parsed = [];
         }
@@ -4273,15 +4166,6 @@ ${geminiAnswer}`;
         .toLowerCase()
         .includes("quota") ||
       e?.code === "RESOURCE_EXHAUSTED";
-    const isLeakedKey =
-      status === 403 &&
-      (msg.includes("leaked") ||
-        msg.includes("reported as leaked") ||
-        msg.includes("please use another api key"));
-    if (isLeakedKey) {
-      // key bị leak: xóa luôn key khỏi danh sách
-      removeLeakedKey(picked);
-    }
     if (isRateLimit) {
       // key dính 429: set hết quota để tránh dùng lại
       markKeyRateLimited(picked);
@@ -4328,25 +4212,7 @@ async function executeActions(
   for (const action of actions) {
     try {
       if (action.type === "chat") {
-        // Đảm bảo không gửi JSON string ra ngoài
-        let content = action.content;
-        if (typeof content === "string") {
-          const trimmed = content.trim();
-          // Nếu content trông giống JSON array hoặc object, cố gắng parse
-          if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
-            try {
-              const parsed = JSON.parse(trimmed);
-              // Nếu parse được và là array, bỏ qua (không gửi JSON ra ngoài)
-              if (Array.isArray(parsed)) {
-                console.log("Skipping JSON array in chat content:", parsed);
-                continue;
-              }
-            } catch {
-              // Nếu không parse được, có thể không phải JSON hợp lệ, gửi bình thường
-            }
-          }
-        }
-        const messageObj: any = { body: content };
+        const messageObj: any = { body: action.content };
         if (action.mentions) messageObj.mentions = action.mentions;
         if (action.effect) messageObj.effect = action.effect;
         if (action.location) messageObj.location = action.location;
@@ -4378,29 +4244,7 @@ async function executeActions(
           () => { }
         );
       } else if (action.type === "set_color") {
-        try {
-          if (action.prompt && typeof action.prompt === "string" && action.prompt.trim().length > 0) {
-            const themes = await generateAIThemesFromPrompt({
-              prompt: action.prompt.trim(),
-              num_themes: 1
-            });
-            const theme = Array.isArray(themes) && themes.length > 0 ? themes[0] : null;
-            if (!theme || !theme.id) {
-              await reply("❌ Không tạo được theme AI từ mô tả, vui lòng thử lại với prompt khác.");
-            } else {
-              client.setTheme(theme.id, threadID);
-              await reply(
-                `✅ Đã đổi nền chat bằng theme AI: ${theme.accessibility_label || "AI theme"}`
-              );
-            }
-          } else {
-            client.setTheme(action.color || "3259963564026002", threadID);
-          }
-        } catch (err) {
-          await reply(
-            "❌ Lỗi khi tạo theme AI cho nền chat, vui lòng thử lại sau."
-          );
-        }
+        client.setTheme(action.color || "3259963564026002", threadID);
       } else if (action.type === "set_nicknames") {
         client.changeNickname(action.name, threadID, action.targetID);
       } else if (action.type === "anti") {
@@ -4498,53 +4342,45 @@ async function executeActions(
         }
       } else if (action.type === "sing") {
         try {
-          let videoUrl: string;
+          let videoIdOrUrl: string;
           let videoTitle = "";
-          let videoAuthor = "";
 
           if (/^\w{11}$|^https?:\/\//i.test(action.trackName)) {
-            videoUrl = /^https?:\/\//i.test(action.trackName)
+            videoIdOrUrl = /^https?:\/\//i.test(action.trackName)
               ? action.trackName
               : `https://www.youtube.com/watch?v=${action.trackName}`;
           } else {
             const searchResult = await searchYouTube(action.trackName, api);
-            videoUrl = `https://www.youtube.com/watch?v=${searchResult.videoId}`;
+            videoIdOrUrl = `https://www.youtube.com/watch?v=${searchResult.videoId}`;
             videoTitle = searchResult.title;
           }
 
-          const r = await dlAudio(videoUrl, videoTitle);
+          const r = await downloadYoutubeAudio(videoIdOrUrl, videoTitle);
+          const info = r.manifest.info;
+          const author = info.channel || "Unknown";
+          const duration = Number(info.duration || 0);
+          const durationStr = duration >= 3600
+            ? `${Math.floor(duration / 3600)}:${String(Math.floor((duration % 3600) / 60)).padStart(2, "0")}:${String(duration % 60).padStart(2, "0")}`
+            : `${Math.floor(duration / 60)}:${String(duration % 60).padStart(2, "0")}`;
+          const sizeFormatted = r.size > 1024 * 1024
+            ? `${(r.size / 1024 / 1024).toFixed(2)}MB`
+            : `${(r.size / 1024).toFixed(2)}KB`;
 
-
-          if (!videoAuthor) {
-            const videoId = extractVideoId(videoUrl);
-            if (videoId) {
-              try {
-                const manifest = await fetchYoutubePlayer(videoId);
-                videoAuthor = manifest.info.author || "";
-                if (!videoTitle) videoTitle = manifest.info.title || "";
-              } catch {
-
-              }
-            }
-          }
-
-          const fileSize = fs.statSync(r.path).size;
-          const sizeFormatted = fileSize > 1024 * 1024
-            ? `${(fileSize / 1024 / 1024).toFixed(2)}MB`
-            : `${(fileSize / 1024).toFixed(2)}KB`;
-
+          const readStream = fs.createReadStream(r.path);
           await reply({
-            body: `🎵 ${r.title}\n👤 ${videoAuthor}\n📊 ${sizeFormatted}`,
-            attachment: [fs.createReadStream(r.path)]
+            body: `🎵 ${r.title}\n👤 ${author}\n⏱️ ${durationStr}\n📊 ${sizeFormatted}`,
+            attachment: [readStream]
           });
-          setTimeout(() => {
-            try {
-              fs.unlinkSync(r.path);
-            } catch { }
-          }, 60000);
+          readStream.on("close", () => {
+            setTimeout(() => {
+              try {
+                fs.unlinkSync(r.path);
+              } catch {}
+            }, 30000);
+          });
         } catch (e: unknown) {
           const errorMessage = e instanceof Error ? e.message : "Unknown error";
-          await reply({ body: `❌ Error: ${errorMessage}` });
+          await reply({ body: `❌ Lỗi: ${errorMessage}` });
         }
       } else if (action.type === "video") {
         try {

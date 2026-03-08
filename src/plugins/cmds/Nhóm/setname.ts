@@ -7,8 +7,9 @@ import type {
 } from "@types";
 import fs from "fs-extra";
 import path from "path";
+import { storagePath } from "../../../core/storagePath";
 
-const setn = path.resolve(process.cwd(), "src/storage/other/setname.json");
+const setn = storagePath("other", "setname.json");
 
 
 if (!fs.existsSync(setn)) {

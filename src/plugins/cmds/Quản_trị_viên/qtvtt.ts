@@ -11,6 +11,7 @@ import type {
 import type { ParsedGroupResult } from "../../../API/detail/threads/threadInfoHtml.js";
 import fs from "fs-extra";
 import path from "path";
+import { STORAGE_ANTI } from "../../../core/storagePath";
 
 type ThreadID = string;
 type TrustedQtvMap = Record<ThreadID, string[]>;
@@ -33,7 +34,7 @@ class TrustedQtvManager {
   private filePath: string;
 
   constructor() {
-    this.dataDir = path.resolve(process.cwd(), "src/storage/anti");
+    this.dataDir = STORAGE_ANTI();
     this.filePath = path.join(this.dataDir, "trustedqtv.json");
     this.initializeFile();
   }

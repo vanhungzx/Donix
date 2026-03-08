@@ -12,6 +12,7 @@ import coreLogger from "../../../utils/log";
 import { readRent, rent } from "../../../utils/rent";
 import type { ThreadData } from "../../database/thread-data";
 import { HandlerDependencies, HandlerEventArgs } from "./types";
+import { storagePath } from "../../storagePath";
 
 const fmt = (t: number) => moment(t).tz("Asia/Ho_Chi_Minh").format("HH:mm:ss | DD/MM/YYYY");
 
@@ -263,28 +264,22 @@ export const createOnCall = ({
       }
     }
 
-  const bodyWithoutBotTag = stripBotMentions(bodyStr);
+    const bodyWithoutBotTag = stripBotMentions(bodyStr);
 
-if (bodyStr === pre || (isBotMentioned && !bodyWithoutBotTag)) {
-  const arr = [
-    `Ơiii bạn ơi (*´∀｀*) \nDùng ${pre}help để xem lệnh nha! 💕`,
-    `Bạn đang tìm lệnh hả? (｡♥‿♥｡)\nGõ ${pre}help để xem nè! ✨`,
-    `Hehe bạn cute ghê ~\nDùng ${pre}help để xem danh sách lệnh nha! 🌸`,
-    `Mình có thể giúp gì cho bạn không? (◕‿◕✿)\nGõ ${pre}help để xem lệnh nè! 💝`,
-    `Bạn muốn xem lệnh hả? (｡◕‿◕｡)\nDùng ${pre}help nha! 🎀`,
-    `Chào bạn đáng yêu! ٩(◕‿◕｡)۶\nGõ ${pre}help để xem mình có thể làm gì nè! 🌟`,
-  ];
-
-  if (reply) {
-    await reply({
-      body: arr[Math.floor(Math.random() * arr.length)],
-      attachment: global.Donix.vdanime?.splice?.(0, 1) || [],
-      effect: "fire"
-    });
-  }
-
-  return;
-}
+    if (bodyStr === pre || (isBotMentioned && !bodyWithoutBotTag)) {
+      const arr = [
+        `Ơiii bạn ơi (*´∀｀*) \nDùng ${pre}help để xem lệnh nha! 💕`,
+        `Bạn đang tìm lệnh hả? (｡♥‿♥｡)\nGõ ${pre}help để xem nè! ✨`,
+        `Hehe bạn cute ghê ~\nDùng ${pre}help để xem danh sách lệnh nha! 🌸`,
+        `Mình có thể giúp gì cho bạn không? (◕‿◕✿)\nGõ ${pre}help để xem lệnh nè! 💝`,
+        `Bạn muốn xem lệnh hả? (｡◕‿◕｡)\nDùng ${pre}help nha! 🎀`,
+        `Chào bạn đáng yêu! ٩(◕‿◕｡)۶\nGõ ${pre}help để xem mình có thể làm gì nè! 🌟`,
+      ];
+      if (reply) {
+        await reply({ body: arr[Math.floor(Math.random() * arr.length)] });
+      }
+      return;
+    }
 
     let args: string[] = [];
     let inCmd = "";
@@ -361,7 +356,7 @@ if (bodyStr === pre || (isBotMentioned && !bodyWithoutBotTag)) {
       return temp(client, `⚠️ Lệnh "${cmd.name}" bị cấm bởi ${role} ${nm} trong nhóm này`, tid, mid, undefined, scopedLogger);
     }
 
-    const dis = path.join(process.cwd(), "storage/other/disable-command.json");
+    const dis = storagePath("other", "disable-command.json");
     if (await fs.pathExists(dis)) {
       try {
         const d = await fs.readJson(dis);

@@ -3,6 +3,7 @@
 import type { Command, CommandOnCallContext } from '@types';
 import fs from "fs-extra";
 import path from "path";
+import { storagePath } from "../../../core/storagePath";
 
 const damCommand: Command = {
   name: "đấm",
@@ -32,10 +33,7 @@ const damCommand: Command = {
     }
     const tag = (mentions?.[mentionId] || "").replace("@", "");
 
-    const gifPath = path.join(
-      process.cwd(),
-      "src/storage/image/dam.gif"
-    );
+    const gifPath = storagePath("image", "dam.gif");
 
     try {
       if (!fs.existsSync(gifPath)) {

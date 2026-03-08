@@ -4,6 +4,7 @@ import type { Command, CommandOnCallContext } from '@types';
 import crypto from "crypto";
 import fs from "fs-extra";
 import path from "path";
+import { STORAGE_GAME } from "../../../core/storagePath";
 
 
 interface StreakData {
@@ -36,7 +37,7 @@ interface GameResult {
 }
 
 
-const dataDir = path.join(process.cwd(), "src/storage", "game", "taixiu");
+const dataDir = path.join(STORAGE_GAME(), "taixiu");
 const historyFilePath = path.join(dataDir, "taixiu_history.json");
 const jackpotFilePath = path.join(dataDir, "group_jackpots.json");
 const streakFilePath = path.join(dataDir, "win_streaks.json");

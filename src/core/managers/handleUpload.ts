@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import logger from "../logger";
 import { getCleanupManager } from "./cleanupManager";
+import { storagePath } from "../storagePath";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,10 +17,10 @@ const CATS = ["vdgai", "vdanime", "vdcos", "vdtrai"] as const;
 type Cat = (typeof CATS)[number];
 
 const DIRS: Record<Cat, string> = {
-  vdgai: path.join(__dirname, "../../storage/media/vdgai"),
-  vdanime: path.join(__dirname, "../../storage/media/vdanime"),
-  vdcos: path.join(__dirname, "../../storage/media/vdcos"),
-  vdtrai: path.join(__dirname, "../../storage/media/vdtrai"),
+  vdgai: storagePath("media", "vdgai"),
+  vdanime: storagePath("media", "vdanime"),
+  vdcos: storagePath("media", "vdcos"),
+  vdtrai: storagePath("media", "vdtrai"),
 };
 
 type UploadResult = { video_id?: string | number; audio_id?: string | number;[key: string]: any } | undefined;
