@@ -16,10 +16,10 @@ const CATS = ["vdgai", "vdanime", "vdcos", "vdtrai"] as const;
 type Cat = (typeof CATS)[number];
 
 const DIRS: Record<Cat, string> = {
-  vdgai: path.join(__dirname, "../../../storage/media/vdgai"),
-  vdanime: path.join(__dirname, "../../../storage/media/vdanime"),
-  vdcos: path.join(__dirname, "../../../storage/media/vdcos"),
-  vdtrai: path.join(__dirname, "../../../storage/media/vdtrai"),
+  vdgai: path.join(__dirname, "../../storage/media/vdgai"),
+  vdanime: path.join(__dirname, "../../storage/media/vdanime"),
+  vdcos: path.join(__dirname, "../../storage/media/vdcos"),
+  vdtrai: path.join(__dirname, "../../storage/media/vdtrai"),
 };
 
 type UploadResult = { video_id?: string | number; audio_id?: string | number;[key: string]: any } | undefined;

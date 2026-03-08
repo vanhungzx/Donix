@@ -235,8 +235,6 @@ function listenMqtt(defaultFuncs: any, api: any, ctx: any, globalCallback: any):
       } catch {
         return;
       }
-      console.log(JSON.stringify(jsonMessage, null, 2));
-
       // Fast path: use strict equality for exact topic matches (faster than switch for common cases)
       if (topic === TOPIC_T_MS) {
         handleTmsMessage(jsonMessage, ctx, defaultFuncs, api, globalCallback);

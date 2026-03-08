@@ -247,5 +247,14 @@
       "allowToxic": true
     },
     "timestamp": "2026-03-07T13:33:58.300Z"
+  },
+  {
+    "_id": "2249766208884182",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2026-03-08T01:53:29.467Z"
   }
 ]

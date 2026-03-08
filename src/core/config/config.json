@@ -4,9 +4,11 @@
   "DevMode": false,
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
   "cookie": "datr=WveraXyIKgKIDgGhr3NQFuap; fr=0J4dJ3S68J8XSsdQk.AWfTb1sa0g4K-E6DJ0oiSIkyNZTtotUO0drZuhFVm2ZqZfpVbKg.Bpq_da..AAA.0.0.Bpq_dk.AWe0736oC1eQNT6lxvR9S3f-Qj0; ps_l=1; ps_n=1; sb=Wverafzt3S-ReYYeY-sZA3Mp; c_user=61574857936692; xs=28%3AccINryp8JiN_2Q%3A2%3A1772877669%3A-1%3A-1",
-  "OWNER": "61574857936692",
+  "OWNER": "61586845605819",
   "ADMIN": [
-    "100001781687480"
+    "100001781687480",
+    "61564114700108",
+    "61587431253366"
   ],
   "token": {
     "EAAAAU": "",
