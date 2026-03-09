@@ -266,20 +266,26 @@ export const createOnCall = ({
 
     const bodyWithoutBotTag = stripBotMentions(bodyStr);
 
-    if (bodyStr === pre || (isBotMentioned && !bodyWithoutBotTag)) {
-      const arr = [
-        `Ơiii bạn ơi (*´∀｀*) \nDùng ${pre}help để xem lệnh nha! 💕`,
-        `Bạn đang tìm lệnh hả? (｡♥‿♥｡)\nGõ ${pre}help để xem nè! ✨`,
-        `Hehe bạn cute ghê ~\nDùng ${pre}help để xem danh sách lệnh nha! 🌸`,
-        `Mình có thể giúp gì cho bạn không? (◕‿◕✿)\nGõ ${pre}help để xem lệnh nè! 💝`,
-        `Bạn muốn xem lệnh hả? (｡◕‿◕｡)\nDùng ${pre}help nha! 🎀`,
-        `Chào bạn đáng yêu! ٩(◕‿◕｡)۶\nGõ ${pre}help để xem mình có thể làm gì nè! 🌟`,
-      ];
-      if (reply) {
-        await reply({ body: arr[Math.floor(Math.random() * arr.length)] });
-      }
-      return;
-    }
+if (bodyStr === pre || (isBotMentioned && !bodyWithoutBotTag)) {
+  const arr = [
+    `Ơiii bạn ơi (*´∀｀*) \nDùng ${pre}help để xem lệnh nha! 💕`,
+    `Bạn đang tìm lệnh hả? (｡♥‿♥｡)\nGõ ${pre}help để xem nè! ✨`,
+    `Hehe bạn cute ghê ~\nDùng ${pre}help để xem danh sách lệnh nha! 🌸`,
+    `Mình có thể giúp gì cho bạn không? (◕‿◕✿)\nGõ ${pre}help để xem lệnh nè! 💝`,
+    `Bạn muốn xem lệnh hả? (｡◕‿◕｡)\nDùng ${pre}help nha! 🎀`,
+    `Chào bạn đáng yêu! ٩(◕‿◕｡)۶\nGõ ${pre}help để xem mình có thể làm gì nè! 🌟`,
+  ];
+
+  if (reply) {
+    await reply({
+      body: arr[Math.floor(Math.random() * arr.length)],
+      attachment: global.Donix.vdanime?.splice?.(0, 1) || [],
+      effect: "fire"
+    });
+  }
+
+  return;
+}
 
     let args: string[] = [];
     let inCmd = "";

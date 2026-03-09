@@ -22,7 +22,7 @@
     ]
   },
   "antiINBOX": true,
-  "adminOnly": false,
+  "adminOnly": true,
   "adminbox": {
     "722146370916700": false,
     "1838598186737845": true,
