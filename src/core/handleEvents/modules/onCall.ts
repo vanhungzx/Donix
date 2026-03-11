@@ -3,7 +3,6 @@ import type {
 } from "@types";
 import fs from "fs-extra";
 import moment from "moment-timezone";
-import path from "path";
 import { findBestMatch } from "string-similarity";
 import { ownerNoPrefixAllowed } from "../../../utils/admin";
 import { escapeRegex } from "../../../utils/banned";
@@ -73,6 +72,13 @@ export const createOnCall = ({
     const sid = String(s);
     const tid = String(t);
     const { antiINBOX, PREFIX, ADMIN, OWNER, DevMode, adminOnly, adminbox } = config;
+
+    // Chuẩn hóa danh sách ADMIN về dạng string[] để tránh lỗi ADMIN null/undefined
+    const adminList: string[] = Array.isArray(ADMIN)
+      ? ADMIN.map((id) => String(id))
+      : ADMIN != null
+        ? [String(ADMIN)]
+        : [];
     const { cmds, cd } = main;
 
     const extEvent = event as ExtendedMessageEvent;
@@ -114,7 +120,7 @@ export const createOnCall = ({
         return typeof prefix === 'string' ? prefix : String(prefix || '');
       });
       const isOwnerCheck = Array.isArray(OWNER) ? OWNER.includes(sid) : String(OWNER) === sid;
-      const isAdminCheck = Array.isArray(ADMIN) ? ADMIN.includes(sid) : false;
+      const isAdminCheck = adminList.includes(sid);
 
       if (bodyStr.startsWith(pre0) && !isOwnerCheck && !isAdminCheck) {
         const name = bodyStr.slice(pre0.length).trim().split(/\s+/)[0]?.toLowerCase();
@@ -123,12 +129,18 @@ export const createOnCall = ({
 
         if (name !== "callad") {
           if (!r) {
-            return client.sendMessage("❎ Nhóm của bạn chưa thuê bot, liên hệ Admin để thuê bot", tid, mid);
+            const ownerContactId = Array.isArray(OWNER) ? OWNER[0] : String(OWNER || "");
+            if (ownerContactId && client.shareContact) {
+              await client.shareContact("❎ Nhóm của bạn chưa thuê bot, liên hệ Admin để thuê bot", ownerContactId, tid);
+            }
           }
-          const end = moment.tz(String(r.endDate).trim(), "DD/MM/YYYY", "Asia/Ho_Chi_Minh");
+          const end = moment.tz(String(r?.endDate).trim(), "DD/MM/YYYY", "Asia/Ho_Chi_Minh");
           const cur = moment.tz("Asia/Ho_Chi_Minh");
           if (end.isValid() && cur.isAfter(end)) {
-            return client.sendMessage("⚠️ Nhóm của bạn đã hết hạn thuê bot, liên hệ Admin để gia hạn", tid, mid);
+            const ownerContactId = Array.isArray(OWNER) ? OWNER[0] : String(OWNER || "");
+            if (ownerContactId && client.shareContact) {
+              await client.shareContact("⚠️ Nhóm của bạn đã hết hạn thuê bot, liên hệ Admin để gia hạn", ownerContactId, tid);
+            }
           }
         }
       }
@@ -162,7 +174,7 @@ export const createOnCall = ({
     );
 
     const isOwner = Array.isArray(OWNER) ? OWNER.includes(sid) : String(OWNER) === sid;
-    const isAdmin = Array.isArray(ADMIN) ? ADMIN.includes(sid) : false;
+    const isAdmin = adminList.includes(sid);
     const isTAdmin =
       (Array.isArray(inf.adminIDs)
         ? inf.adminIDs.some((a) => {
@@ -355,7 +367,7 @@ if (bodyStr === pre || (isBotMentioned && !bodyWithoutBotTag)) {
       const role =
         Array.isArray(OWNER) && OWNER.includes(bc.bannedBy)
           ? "Chủ Bot"
-          : Array.isArray(ADMIN) && ADMIN.includes(bc.bannedBy)
+          : adminList.includes(String(bc.bannedBy))
             ? "Admin Bot"
             : "Quản Trị Viên";
 

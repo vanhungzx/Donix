@@ -720,7 +720,10 @@ export default function (_defaultFuncs: unknown, _api: unknown, ctx: Context) {
             logger.error(`[uploadFb] Token refresh failed: ${(refreshErr as Error).message}`);
           }
         }
-        logger.error(`[uploadFb] error ${error.code || error.response?.status || ""} ${error.message || error}`);
+        const level = error.code === "NO_METADATA" ? "warn" : "error";
+        (logger as any)[level](
+          `[uploadFb] ${level} ${error.code || error.response?.status || ""} ${error.message || error}`
+        );
         return callback(error);
       }
     })().catch((err) => {

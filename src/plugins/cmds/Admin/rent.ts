@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import moment from 'moment-timezone';
 import { RENT_JSON_PATH, RENT_KEYS_PATH, STORAGE_RENT } from '../../../core/storagePath';
+import { remDays, nicknameFor } from '../../../core/handleEvents/task/utils';
 
 const RENT_PATH = RENT_JSON_PATH();
 const KEY_PATH = RENT_KEYS_PATH();
@@ -107,6 +108,7 @@ const onCall = async ({
   args,
   userData,
   threadData,
+  config,
   main,
   commandName
 }: any): Promise<any> => {
@@ -116,6 +118,29 @@ const onCall = async ({
 
   const today = moment().tz('Asia/Ho_Chi_Minh');
   const sub = String(args[0]).toLowerCase();
+
+  const getBotId = async (): Promise<string> => {
+    try {
+      const id = String((client as any)?.id ?? '');
+      if (id) return id;
+      const id2 = await (client as any)?.getCurrentUserID?.();
+      return String(id2 ?? '');
+    } catch {
+      return '';
+    }
+  };
+
+  const notRentedNickname = async (threadID: string): Promise<string> => {
+    const pre0 = String(config?.PREFIX || '/');
+    const botname = String(config?.BOTNAME || 'Obito');
+    try {
+      const inf = await threadData.get(String(threadID)).catch(() => null);
+      const pre = String(inf?.data?.PREFIX || pre0);
+      return `[ ${pre} ] • ${botname} || Chưa thuê`;
+    } catch {
+      return `[ ${pre0} ] • ${botname} || Chưa thuê`;
+    }
+  };
 
   switch (sub) {
     case 'add': {
@@ -181,6 +206,22 @@ const onCall = async ({
       rentList.push(rentData);
       saveData(rentList, RENT_PATH);
 
+      // Cập nhật biệt danh với số ngày còn lại
+      try {
+        const uid = await getBotId();
+        if (uid) {
+          const pre0 = String(config?.PREFIX || '/');
+          const botname = String(config?.BOTNAME || 'Obito');
+          const inf = await threadData.get(String(threadID)).catch(() => null);
+          const pre = String(inf?.data?.PREFIX || pre0);
+          const d = remDays(timeEnd);
+          const nn = nicknameFor(pre, botname, d);
+          await client.changeNickname(nn, String(threadID), String(uid));
+        }
+      } catch {
+        // ignore
+      }
+
       return reply(
         `✅ Thêm thành công!\n⏱️ ${timeStart} → ${timeEnd}\n🆔 Nhóm: ${threadID}\n👤 Người thuê: ${userID}`
       );
@@ -200,6 +241,17 @@ const onCall = async ({
 
       rentList.splice(idx, 1);
       saveData(rentList, RENT_PATH);
+
+      // Reset nickname về trạng thái "chưa thuê"
+      try {
+        const uid = await getBotId();
+        if (uid) {
+          const nn = await notRentedNickname(targetThread);
+          await client.changeNickname(nn, String(targetThread), String(uid));
+        }
+      } catch {
+        // ignore
+      }
 
       return reply(
         `✅ Đã xóa dữ liệu thuê:\n- Nhóm: ${threadName}\n- Người thuê: ${userName}\n- Thời gian: ${deleted.startDate} → ${deleted.endDate}`
@@ -679,16 +731,36 @@ const onReply = async ({
   main,
   event,
   threadData,
-  userData
+  userData,
+  config
 }: any): Promise<any> => {
   const body = String(event.body || '').trim();
   if (Reply.author && Reply.author !== event.senderID) {
-    return client.sendMessage(
-      '⚠️ Bạn không phải người yêu cầu thao tác này.',
-      Reply.threadID || event.threadID,
-      Reply.messageID
-    );
+    return;
   }
+
+  const getBotId = async (): Promise<string> => {
+    try {
+      const id = String((client as any)?.id ?? '');
+      if (id) return id;
+      const id2 = await (client as any)?.getCurrentUserID?.();
+      return String(id2 ?? '');
+    } catch {
+      return '';
+    }
+  };
+
+  const notRentedNickname = async (threadID: string): Promise<string> => {
+    const pre0 = String(config?.PREFIX || '/');
+    const botname = String(config?.BOTNAME || 'Obito');
+    try {
+      const inf = await threadData.get(String(threadID)).catch(() => null);
+      const pre = String(inf?.data?.PREFIX || pre0);
+      return `[ ${pre} ] • ${botname} || Chưa thuê`;
+    } catch {
+      return `[ ${pre0} ] • ${botname} || Chưa thuê`;
+    }
+  };
 
   switch (Reply.type as ReplyType) {
     case 'bank': {
@@ -865,6 +937,23 @@ const onReply = async ({
 
         saveData(updatedRent, RENT_PATH);
         saveData(updatedKeys, KEY_PATH);
+
+        // Reset nickname các nhóm vừa xóa thuê về "chưa thuê"
+        try {
+          const uid = await getBotId();
+          if (uid) {
+            for (const r of toDelete) {
+              try {
+                const nn = await notRentedNickname(r.threadID);
+                await client.changeNickname(nn, String(r.threadID), String(uid));
+              } catch {
+                // ignore
+              }
+            }
+          }
+        } catch {
+          // ignore
+        }
 
         const names = await Promise.all(
           toDelete.map(async (r) => {

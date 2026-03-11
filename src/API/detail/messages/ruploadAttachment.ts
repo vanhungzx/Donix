@@ -266,10 +266,6 @@ function generateUUID(): string {
   });
 }
 
-
-
-
-
 function ensureString(value: string | number | undefined): string | undefined {
   if (value === undefined || value === null) return undefined;
   return typeof value === "string" ? value : String(value);
@@ -359,80 +355,31 @@ async function checkSessionStatus(
         result.details += "Cookie: LIVE ✓; ";
       } else {
         result.cookieLive = false;
-        result.details += "Cookie: DEAD ✗ (không tìm thấy userID hoặc không khớp); ";
+        result.details += "Cookie: DEAD ✗; ";
       }
     } else {
-      result.details += "Cookie: Không có jar; ";
+      result.details += "Cookie: UNKNOWN; ";
     }
 
-    // 2. Check có bị logout không bằng cách gọi API đơn giản
-    if (defaultFuncs && ctx?.jar) {
-      try {
-        const testRes = await defaultFuncs.get("https://www.facebook.com/", ctx.jar) as ResponseWithUrl;
-        const html = typeof testRes?.data === "string" ? testRes.data : String(testRes?.data || "");
-        const url = testRes?.request?.res?.responseUrl || testRes?.config?.url || "";
+    // 2. Check error có chứa thông tin logout/checkpoint/warning không
+    const errorStr = String(
+      (error as any)?.response?.body ||
+      (error as any)?.body ||
+      (error as any)?.message ||
+      error
+    );
 
-        // Check redirect đến login
-        if (
-          url.includes("/login.php") ||
-          url.includes("login") ||
-          html.includes("https://www.facebook.com/login.php") ||
-          html.includes('"__user":0') ||
-          html.includes('"USER_ID":0')
-        ) {
-          result.isLoggedOut = true;
-          result.details += "Logout: YES ✗; ";
-        } else {
-          result.isLoggedOut = false;
-          result.details += "Logout: NO ✓; ";
-        }
-
-        // 3. Check checkpoint
-        if (
-          html.includes("/checkpoint/") ||
-          html.includes("checkpoint") ||
-          html.includes("1501092823525282") ||
-          html.includes("828281030927956") ||
-          url.includes("/checkpoint/")
-        ) {
-          result.hasCheckpoint = true;
-          result.details += "Checkpoint: YES ✗; ";
-        } else {
-          result.hasCheckpoint = false;
-          result.details += "Checkpoint: NO ✓; ";
-        }
-
-        // 4. Check warning
-        if (
-          html.includes("XCheckpointFBScrapingWarningController") ||
-          html.includes("601051028565049") ||
-          html.includes("FBScrapingWarning")
-        ) {
-          result.hasWarning = true;
-          result.details += "Warning: YES ✗; ";
-        } else {
-          result.hasWarning = false;
-          result.details += "Warning: NO ✓; ";
-        }
-      } catch (checkErr: unknown) {
-        const errMsg = checkErr instanceof Error ? checkErr.message : String(checkErr);
-        result.details += `Không thể check session (${errMsg}); `;
-      }
-    }
-
-    // Check trong error response nếu có
-    const errorStr = JSON.stringify(error || {});
-    if (errorStr.includes("XCheckpointFBScrapingWarningController") || errorStr.includes("601051028565049")) {
-      result.hasWarning = true;
-      result.details += "Warning trong error: YES ✗; ";
-    }
-    if (errorStr.includes("/checkpoint/") || errorStr.includes("checkpoint")) {
+    if (/checkpoint/i.test(errorStr)) {
       result.hasCheckpoint = true;
-      result.details += "Checkpoint trong error: YES ✗; ";
+      result.details += "Checkpoint: YES ✗; ";
     }
-    if (errorStr.includes("/login.php") || errorStr.includes("Not logged in")) {
+    if (/warning|tạm khóa|bị cảnh cáo/i.test(errorStr)) {
+      result.hasWarning = true;
+      result.details += "Warning: YES ✗; ";
+    }
+    if (/login|log in|đăng nhập lại|signed out|logged out/i.test(errorStr)) {
       result.isLoggedOut = true;
-      result.details += "Logout trong error: YES ✗; ";
+      result.details += "Logout: YES ✗; ";
     }
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
@@ -803,3 +750,4 @@ export default function ruploadAttachmentModule(
     }
   };
 }
+

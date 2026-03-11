@@ -236,7 +236,10 @@ export default function (
     } catch (err) {
       uploadFbError = err;
       // uploadFb failed, will try ruploadAttachment as fallback
-      logger.warn(`uploadAttachment (uploadFb failed): ${(err as Error)?.message || err}`);
+      const code = (err as any)?.code;
+      if (code !== "NO_METADATA") {
+        logger.warn(`uploadAttachment (uploadFb failed): ${(err as Error)?.message || err}`);
+      }
     }
 
     // Fallback to ruploadAttachment if uploadFb failed or returned no IDs
