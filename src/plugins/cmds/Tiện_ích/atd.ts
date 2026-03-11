@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { tempPath } from "../../../core/storagePath";
 
 function urlify(text: unknown): string[] {
   if (typeof text !== "string") {
@@ -367,7 +368,7 @@ const atd = {
             if (attachment.type === "Video") {
               if (attachment.buffer) {
                 const uuid = utils.getGUID();
-                const filePath = path.join(process.cwd(), `src/temp/tiktok_video_${uuid}.mp4`);
+                const filePath = tempPath(`tiktok_video_${uuid}.mp4`);
                 fs.writeFileSync(filePath, attachment.buffer);
                 attachments.push(fs.createReadStream(filePath));
               } else if (attachment.url) {
@@ -615,7 +616,7 @@ const atd = {
             if (at.type === "Video") {
               if (at.buffer) {
                 const uuid = utils.getGUID();
-                const filePath = path.join(process.cwd(), `src/temp/pinterest_video_${uuid}.mp4`);
+                const filePath = tempPath(`pinterest_video_${uuid}.mp4`);
                 fs.writeFileSync(filePath, at.buffer);
                 attachments.push(fs.createReadStream(filePath));
               } else if (at.url) {

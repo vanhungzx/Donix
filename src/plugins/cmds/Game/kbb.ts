@@ -5,6 +5,7 @@ import crypto from "crypto";
 import fs from "fs-extra";
 import Jimp from "jimp";
 import path from "path";
+import { TEMP_DIR } from "../../../core/storagePath";
 import { fileURLToPath } from "url";
 import { storagePath } from "../../../core/storagePath";
 
@@ -48,7 +49,7 @@ async function combineImages(images: (string | null)[]): Promise<string | null> 
       x += img.getWidth();
     }
 
-    const tempDir = path.join(process.cwd(), "src/temp");
+    const tempDir = TEMP_DIR();
     if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
     const tempPath = path.join(

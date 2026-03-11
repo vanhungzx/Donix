@@ -4,6 +4,7 @@ import type { Command, CommandOnCallContext, CommandOnReplyContext } from "@type
 import axios from "axios";
 import fs from "fs";
 import path from "path";
+import { TEMP_DIR } from "../../../core/storagePath";
 
 interface MusicTrack {
   id: string;
@@ -31,7 +32,7 @@ interface GetStoryMusicListOptions {
 }
 
 function tempRoot(): string {
-  const p = path.join(process.cwd(), "src/temp");
+  const p = TEMP_DIR();
   if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
   return p;
 }

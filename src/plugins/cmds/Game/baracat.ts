@@ -5,6 +5,7 @@ import { CanvasRenderingContext2D, createCanvas, loadImage } from "canvas";
 import { createReadStream } from "fs";
 import fs from "fs-extra";
 import path from "path";
+import { TEMP_DIR } from "../../../core/storagePath";
 
 // ===== CẤU HÌNH HÌNH ẢNH LÁ BÀI =====
 // Bạn hãy tải thư mục `cards` từ repo:
@@ -16,7 +17,7 @@ import path from "path";
 // suit: C (Clubs), D (Diamonds), H (Hearts), S (Spades)
 
 const CONFIG = {
-  TEMP_DIR: "src/temp",
+  TEMP_DIR: TEMP_DIR(),
   // Tải trực tiếp ảnh lá bài từ GitHub (repo poker-cards)
   CARDS_BASE_URL: "https://raw.githubusercontent.com/ntkhang03/poker-cards/main/cards",
   MIN_BET: 1000n,

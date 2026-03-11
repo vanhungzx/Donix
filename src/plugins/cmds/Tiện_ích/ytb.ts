@@ -3,6 +3,7 @@ import axios from "axios";
 import fs from "fs";
 import type { Readable } from "node:stream";
 import path from "path";
+import { TEMP_DIR } from "../../../core/storagePath";
 
 interface VideoResult {
   type?: "video" | "live";
@@ -87,7 +88,7 @@ interface StreamResult {
 }
 
 function tempRoot(): string {
-  const p = path.join(process.cwd(), "src/temp");
+  const p = TEMP_DIR();
   if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
   return p;
 }

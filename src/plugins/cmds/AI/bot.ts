@@ -12,8 +12,13 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import { database } from "../../../core/AI-Database";
+import { STORAGE_GEMINI } from "../../../core/storagePath";
+import { TEMP_DIR } from "../../../core/storagePath";
+import { generateAIThemesFromPrompt } from "../../../API/detail/AI/generateAIThemes";
+import { imagineGenerate } from "../../../API/detail/AI/imagine";
 
 import type { ServicesMap } from "../../../types/api";
+import { downloadYoutubeAudio } from "../Tiện_ích/sing";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,8 +43,6 @@ function tmpPath(ext?: string) {
     `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext || "bin"}`
   );
 }
-
-
 
 const EXT_BY_MIME: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -73,6 +76,16 @@ function guessExtFromMime(m: string) {
 
 function guessMimeFromExt(e: string) {
   return MIME_BY_EXT[String(e || "").toLowerCase()] || "application/octet-stream";
+}
+
+function withStreamMeta<T extends NodeJS.ReadableStream>(
+  stream: T,
+  filename: string,
+  contentType?: string
+): T {
+  (stream as any).filename = filename;
+  if (contentType) (stream as any).contentType = contentType;
+  return stream;
 }
 
 
@@ -414,28 +427,43 @@ async function fetchWeatherSummary(location: string) {
 async function generateRoast(target: string, allowToxic: boolean) {
   const safeTarget = target || "người này";
   const picked = pickKeyForModel("flash");
-  const ai = new GoogleGenAI({ apiKey: picked.key }) as unknown as GenAIModels;
-  const r = await ai.models.generateContent({
-    model: picked.modelName,
-    contents: [{ role: "user", parts: [{ text: `Roast ${safeTarget} nhé.` }] }],
-    config: {
-      safetySettings,
-      thinkingConfig: { thinkingBudget: 0 },
-      systemInstruction: `Bạn là Hương, genZ, biết cà khịa. Viết đoạn chửi/roast ngắn gọn bằng tiếng Việt, hài hước, không xúc phạm nhóm yếu thế, không đe dọa bạo lực. ${allowToxic
-        ? "Có thể dùng từ lóng, chửi nhẹ nhưng tránh quá đà."
-        : "Giữ mức độ mỉa mai nhẹ, tránh tục tĩu vì chế độ chửi đang tắt."
-        }`
+  try {
+    const ai = new GoogleGenAI({ apiKey: picked.key }) as unknown as GenAIModels;
+    const r = await ai.models.generateContent({
+      model: picked.modelName,
+      contents: [{ role: "user", parts: [{ text: `Roast ${safeTarget} nhé.` }] }],
+      config: {
+        safetySettings,
+        thinkingConfig: { thinkingBudget: 0 },
+        systemInstruction: `Bạn là Hương, genZ, biết cà khịa. Viết đoạn chửi/roast ngắn gọn bằng tiếng Việt, hài hước, không xúc phạm nhóm yếu thế, không đe dọa bạo lực. ${allowToxic
+          ? "Có thể dùng từ lóng, chửi nhẹ nhưng tránh quá đà."
+          : "Giữ mức độ mỉa mai nhẹ, tránh tục tĩu vì chế độ chửi đang tắt."
+          }`
+      }
+    });
+    markRequestSuccess(picked);
+    const text =
+      typeof r?.text === "function"
+        ? r.text()
+        : r?.text ||
+        r?.response?.text?.() ||
+        r?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text).filter(Boolean).join(" ") ||
+        "Im speechless luôn.";
+    return text.trim();
+  } catch (e: any) {
+    const status = e?.status ?? e?.response?.status;
+    const msg = String(e?.message || "").toLowerCase();
+    const isLeakedKey =
+      status === 403 &&
+      (msg.includes("leaked") ||
+        msg.includes("reported as leaked") ||
+        msg.includes("please use another api key"));
+    if (isLeakedKey) {
+      // key bị leak: xóa luôn key khỏi danh sách
+      removeLeakedKey(picked);
     }
-  });
-  markRequestSuccess(picked);
-  const text =
-    typeof r?.text === "function"
-      ? r.text()
-      : r?.text ||
-      r?.response?.text?.() ||
-      r?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text).filter(Boolean).join(" ") ||
-      "Im speechless luôn.";
-  return text.trim();
+    throw e;
+  }
 }
 
 const topicMemories = database.createCollection("topic_memories");
@@ -459,9 +487,7 @@ type ApiKeyState = {
   remaining: Record<ModelKind, number>;
 };
 
-import { STORAGE_GEMINI } from "../../../core/storagePath";
-import { downloadYoutubeAudio } from "../Tiện_ích/sing";
-
+// Thống nhất storage bên ngoài root (./storage/...)
 const QUOTA_STATE_FILE = path.join(STORAGE_GEMINI(), "api-quota.json");
 
 const API_KEYS: ApiKeyState[] = [
@@ -768,6 +794,19 @@ function markKeyRateLimited(picked: PickedKey | null | undefined) {
   k.remaining.flash = 0;
   k.remaining.lite = 0;
   saveQuotaToFile();
+}
+
+function removeLeakedKey(picked: PickedKey | null | undefined) {
+  if (!picked || picked.index < 0) return;
+  if (picked.index >= 0 && picked.index < API_KEYS.length) {
+    console.log(`Removing leaked API key at index ${picked.index}: ${picked.key.substring(0, 20)}...`);
+    API_KEYS.splice(picked.index, 1);
+    // Reset currentKeyIndex if it's out of bounds
+    if (currentKeyIndex >= API_KEYS.length) {
+      currentKeyIndex = 0;
+    }
+    saveQuotaToFile();
+  }
 }
 
 const safetySettings = [
@@ -1607,7 +1646,7 @@ function sessionKey(threadID: string, userID: string): string {
   return `${threadID}:${userID}`;
 }
 
-function buildHistoryContents(recent: any[], userName: string): any[] {
+function buildHistoryContents(recent: any[], _userName: string): any[] {
   return recent
     .filter((m: any) => m?.sender && m?.content)
     .map((m: any) => ({
@@ -1689,7 +1728,7 @@ async function dlVideo(url: string, q: number = 360, givenTitle: string = ""): P
 }
 
 function tempRoot(): string {
-  const p = path.join(process.cwd(), "src/temp");
+  const p = TEMP_DIR();
   if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
   return p;
 }
@@ -2222,9 +2261,10 @@ function formatEventsForPrompt(ctx: any) {
 }
 
 async function askGeminiForInfo(question: string, useSearch = false) {
+  let picked: PickedKey | null | undefined;
   const timeoutMs = 10000;
   try {
-    const picked = pickKeyForModel("flash");
+    picked = pickKeyForModel("flash");
     const helperAI = new GoogleGenAI({ apiKey: picked.key }) as unknown as GenAIModels;
     const helperPrompt = `Bạn là một trợ lý thông minh. Hãy cung cấp thông tin ngắn gọn, chính xác về câu hỏi sau (tối đa 200 từ, bằng tiếng Việt, tự nhiên như đang trò chuyện với bạn thân):
 
@@ -2265,6 +2305,17 @@ Yêu cầu:
         : response?.text || "";
     return answer.trim() || null;
   } catch (e: any) {
+    const status = e?.status ?? e?.response?.status;
+    const msg = String(e?.message || "").toLowerCase();
+    const isLeakedKey =
+      status === 403 &&
+      (msg.includes("leaked") ||
+        msg.includes("reported as leaked") ||
+        msg.includes("please use another api key"));
+    if (isLeakedKey) {
+      // key bị leak: xóa luôn key khỏi danh sách
+      removeLeakedKey(picked);
+    }
     console.log("Error asking Gemini for info:", e?.message || e);
     return null;
   }
@@ -2527,23 +2578,28 @@ TIN NHẮN HIỆN TẠI: ${prompt}${inlineAttachments.length
   const botName = "Hương";
   const SYSTEM_INSTRUCTION = `Thị HƯơng là:
 
-⚠️⚠️⚠️ QUY TẮC VÀNG QUAN TRỌNG NHẤT - ĐỌC KỸ TRƯỚC KHI TRẢ LỜI ⚠️⚠️⚠️:
-1. **KHI NGƯỜI DÙNG YÊU CẦU MỞ/PHÁT/BẬT NHẠC: PHẢI TẠO ACTION "sing" NGAY, KHÔNG BAO GIỜ CHỈ CHAT!**
-   - Nếu chỉ tạo action "chat" mà không có action "sing" → ĐÂY LÀ LỖI NGHIÊM TRỌNG!
-   - Ví dụ: "mở bài Yêu Là Cưới" → PHẢI có [{"type": "sing", "trackName": "Yêu Là Cưới"}]
+⚠️⚠️⚠️ QUY TẮC VÀNG QUAN TRỌNG NHẤT - ĐỌC RẤT KỸ TRƯỚC KHI TRẢ LỜI ⚠️⚠️⚠️
 
-2. **KHI NGƯỜI DÙNG YÊU CẦU MỞ/PHÁT/BẬT VIDEO: PHẢI TẠO ACTION "video" NGAY, KHÔNG BAO GIỜ CHỈ CHAT!**
-   - Nếu chỉ tạo action "chat" mà không có action "video" → ĐÂY LÀ LỖI NGHIÊM TRỌNG!
-   - Ví dụ: "mở MV Yêu Là Cưới" → PHẢI có [{"type": "video", "videoName": "Yêu Là Cưới"}]
+1. **MỞ/PHÁT/BẬT NHẠC → BẮT BUỘC PHẢI CÓ ACTION "sing" (KHÔNG ĐƯỢC CHỈ CHAT)**  
+   - Nếu người dùng yêu cầu nhạc mà câu trả lời KHÔNG có action \`"type": "sing"\` → coi như TRẢ LỜI SAI HOÀN TOÀN.  
+   - Dù có thêm action khác (ví dụ: "chat") thì **vẫn phải có ít nhất 1 action "sing"**.  
+   - Ví dụ ĐÚNG: "mở bài Yêu Là Cưới" → PHẢI có \`[{ "type": "sing", "trackName": "Yêu Là Cưới" }]\` (có thể kèm chat).  
+   - Ví dụ SAI: chỉ trả lời \`[{ "type": "chat", "content": "Dạ em mở ngay..." }]\` mà không có "sing".  
+   - Nếu người dùng chỉ nói tên bài hát hoặc nói mơ hồ như "bật nhạc đi", "cho nghe nhạc", "play music", "bật bài remix", "mở nhạc chill", "bật beat", "bật lofi", "bật playlist", "cho em nghe bài Shape Of You", "mở nhạc TikTok"… → **vẫn PHẢI tạo action "sing"**.  
+   - **TỪ KHÓA NHẬN DIỆN NHẠC** (ví dụ, không giới hạn): "mở nhạc", "phát nhạc", "bật nhạc", "tải nhạc", "mở bài", "phát bài", "bật bài", "bật beat", "beat", "nhạc", "lofi", "chill", "playlist", "bài hát", "song", "track", "music", "mp3", "audio", "cho nghe", "cho tôi nghe", "cho em nghe", "play music", "nghe bài", "bài này", "bài kia", hoặc người dùng chỉ nói tên một bài hát/ca sĩ.  
+   - Nếu không chắc 100% người dùng muốn gì nhưng có mùi "mở nhạc" → **ƯU TIÊN tạo "sing"** hơn là bỏ sót.
 
-3. **KHI NGƯỜI DÙNG YÊU CẦU TÌM/TÌM KIẾM TIKTOK: PHẢI TẠO ACTION "tiktok" NGAY, KHÔNG BAO GIỜ CHỈ CHAT!**
-   - Khi người dùng nói: "tìm tiktok", "tìm video tiktok", "tiktok của", "video tiktok của", "tìm kiếm tiktok", hoặc bất kỳ yêu cầu nào liên quan đến TikTok → PHẢI tạo action "tiktok" ngay!
-   - Nếu chỉ tạo action "chat" mà không có action "tiktok" → ĐÂY LÀ LỖI NGHIÊM TRỌNG!
-   - Ví dụ: "tìm tiktok patoo.204" → PHẢI có [{"type": "tiktok", "content": "patoo.204"}]
-   - Ví dụ: "tìm video TikTok của patoo.204" → PHẢI có [{"type": "tiktok", "content": "patoo.204"}]
-   - KHÔNG BAO GIỜ chỉ nói "em đang tìm" mà không có action "tiktok"!
+2. **MỞ/PHÁT/BẬT VIDEO → BẮT BUỘC PHẢI CÓ ACTION "video" (KHÔNG ĐƯỢC CHỈ CHAT)**  
+   - Nếu chỉ tạo action "chat" mà không có action "video" → TRẢ LỜI SAI.  
+   - Ví dụ: "mở MV Yêu Là Cưới", "bật video", "xem clip", "bật mv", "mở video này", "play video" → PHẢI có \`[{ "type": "video", "videoName": "..." }]\`.
 
-**NẾU VI PHẠM 3 QUY TẮC TRÊN, BOT SẼ KHÔNG HOẠT ĐỘNG ĐÚNG!**
+3. **TÌM/TÌM KIẾM TIKTOK → BẮT BUỘC PHẢI CÓ ACTION "tiktok" (KHÔNG ĐƯỢC CHỈ CHAT)**  
+   - Khi người dùng nói: "tìm tiktok", "tìm video tiktok", "tiktok của", "video tiktok của", "tìm kiếm tiktok", "tìm clip tiktok", hoặc bất kỳ yêu cầu nào liên quan đến TikTok → PHẢI tạo action "tiktok" ngay.  
+   - Ví dụ: "tìm tiktok patoo.204" → PHẢI có \`[{ "type": "tiktok", "content": "patoo.204" }]\`.  
+   - Ví dụ: "tìm video TikTok của patoo.204" → PHẢI có \`[{ "type": "tiktok", "content": "patoo.204" }]\`.  
+   - KHÔNG BAO GIỜ chỉ nói "em đang tìm", "em sẽ tìm" mà không có action "tiktok".
+
+**NẾU VI PHẠM 3 QUY TẮC TRÊN (ĐẶC BIỆT LÀ QUY TẮC NHẠC VỚI ACTION "sing"), BOT SẼ HOẠT ĐỘNG SAI!**
 
 ---
 
@@ -3888,6 +3944,13 @@ Chỉ ADMIN TỔNG mới được sử dụng lệnh này để kiểm tra trạ
    - Ví dụ SAI: [{ "type": "chat", "content": "Dạ em đang tìm video TikTok của patoo.204 cho anh Đồng đây ạ!" }] mà không có action "tiktok" → ĐÂY LÀ LỖI NGHIÊM TRỌNG!
    - Ví dụ SAI: [{ "type": "chat", "content": "Dạ em tìm ngay đây! TikTok của..." }] mà không có action "tiktok" → ĐÂY LÀ LỖI NGHIÊM TRỌNG!
 
+24. **⚠️⚠️⚠️ KHI NGƯỜI DÙNG YÊU CẦU VẼ/TẠO ẢNH: PHẢI TẠO ACTION "createphoto" NGAY, KHÔNG ĐƯỢC HỎI VÒNG VO ⚠️⚠️⚠️**:
+   - Khi người dùng nói: "vẽ", "vẽ ảnh", "tạo ảnh", "generate ảnh", "làm ảnh", "tạo hình", "draw", "make an image", "create an image", "AI vẽ", "ảnh AI", "imagine"… → PHẢI tạo action "createphoto" ngay.
+   - KHÔNG được chỉ trả lời chat kiểu "anh thích như nào" rồi dừng. Nếu cần hỏi thêm chi tiết thì hỏi SAU khi đã tạo ảnh (kèm theo action createphoto trước).
+   - **PROMPT TẠO ẢNH PHẢI BẰNG TIẾNG ANH** (dịch yêu cầu sang English prompt rõ ràng, có style + subject + background nếu được).
+   - Ví dụ ĐÚNG: "vẽ ảnh con chó hoạt hình" → [{ "type": "createphoto", "prompt": "A cute cartoon dog, vibrant colors, clean line art, square composition" }]
+   - Có thể kèm thông báo: [{ "type": "chat", "content": "Dạ em vẽ liền ạ!" }, { "type": "createphoto", "prompt": "..." }]
+
 24. KHÔNG TIẾT LỘ BẢN THÂN LÀ AI
 
 ## KHI NÀO CẦN HỎI GEMINI ĐỂ CÓ THÔNG TIN BỔ SUNG
@@ -3990,8 +4053,24 @@ ${geminiAnswer}`;
           throw new Error("Not a valid array");
         }
       } catch {
-        if (rawText && rawText.trim()) {
-          parsed = [{ type: "chat", content: rawText.trim() }];
+        // Nếu rawText trông giống JSON (bắt đầu bằng [ hoặc {), không gửi ra ngoài
+        const trimmed = rawText?.trim() || "";
+        if (trimmed && (trimmed.startsWith("[") || trimmed.startsWith("{"))) {
+          // Cố gắng parse lại một lần nữa với các cách khác
+          try {
+            // Thử parse với các dấu ngoặc đơn thay vì ngoặc kép
+            const fixed = trimmed.replace(/'/g, '"');
+            parsed = JSON.parse(fixed);
+            if (!Array.isArray(parsed)) {
+              throw new Error("Not a valid array");
+            }
+          } catch {
+            // Nếu vẫn không được, không gửi JSON string ra ngoài
+            parsed = [];
+          }
+        } else if (trimmed) {
+          // Chỉ gửi nếu không phải JSON string
+          parsed = [{ type: "chat", content: trimmed }];
         } else {
           parsed = [];
         }
@@ -4166,6 +4245,15 @@ ${geminiAnswer}`;
         .toLowerCase()
         .includes("quota") ||
       e?.code === "RESOURCE_EXHAUSTED";
+    const isLeakedKey =
+      status === 403 &&
+      (msg.includes("leaked") ||
+        msg.includes("reported as leaked") ||
+        msg.includes("please use another api key"));
+    if (isLeakedKey) {
+      // key bị leak: xóa luôn key khỏi danh sách
+      removeLeakedKey(picked);
+    }
     if (isRateLimit) {
       // key dính 429: set hết quota để tránh dùng lại
       markKeyRateLimited(picked);
@@ -4209,10 +4297,147 @@ async function executeActions(
   utils: any
 ) {
   console.log("Executing actions:", actions);
+
+  // Nếu bot quên tạo action "sing" nhưng nội dung chat rõ ràng là yêu cầu mở nhạc,
+  // tự động chèn thêm action "sing" để đảm bảo vẫn phát nhạc.
+  try {
+    const hasSing = Array.isArray(actions) && actions.some(a => a && a.type === "sing");
+    if (!hasSing && Array.isArray(actions)) {
+      const musicKeywords = [
+        "mở nhạc",
+        "phát nhạc",
+        "bật nhạc",
+        "mở bài",
+        "phát bài",
+        "bật bài",
+        "cho nghe",
+        "nghe bài",
+        "play music",
+        "music",
+        "mp3",
+        "audio",
+        "lofi",
+        "chill",
+        "playlist"
+      ];
+      const chatWithMusic = actions.find(
+        a =>
+          a &&
+          a.type === "chat" &&
+          typeof a.content === "string" &&
+          musicKeywords.some(k => a.content.toLowerCase().includes(k))
+      );
+      if (chatWithMusic && typeof chatWithMusic.content === "string") {
+        const content = chatWithMusic.content;
+        let trackName = "";
+        // Ưu tiên lấy tên bài trong dấu ngoặc kép
+        const quoted = content.match(/\"([^\"]{2,80})\"/);
+        if (quoted && quoted[1]) {
+          trackName = quoted[1].trim();
+        } else {
+          // Thử bắt theo mẫu "mở bài <tên bài>"
+          const m = content.match(/mở bài\s+(.+?)(?:[,。.!\?]| nha| nhé| nhe| đi| thôi|$)/i);
+          if (m && m[1]) {
+            trackName = m[1].trim();
+          }
+        }
+        if (trackName) {
+          const autoSing = {
+            type: "sing",
+            trackName
+          };
+          console.log("Auto-injected sing action from chat content:", autoSing);
+          actions.push(autoSing);
+        }
+      }
+    }
+  } catch (e) {
+    console.log("Error while auto-injecting sing action:", e);
+  }
+
+  // Nếu bot quên tạo action "createphoto" nhưng chat đang nói về việc vẽ/tạo ảnh,
+  // tự động chèn thêm action "createphoto" để đảm bảo vẫn tạo ảnh.
+  // Hiện tại tắt mặc định để tránh trường hợp trả lời giới thiệu tính năng
+  // cũng tự động vẽ ảnh ngoài ý muốn.
+  const enableAutoCreatePhoto = false;
+  try {
+    const hasCreatePhoto = Array.isArray(actions) && actions.some(a => a && a.type === "createphoto");
+    if (enableAutoCreatePhoto && !hasCreatePhoto && Array.isArray(actions)) {
+      const imageKeywords = [
+        "vẽ",
+        "vẽ ảnh",
+        "tạo ảnh",
+        "làm ảnh",
+        "generate ảnh",
+        "ảnh ai",
+        "ai vẽ",
+        "draw",
+        "create an image",
+        "make an image",
+        "imagine"
+      ];
+      const chatWithImage = actions.find(
+        a =>
+          a &&
+          a.type === "chat" &&
+          typeof a.content === "string" &&
+          imageKeywords.some(k => a.content.toLowerCase().includes(k))
+      );
+      if (chatWithImage && typeof chatWithImage.content === "string") {
+        const content = chatWithImage.content;
+        // Thử lấy subject trong dấu ngoặc kép, hoặc sau từ "vẽ ảnh"/"tạo ảnh"
+        let promptVi = "";
+        const quoted = content.match(/\"([^\"]{2,120})\"/);
+        if (quoted && quoted[1]) {
+          promptVi = quoted[1].trim();
+        } else {
+          const m =
+            content.match(/vẽ ảnh\s+(.+?)(?:[,。.!\?]| nha| nhé| nhe| đi| thôi|$)/i) ||
+            content.match(/tạo ảnh\s+(.+?)(?:[,。.!\?]| nha| nhé| nhe| đi| thôi|$)/i) ||
+            content.match(/vẽ\s+(.+?)(?:[,。.!\?]| nha| nhé| nhe| đi| thôi|$)/i);
+          if (m && m[1]) promptVi = m[1].trim();
+        }
+
+        // PROMPT createphoto nên là tiếng Anh. Nếu không bắt được subject rõ ràng,
+        // dùng prompt chung an toàn.
+        const promptEn = promptVi
+          ? `An illustration of ${promptVi}, cute cartoon style, vibrant colors, clean line art, square composition`
+          : "A cute cartoon illustration, vibrant colors, clean line art, square composition";
+
+        const autoCreate = {
+          type: "createphoto",
+          prompt: promptEn
+        };
+        console.log("Auto-injected createphoto action from chat content:", autoCreate);
+        actions.push(autoCreate);
+      }
+    }
+  } catch (e) {
+    console.log("Error while auto-injecting createphoto action:", e);
+  }
+
   for (const action of actions) {
     try {
       if (action.type === "chat") {
-        const messageObj: any = { body: action.content };
+        // Đảm bảo không gửi JSON string ra ngoài
+        let content = action.content;
+        if (typeof content === "string") {
+          const trimmed = content.trim();
+          // Nếu content trông giống JSON array hoặc object, cố gắng parse
+          if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+            try {
+              const parsed = JSON.parse(trimmed);
+              // Nếu parse được và là array, bỏ qua (không gửi JSON ra ngoài)
+              if (Array.isArray(parsed)) {
+                console.log("Skipping JSON array in chat content:", parsed);
+                continue;
+              }
+            } catch {
+              // Nếu không parse được, có thể không phải JSON hợp lệ, gửi bình thường
+            }
+          }
+        }
+        const messageObj: any = { body: content };
         if (action.mentions) messageObj.mentions = action.mentions;
         if (action.effect) messageObj.effect = action.effect;
         if (action.location) messageObj.location = action.location;
@@ -4244,7 +4469,29 @@ async function executeActions(
           () => { }
         );
       } else if (action.type === "set_color") {
-        client.setTheme(action.color || "3259963564026002", threadID);
+        try {
+          if (action.prompt && typeof action.prompt === "string" && action.prompt.trim().length > 0) {
+            const themes = await generateAIThemesFromPrompt({
+              prompt: action.prompt.trim(),
+              num_themes: 1
+            });
+            const theme = Array.isArray(themes) && themes.length > 0 ? themes[0] : null;
+            if (!theme || !theme.id) {
+              await reply("❌ Không tạo được theme AI từ mô tả, vui lòng thử lại với prompt khác.");
+            } else {
+              client.setTheme(theme.id, threadID);
+              await reply(
+                `✅ Đã đổi nền chat bằng theme AI: ${theme.accessibility_label || "AI theme"}`
+              );
+            }
+          } else {
+            client.setTheme(action.color || "3259963564026002", threadID);
+          }
+        } catch (err) {
+          await reply(
+            "❌ Lỗi khi tạo theme AI cho nền chat, vui lòng thử lại sau."
+          );
+        }
       } else if (action.type === "set_nicknames") {
         client.changeNickname(action.name, threadID, action.targetID);
       } else if (action.type === "anti") {
@@ -4342,45 +4589,92 @@ async function executeActions(
         }
       } else if (action.type === "sing") {
         try {
-          let videoIdOrUrl: string;
+          let videoUrl: string;
           let videoTitle = "";
+          let videoAuthor = "";
 
           if (/^\w{11}$|^https?:\/\//i.test(action.trackName)) {
-            videoIdOrUrl = /^https?:\/\//i.test(action.trackName)
+            videoUrl = /^https?:\/\//i.test(action.trackName)
               ? action.trackName
               : `https://www.youtube.com/watch?v=${action.trackName}`;
           } else {
             const searchResult = await searchYouTube(action.trackName, api);
-            videoIdOrUrl = `https://www.youtube.com/watch?v=${searchResult.videoId}`;
+            videoUrl = `https://www.youtube.com/watch?v=${searchResult.videoId}`;
             videoTitle = searchResult.title;
           }
 
-          const r = await downloadYoutubeAudio(videoIdOrUrl, videoTitle);
-          const info = r.manifest.info;
-          const author = info.channel || "Unknown";
-          const duration = Number(info.duration || 0);
-          const durationStr = duration >= 3600
-            ? `${Math.floor(duration / 3600)}:${String(Math.floor((duration % 3600) / 60)).padStart(2, "0")}:${String(duration % 60).padStart(2, "0")}`
-            : `${Math.floor(duration / 60)}:${String(duration % 60).padStart(2, "0")}`;
-          const sizeFormatted = r.size > 1024 * 1024
-            ? `${(r.size / 1024 / 1024).toFixed(2)}MB`
-            : `${(r.size / 1024).toFixed(2)}KB`;
+          // Dùng chung logic tải audio YouTube ổn định như lệnh sing.ts
+          const r = await downloadYoutubeAudio(videoUrl, videoTitle);
 
-          const readStream = fs.createReadStream(r.path);
-          await reply({
-            body: `🎵 ${r.title}\n👤 ${author}\n⏱️ ${durationStr}\n📊 ${sizeFormatted}`,
-            attachment: [readStream]
-          });
-          readStream.on("close", () => {
+          if (!videoAuthor) {
+            const videoId = extractVideoId(videoUrl);
+            if (videoId) {
+              try {
+                const manifest = await fetchYoutubePlayer(videoId);
+                // 2 nguồn info khác nhau, ưu tiên channel/author nếu có
+                videoAuthor =
+                  (manifest.info as any).author ||
+                  (manifest.info as any).channel ||
+                  "";
+                if (!videoTitle) {
+                  videoTitle = manifest.info.title || r.title || "";
+                }
+              } catch {
+                // ignore metadata errors
+              }
+            }
+          }
+
+          const fileSize = fs.statSync(r.path).size;
+          const sizeFormatted =
+            fileSize > 1024 * 1024
+              ? `${(fileSize / 1024 / 1024).toFixed(2)}MB`
+              : `${(fileSize / 1024).toFixed(2)}KB`;
+          const body = `🎵 ${videoTitle || r.title}\n👤 ${videoAuthor || "Unknown"}\n📊 ${sizeFormatted}`;
+
+          // Ưu tiên stream trực tiếp giống lệnh sing.ts để tránh lỗi uploadFb/NO_METADATA
+          if (client && typeof client.sendMessage === "function") {
+            const readStream = fs.createReadStream(r.path);
+            const attachment = {
+              stream: readStream,
+              filename: "audio.mp3",
+              contentType: "audio/mpeg"
+            };
+
+            await new Promise<void>((resolve, reject) => {
+              client.sendMessage(
+                { body, attachment },
+                threadID,
+                (err?: Error) => {
+                  if (err) reject(err);
+                  else resolve();
+                },
+                messageID
+              );
+            });
+
+            readStream.on("close", () => {
+              setTimeout(() => {
+                try {
+                  fs.unlinkSync(r.path);
+                } catch { }
+              }, 30000);
+            });
+          } else {
+            // Fallback: dùng reply (sẽ đi qua uploadAttachment)
+            await reply({
+              body,
+              attachment: [withStreamMeta(fs.createReadStream(r.path), "audio.mp3", "audio/mpeg")]
+            });
             setTimeout(() => {
               try {
                 fs.unlinkSync(r.path);
-              } catch {}
-            }, 30000);
-          });
+              } catch { }
+            }, 60000);
+          }
         } catch (e: unknown) {
           const errorMessage = e instanceof Error ? e.message : "Unknown error";
-          await reply({ body: `❌ Lỗi: ${errorMessage}` });
+          await reply({ body: `❌ Error: ${errorMessage}` });
         }
       } else if (action.type === "video") {
         try {
@@ -4421,7 +4715,7 @@ async function executeActions(
 
           await reply({
             body: `📹 ${r.title}\n👤 ${videoAuthor}\n📊 ${sizeFormatted}`,
-            attachment: [fs.createReadStream(r.path)]
+            attachment: [withStreamMeta(fs.createReadStream(r.path), "video.mp4", "video/mp4")]
           });
           setTimeout(() => {
             try {
@@ -4527,27 +4821,75 @@ async function executeActions(
         }
       } else if (action.type === "createphoto") {
         try {
-          const url = `https://pollinations.ai/p/${encodeURIComponent(
-            action.prompt
-          )}?width=${action.width || 1080}&height=${action.height || 1920
-            }&nologo=true&seed=${Math.floor(
-              Math.random() * 1e6
-            )}&model=flux`;
-          const r = await axios.get(url, {
-            responseType: "arraybuffer",
-            timeout: 30000
+          const prompt =
+            (typeof action.prompt === "string" && action.prompt.trim()) ||
+            "Hình minh hoạ đẹp, phong cách dễ thương";
+
+          await reply({
+            body: "⏳ Đang tạo ảnh Imagine qua Facebook, anh/chị đợi xíu nhé..."
           });
+
+          const result = await imagineGenerate({ prompt });
+          const imgUrl = result?.uri;
+
+          if (!imgUrl) {
+            await reply({
+              body: "❌ Không lấy được URL ảnh từ Imagine, thử lại sau giúp em."
+            });
+            return;
+          }
+
+          const r = await axios.get(imgUrl, {
+            responseType: "arraybuffer",
+            timeout: 60000
+          });
+
           const temp = createTemp(
-            path.join(process.cwd(), "src/temp"),
-            "png"
+            TEMP_DIR(),
+            "jpg"
           );
           fs.writeFileSync(temp, r.data);
+
+          if (client && typeof client.sendMessage === "function") {
+            const readStream = fs.createReadStream(temp);
+ 
+            await new Promise<void>((resolve, reject) => {
+              client.sendMessage(
+                { body: "", attachment: readStream },
+                threadID,
+                (err?: Error) => {
+                  if (err) reject(err);
+                  else resolve();
+                },
+                messageID
+              );
+            });
+            readStream.on("close", () => {
+              setTimeout(() => {
+                try {
+                  safeUnlink(temp);
+                } catch { }
+              }, 30000);
+            });
+          } else {
+            await reply({
+              attachment: [withStreamMeta(fs.createReadStream(temp), "image.jpg", "image/jpeg")]
+            });
+            setTimeout(() => {
+              try {
+                safeUnlink(temp);
+              } catch { }
+            }, 30000);
+          }
+        } catch (e: any) {
+          console.error("[bot imagine] createphoto error:", e);
+          const msg =
+            typeof e?.message === "string"
+              ? e.message
+              : String(e || "Unknown error");
           await reply({
-            attachment: [fs.createReadStream(temp)]
+            body: `❌ Em xin lỗi, không tạo được ảnh Imagine: ${msg}`
           });
-          safeUnlink(temp);
-        } catch {
-          await reply({ body: "Em xin lỗi, không tạo được ảnh... 😔" });
         }
       } else if (action.type === "photo") {
         try {
@@ -4560,10 +4902,41 @@ async function executeActions(
             "jpg"
           );
           fs.writeFileSync(temp, r.data);
-          await reply({
-            attachment: [fs.createReadStream(temp)]
-          });
-          safeUnlink(temp);
+          if (client && typeof client.sendMessage === "function") {
+            const readStream = fs.createReadStream(temp);
+            const attachment = {
+              stream: readStream,
+              filename: "image.jpg",
+              contentType: "image/jpeg"
+            };
+            await new Promise<void>((resolve, reject) => {
+              client.sendMessage(
+                { body: "", attachment },
+                threadID,
+                (err?: Error) => {
+                  if (err) reject(err);
+                  else resolve();
+                },
+                messageID
+              );
+            });
+            readStream.on("close", () => {
+              setTimeout(() => {
+                try {
+                  safeUnlink(temp);
+                } catch { }
+              }, 30000);
+            });
+          } else {
+            await reply({
+              attachment: [withStreamMeta(fs.createReadStream(temp), "image.jpg", "image/jpeg")]
+            });
+            setTimeout(() => {
+              try {
+                safeUnlink(temp);
+              } catch { }
+            }, 30000);
+          }
         } catch {
           await reply({ body: "Em xin lỗi, không gửi được ảnh... 😔" });
         }
@@ -4620,7 +4993,7 @@ async function executeActions(
           );
           await fs.writeFile(temp, audio);
           await reply({
-            attachment: [fs.createReadStream(temp)]
+            attachment: [withStreamMeta(fs.createReadStream(temp), "voice.mp3", "audio/mpeg")]
           });
           safeUnlink(temp);
         } catch { }

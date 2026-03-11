@@ -12,8 +12,7 @@ import path from 'path';
 import sharp from 'sharp';
 import { pipeline, Readable } from 'stream';
 import { promisify } from 'util';
-import path from "path";
-import { storagePath } from "../../../core/storagePath";
+import { storagePath, TEMP_DIR } from "../../../core/storagePath";
 import type {
   Command,
   CommandOnCallContext,
@@ -30,7 +29,7 @@ sharp.cache(false);
 // --- Paths
 const ShortFile = storagePath("other", "shortCutData.json");
 const MediaRoot = storagePath("other", "shortcutMedia");
-const TempRoot = path.join(process.cwd(), 'src/temp');
+const TempRoot = TEMP_DIR();
 
 // Ensure dirs
 if (!fs.existsSync(path.dirname(ShortFile))) fs.mkdirSync(path.dirname(ShortFile), { recursive: true });

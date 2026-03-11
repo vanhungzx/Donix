@@ -18,6 +18,7 @@ import {
   writeFileSync
 } from "node:fs";
 import path from "node:path";
+import { tempPath } from "../../../core/storagePath";
 
 interface FileEntry {
   dest: string;
@@ -455,9 +456,9 @@ async function catbox(stream: NodeJS.ReadableStream): Promise<string> {
 
 async function createZip(source_paths: string[]): Promise<NodeJS.ReadableStream> {
   const zip = new AdmZip();
-  const tempPath = path.join(process.cwd(), "src/temp", `temp_${Date.now()}.zip`);
+  const zipTempPath = tempPath(`temp_${Date.now()}.zip`);
 
-  const tempDir = path.dirname(tempPath);
+  const tempDir = path.dirname(zipTempPath);
   if (!existsSync(tempDir)) {
     mkdirSync(tempDir, { recursive: true });
   }
@@ -477,14 +478,14 @@ async function createZip(source_paths: string[]): Promise<NodeJS.ReadableStream>
     }
   }
 
-  zip.writeZip(tempPath);
+  zip.writeZip(zipTempPath);
 
-  const stream = createReadStream(tempPath);
+  const stream = createReadStream(zipTempPath);
 
   stream.on("end", () => {
     try {
-      if (existsSync(tempPath)) {
-        unlinkSync(tempPath);
+      if (existsSync(zipTempPath)) {
+        unlinkSync(zipTempPath);
       }
     } catch (err) {
       console.error("Error cleaning up temp zip file:", err);
@@ -493,8 +494,8 @@ async function createZip(source_paths: string[]): Promise<NodeJS.ReadableStream>
 
   stream.on("error", () => {
     try {
-      if (existsSync(tempPath)) {
-        unlinkSync(tempPath);
+      if (existsSync(zipTempPath)) {
+        unlinkSync(zipTempPath);
       }
     } catch (err) {
       console.error("Error cleaning up temp zip file:", err);

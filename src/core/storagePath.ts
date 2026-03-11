@@ -49,6 +49,12 @@ export const STORAGE_GAME = () => storagePath("game");
 /** Gemini */
 export const STORAGE_GEMINI = () => storagePath("gemini");
 
+/** Temp (thống nhất: ./temp ở root project) */
+export const TEMP_DIR = () => path.join(process.cwd(), "temp");
+export function tempPath(...segments: string[]): string {
+  return path.join(TEMP_DIR(), ...segments);
+}
+
 /** Anti / set_media */
 export const STORAGE_ANTI = () => storagePath("anti");
 export const STORAGE_SET_MEDIA = () => storagePath("set_media");

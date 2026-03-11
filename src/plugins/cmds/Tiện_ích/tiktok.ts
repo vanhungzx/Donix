@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { tempPath } from "../../../core/storagePath";
 
 const convertTime = (timestamp: number): string => {
   const date = new Date(timestamp * 1000);
@@ -322,9 +323,7 @@ export default {
           if (chosenVideo.type === "Video") {
             if (chosenVideo.vdbuffer) {
               const uuid = utils.getGUID();
-              const filePath = path.join(
-                process.cwd(), `src/temp/tiktok_video_${uuid}.mp4`
-              );
+              const filePath = tempPath(`tiktok_video_${uuid}.mp4`);
               fs.writeFileSync(filePath, chosenVideo.vdbuffer);
               attachments.push(fs.createReadStream(filePath));
             } else if (chosenVideo.play) {
@@ -376,9 +375,7 @@ export default {
           const attachments: any[] = [];
           if (res.type === "Video" && res.vdbuffer) {
             const uuid = utils.getGUID();
-            const filePath = path.join(
-              process.cwd(), `src/temp/tiktok_video_${uuid}.mp4`
-            );
+            const filePath = tempPath(`tiktok_video_${uuid}.mp4`);
             fs.writeFileSync(filePath, res.vdbuffer);
             attachments.push(fs.createReadStream(filePath));
           } else if (res.type === "Photo" && Array.isArray(res.url)) {

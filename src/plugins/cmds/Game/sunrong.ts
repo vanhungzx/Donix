@@ -10,7 +10,7 @@ import crypto from "crypto";
 import fs from "fs-extra";
 import moment from "moment-timezone";
 import path from "path";
-import { storagePath } from "../../../core/storagePath";
+import { storagePath, TEMP_DIR } from "../../../core/storagePath";
 
 const DATA_DIR = storagePath("game", "sunrong");
 
@@ -384,7 +384,7 @@ const sunrongCommand: Command = {
 
   onLoad: async function (_ctx: CommandOnLoadContext) {
     const dataDir = DATA_DIR;
-    const tempDir = path.join(process.cwd(), "src/temp");
+    const tempDir = TEMP_DIR();
 
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
@@ -417,7 +417,7 @@ const sunrongCommand: Command = {
 
     const historyPath = storagePath("game", "sunrong", "history.json");
     const jackpotPath = storagePath("game", "sunrong", "jackpot.json");
-    const tempDir = path.join(process.cwd(), "src/temp");
+    const tempDir = TEMP_DIR();
 
     let his: HistoryEntry[] = [];
     let pots: Jackpots = {};

@@ -4,6 +4,7 @@ import type { Command, CommandOnCallContext } from "@types";
 import axios from "axios";
 import fs from "fs";
 import path from "path";
+import { TEMP_DIR } from "../../../core/storagePath";
 import { imagineGenerate, imagineSuggestions } from "../../../API/detail/AI/imagine";
 
 const imagineCommand: Command = {
@@ -56,7 +57,7 @@ const imagineCommand: Command = {
     }
 
     const prompt = args.join(" ");
-    const tempDir = path.join(process.cwd(), "src/temp");
+    const tempDir = TEMP_DIR();
     if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
     try {

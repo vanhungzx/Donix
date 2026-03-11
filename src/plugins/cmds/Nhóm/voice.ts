@@ -1,6 +1,7 @@
 import fs from "fs";
 import axios from "axios";
 import path from "path";
+import { TEMP_DIR } from "../../../core/storagePath";
 
 type OnCallParams = {
   reply: (msg: any) => Promise<any> | any;
@@ -19,7 +20,7 @@ const say = {
   prefix: true,
   async onCall({ reply, event, args }: OnCallParams) {
     try {
-      const tempDir = path.join(process.cwd(), "src/temp");
+      const tempDir = TEMP_DIR();
       if (!fs.existsSync(tempDir)) {
         fs.mkdirSync(tempDir, { recursive: true });
       }

@@ -2,6 +2,7 @@ import type { Command, CommandOnCallContext, CommandOnReplyContext } from '@type
 import axios from "axios";
 import fs from "fs";
 import path from "path";
+import { TEMP_DIR } from "../../../core/storagePath";
 import { STORAGE_OTHER } from "../../../core/storagePath";
 
 interface PromptData {
@@ -325,7 +326,7 @@ const editaiCommand: Command = {
       reply({ body: `⏳ Đang xử lý ảnh với kiểu: ${promptName}\nVui lòng đợi...` });
 
       try {
-        const cacheDir = path.join(process.cwd(), "src/temp");
+        const cacheDir = TEMP_DIR();
         if (!fs.existsSync(cacheDir)) {
           fs.mkdirSync(cacheDir, { recursive: true });
         }

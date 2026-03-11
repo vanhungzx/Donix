@@ -735,7 +735,7 @@ const startAutoCleanup = () => {
       try {
         const tempDirs = [
           join(process.cwd(), "temp"),
-          join(process.cwd(), "src/temp")
+          join(process.cwd(), "temp")
         ];
         const MAX_TEMP_AGE = 60 * 60 * 1000; // 1 giờ
         let tempFilesCleaned = 0;

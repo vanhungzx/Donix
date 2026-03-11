@@ -6,7 +6,7 @@ import { createCanvas, loadImage } from 'canvas';
 import fsCore from 'fs';
 import fs from 'fs-extra';
 import path from 'path';
-import { STORAGE_SET_MEDIA } from '../../../core/storagePath';
+import { STORAGE_SET_MEDIA, TEMP_DIR } from '../../../core/storagePath';
 
 type CanvasImageSource = any;
 
@@ -15,7 +15,7 @@ function getMediaDir(threadID: string | number): string {
 }
 
 function getTempDir(): string {
-  return path.join(process.cwd(), 'src/temp');
+  return TEMP_DIR();
 }
 
 function splitMessageAndUrl(input: string) {

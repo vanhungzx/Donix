@@ -8,8 +8,9 @@ import axios from "axios";
 import { createCanvas, loadImage } from "canvas";
 import fs from "fs-extra";
 import path from "path";
+import { TEMP_DIR } from "../../../core/storagePath";
 
-const TempRoot = path.join(process.cwd(), "src/temp");
+const TempRoot = TEMP_DIR();
 if (!fs.existsSync(TempRoot)) fs.mkdirSync(TempRoot, { recursive: true });
 
 

@@ -4,6 +4,7 @@ import type { Command, CommandOnCallContext } from '@types';
 import axios from "axios";
 import fs from "fs-extra";
 import path from "path";
+import { TEMP_DIR } from "../../../core/storagePath";
 
 const honCommand: Command = {
   name: "hôn",
@@ -36,7 +37,7 @@ const honCommand: Command = {
 
     const tag = (event.mentions?.[mentionId]?.replace("@", "")) || mentionId;
     const randomLink = links[Math.floor(Math.random() * links.length)];
-    const tempDir = path.join(process.cwd(), "src/temp");
+    const tempDir = TEMP_DIR();
 
     if (!fs.existsSync(tempDir)) {
       await fs.ensureDir(tempDir);

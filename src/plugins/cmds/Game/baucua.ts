@@ -5,7 +5,7 @@ import { createReadStream } from "fs";
 import fs from "fs-extra";
 import Jimp from "jimp";
 import path from "path";
-import { storagePath } from "../../../core/storagePath";
+import { storagePath, TEMP_DIR } from "../../../core/storagePath";
 
 const CONFIG = {
   MIN_BET: 1000,
@@ -15,7 +15,7 @@ const CONFIG = {
     2: 4,
     3: 6,
   },
-  TEMP_DIR: "./src/temp",
+  TEMP_DIR: TEMP_DIR(),
   get ASSETS_DIR() { return storagePath("game", "baucua", "img"); },
 } as const;
 

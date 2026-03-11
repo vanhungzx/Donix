@@ -4,10 +4,11 @@ import * as fs from "fs";
 import * as path from "path";
 import { pipeline } from "stream";
 import { promisify } from "util";
+import { TEMP_DIR } from "../../../core/storagePath";
 
 const streamPipeline = promisify(pipeline);
 
-const TempRoot = path.join(process.cwd(), "src/temp");
+const TempRoot = TEMP_DIR();
 
 if (!fs.existsSync(TempRoot)) {
   fs.mkdirSync(TempRoot, { recursive: true });

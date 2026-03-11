@@ -6,6 +6,7 @@ import { createCanvas, loadImage } from "canvas";
 import FormData from "form-data";
 import fs, { createReadStream } from "fs";
 import path from "path";
+import { TEMP_DIR, tempPath } from "../../../core/storagePath";
 
 const theliemsCommand: Command = {
   name: "theliems",
@@ -19,7 +20,7 @@ const theliemsCommand: Command = {
   onCall: async function (ctx: CommandOnCallContext): Promise<void> {
     const { client, event, args, reply } = ctx;
     const threadID = event.threadID;
-    const tempDir = path.join(process.cwd(), "src/temp");
+    const tempDir = TEMP_DIR();
 
     if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
@@ -36,8 +37,8 @@ const theliemsCommand: Command = {
 
     try {
       const [tplBuf, rawBuf] = await Promise.all([download(templateUrl), download(srcUrl)]);
-      const inPath = path.join(tempDir, `rb_in_${Date.now()}.jpg`);
-      const outRbPath = path.join(tempDir, `rb_out_${Date.now()}.png`);
+      const inPath = tempPath(`rb_in_${Date.now()}.jpg`);
+      const outRbPath = tempPath(`rb_out_${Date.now()}.png`);
 
       fs.writeFileSync(inPath, rawBuf);
 
@@ -138,7 +139,7 @@ async function download(url: string): Promise<Buffer> {
 async function removeBgFromFile(
   apiKey: string,
   inputPath: string,
-  outPath: string = path.join(process.cwd(), "src/temp", `removebg_${Date.now()}.png`)
+  outPath: string = tempPath(`removebg_${Date.now()}.png`)
 ): Promise<{ status: number; outPath: string }> {
   const form = new FormData();
   form.append("size", "auto");

@@ -3,7 +3,7 @@ import { CanvasRenderingContext2D, createCanvas, loadImage, registerFont } from 
 import fs from "fs-extra";
 import path from "path";
 import { URLSearchParams } from "url";
-import { STORAGE_FONT } from "../core/storagePath";
+import { STORAGE_FONT, TEMP_DIR } from "../core/storagePath";
 
 const FONT_DIR = STORAGE_FONT();
 const F_INTER = path.join(FONT_DIR, "Inter-Variable.ttf");
@@ -95,7 +95,7 @@ async function loadPreferredFonts(): Promise<void> {
 }
 
 function ensureTemp(): string {
-  const p = path.join(process.cwd(), "src/temp");
+  const p = TEMP_DIR();
   fs.ensureDirSync(p);
   return p;
 }

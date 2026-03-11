@@ -13,7 +13,7 @@ import { createReadStream } from "fs";
 import fs from "fs-extra";
 import Jimp from "jimp";
 import path from "path";
-import { storagePath } from "../../../core/storagePath";
+import { storagePath, tempPath } from "../../../core/storagePath";
 
 const CONFIG = {
   ASSETS_DIR: storagePath("game", "baucua", "img"),
@@ -251,14 +251,10 @@ const bcuaCommand: Command = {
       let attachment: any = undefined;
 
       if (attachmentBuffer) {
-        const tempPath = path.join(
-          process.cwd(),
-          "src/temp",
-          `bcua-help-${Date.now()}.jpg`
-        );
-        await fs.ensureDir(path.dirname(tempPath));
-        await fs.writeFile(tempPath, attachmentBuffer);
-        attachment = createReadStream(tempPath);
+        const outPath = tempPath(`bcua-help-${Date.now()}.jpg`);
+        await fs.ensureDir(path.dirname(outPath));
+        await fs.writeFile(outPath, attachmentBuffer);
+        attachment = createReadStream(outPath);
       }
 
       return send({
@@ -492,14 +488,10 @@ const bcuaCommand: Command = {
         }
       }
 
-      const tempPath = path.join(
-        process.cwd(),
-        "src/temp",
-        `result-${Date.now()}.png`
-      );
+      const outPath = tempPath(`result-${Date.now()}.png`);
 
-      await fs.ensureDir(path.dirname(tempPath));
-      await resultImage.writeAsync(tempPath);
+      await fs.ensureDir(path.dirname(outPath));
+      await resultImage.writeAsync(outPath);
 
       const addMoney = userData.addMoney as ((id: string, amount: bigint) => Promise<void>) | undefined;
       const delMoney = userData.delMoney as ((id: string, amount: bigint) => Promise<void>) | undefined;
@@ -533,7 +525,7 @@ ${winMessages.join("\n") || "Không có ai thắng"}
 [ NGƯỜI THUA ]
 
 ${loseMessages.join("\n") || "Không có ai thua"}`,
-        attachment: createReadStream(tempPath),
+        attachment: createReadStream(outPath),
       });
 
       const finalRoom = data[tid];

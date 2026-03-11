@@ -6,6 +6,7 @@ import { createReadStream } from "fs";
 import fs from "fs-extra";
 import Jimp from "jimp";
 import path from "path";
+import { TEMP_DIR } from "../../../core/storagePath";
 
 interface MakeImageParams {
   one: string;
@@ -13,9 +14,8 @@ interface MakeImageParams {
 }
 
 async function makeImage({ one, two }: MakeImageParams): Promise<string> {
-  const __root = path.resolve(
-    path.join(process.cwd(), "src/temp")
-  );
+  const __root = path.resolve(TEMP_DIR());
+  await fs.ensureDir(__root);
 
   
   const bopco_img = await Jimp.read(path.join(__root, "bopco.jpg"));

@@ -6,7 +6,7 @@ import { createCanvas, loadImage, registerFont } from "canvas";
 import { createReadStream } from "fs";
 import fs from "fs-extra";
 import path from "path";
-import { STORAGE_FONT } from "../../../core/storagePath";
+import { STORAGE_FONT, TEMP_DIR } from "../../../core/storagePath";
 
 const locations: string[] = [
   "khu vực Cầu Giấy",
@@ -33,7 +33,7 @@ async function makeImage({
   timeString,
   location,
 }: MakeImageParams): Promise<string> {
-  const cache = path.join(process.cwd(), "src/temp");
+  const cache = TEMP_DIR();
   const pathImg = path.join(cache, `timcho_${userId}_${Date.now()}.png`);
   const avatarPath = path.join(cache, `avt_${userId}.png`);
 

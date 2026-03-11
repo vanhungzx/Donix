@@ -4,6 +4,7 @@ import type { Command, CommandOnCallContext } from '@types';
 import axios from "axios";
 import fs from "fs-extra";
 import path from "path";
+import { TEMP_DIR } from "../../../core/storagePath";
 
 const tileCommand: Command = {
   name: "tile",
@@ -44,7 +45,7 @@ const tileCommand: Command = {
         { id: senderID, tag: namee },
       ];
 
-      const tempPath = path.join(process.cwd(), "src/temp");
+      const tempPath = TEMP_DIR();
       await fs.ensureDir(tempPath);
 
       const avatar1Path = path.join(tempPath, `avt_${Date.now()}_${mention}.png`);

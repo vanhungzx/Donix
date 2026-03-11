@@ -8,9 +8,10 @@ import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { getConfig } from "../../../core/configManager";
+import { TEMP_DIR } from "../../../core/storagePath";
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
-const TempRoot = path.join(process.cwd(), "src/temp");
+const TempRoot = TEMP_DIR();
 if (!fs.existsSync(TempRoot)) fs.mkdirSync(TempRoot, { recursive: true });
 
 function pickAttachmentUrl(att: any): string | null {

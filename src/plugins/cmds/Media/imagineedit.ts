@@ -4,6 +4,7 @@ import type { Command, CommandOnCallContext } from "@types";
 import axios from "axios";
 import fs from "fs";
 import path from "path";
+import { TEMP_DIR } from "../../../core/storagePath";
 import { imagineEditOnce } from "../../../API/detail/AI/imagineEdit";
 
 const imagineEditCommand: Command = {
@@ -52,7 +53,7 @@ const imagineEditCommand: Command = {
       return;
     }
 
-    const tempDir = path.join(process.cwd(), "src/temp");
+    const tempDir = TEMP_DIR();
     if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
     try {

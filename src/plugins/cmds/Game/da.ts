@@ -4,6 +4,7 @@ import type { Command, CommandOnCallContext } from '@types';
 import axios from "axios";
 import fs from "fs-extra";
 import path from "path";
+import { TEMP_DIR } from "../../../core/storagePath";
 
 const links = [
   "https://i.postimg.cc/65TSxJYD/2ce5a017f6556ff103bce87b273b89b7.gif",
@@ -42,7 +43,7 @@ const daCommand: Command = {
 
     const randomLink = links[Math.floor(Math.random() * links.length)];
 
-    const tempDir = path.join(process.cwd(), "src/temp");
+    const tempDir = TEMP_DIR();
 
     await fs.ensureDir(tempDir);
 

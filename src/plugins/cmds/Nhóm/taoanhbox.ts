@@ -4,7 +4,7 @@ import fs from "fs-extra";
 import Jimp from "jimp";
 import path from "path";
 import { fileURLToPath } from "url";
-import { STORAGE_FONT, storagePath } from "../../../core/storagePath";
+import { STORAGE_FONT, storagePath, TEMP_DIR } from "../../../core/storagePath";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -903,7 +903,7 @@ const command = {
     }
 
 
-    const tempDir = path.join(process.cwd(), "src/temp");
+    const tempDir = TEMP_DIR();
     await fs.ensureDir(tempDir);
     const pathAVT = path.join(tempDir, `${Date.now() + 10000}.png`);
 

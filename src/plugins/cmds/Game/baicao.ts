@@ -10,6 +10,7 @@ import { createCanvas, loadImage } from "canvas";
 import { createReadStream } from "fs";
 import fs from "fs-extra";
 import path from "path";
+import { TEMP_DIR } from "../../../core/storagePath";
 
 interface Card {
   value: string;
@@ -158,7 +159,7 @@ function helpText(prefix = ""): string {
   );
 }
 
-const TEMP_DIR = "src/temp";
+const TEMP_DIR_PATH = TEMP_DIR();
 
 const baicaoCommand: Command = {
   name: "baicao",
@@ -428,7 +429,7 @@ const baicaoCommand: Command = {
           const cards = [c1, c2, c3];
           const filePath = await renderCardsToFile(
             cards,
-            TEMP_DIR,
+            TEMP_DIR_PATH,
             `baicao_${tid}_${p.id}`,
           );
 
@@ -506,7 +507,7 @@ const baicaoCommand: Command = {
           const cards = [player.card1, player.card2, player.card3];
           const filePath = await renderCardsToFile(
             cards,
-            TEMP_DIR,
+            TEMP_DIR_PATH,
             `baicao_${tid}_${player.id}`,
           );
 
