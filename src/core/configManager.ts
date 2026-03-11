@@ -56,9 +56,17 @@ export const loadConfig = async (): Promise<Record<string, any>> => {
       currentConfig = v8.deserialize(v8.serialize(loaded));
 
       const globalAny = global as typeof globalThis & { account?: { cookie?: string; token?: any } };
+      const tokenSource = currentConfig.token;
+      const tokenValue =
+        tokenSource && typeof tokenSource === "object" && !Array.isArray(tokenSource)
+          ? { ...tokenSource }
+          : tokenSource?.EAAAAU
+            ? { EAAAAU: tokenSource.EAAAAU }
+            : null;
+
       globalAny.account = {
         cookie: currentConfig.cookie,
-        token: currentConfig.token?.EAAAAU ? { EAAAAU: currentConfig.token.EAAAAU } : null
+        token: tokenValue
       };
 
       for (const listener of configListeners) {

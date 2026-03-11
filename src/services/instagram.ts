@@ -2,8 +2,23 @@
 import axios, { AxiosInstance, Method } from "axios";
 import * as cheerio from "cheerio";
 
-const cookie =
-  'csrftoken=E_xtHbWKacXuCxtC-49_HC; datr=sEmxaZ73UX5ffSRlu8aTWNwj; ig_did=9914C10B-88C4-4ECD-9E3B-7D8B3049673B; mid=abFJsAALAAEi55_B5Fd3HoTaBgDG; ig_nrcb=1; ps_l=1; ps_n=1; ds_user_id=73749735606; sessionid=73749735606%3Ajuo3Mh1ZJE3bA0%3A23%3AAYjCx2T71HDQaGewSkZZRNG-6ZAM7w7VPdi6VU2ylw; rur="VCN\05473749735606\0541804762838:01fecfa4ad900652f74bf28ace5aa53e4ca4f039cbf552ec556b2f4d099ea6f0d0977d12"; wd=181x1298';
+
+const FALLBACK_COOKIE =
+  'csrftoken=E_xtHbWKacXuCxtC-49_HC; datr=sEmxaZ73UX5ffSRlu8aTWNwj; ig_did=9914C10B-88C4-4ECD-9E3B-7D8B3049673B; mid=abFJsAALAAEi55_B5Fd3HoTaBgDG; ig_nrcb=1; ps_l=1; ps_n=1; ds_user_id=73749735606; sessionid=73749735606%3Ajuo3Mh1ZJE3bA0%3A23%3AAYjCx2T71HDQaGewSkZZRNG-6ZAM7w7VPdi6VU2ylw; rur="VCN,73749735606,1804762838:01fecfa4ad900652f74bf28ace5aa53e4ca4f039cbf552ec556b2f4d099ea6f0d0977d12"; wd=181x1298';
+
+function getInstagramCookie(): string {
+  const globalAny = global as typeof globalThis & {
+    cookie?: Record<string, string>;
+    Donix?: { cookie?: Record<string, string> };
+  };
+
+  // Ưu tiên cookie từ storage/cookies (được load bởi utils/cookieLoader.ts)
+  return (
+    globalAny.Donix?.cookie?.instagram ||
+    globalAny.cookie?.instagram ||
+    FALLBACK_COOKIE
+  );
+}
 
 class getID {
   static BASE64URL_CHARMAP =
@@ -208,6 +223,7 @@ class InstagramAPI {
     data: any = null
   ): Promise<T> {
     try {
+      const cookie = getInstagramCookie();
       (this.client.defaults.headers as any).cookie = cookie;
       const response = await this.client.request<T>({
         method,
@@ -345,7 +361,7 @@ class InstagramAPI {
         "Accept-Language":
           "vi,en-US;q=0.9,en;q=0.8,fr-FR;q=0.7,fr;q=0.6",
         "Cache-Control": "max-age=0",
-        Cookie: cookie,
+        Cookie: getInstagramCookie(),
         Dpr: "1",
         "Sec-Ch-Prefers-Color-Scheme": "dark",
         "Sec-Ch-Ua":
@@ -607,7 +623,7 @@ class InstagramAPI {
         "Accept-Language":
           "vi,en-US;q=0.9,en;q=0.8,fr-FR;q=0.7,fr;q=0.6",
         "Cache-Control": "max-age=0",
-        Cookie: cookie,
+        Cookie: getInstagramCookie(),
         Dpr: "1",
         "Sec-Ch-Prefers-Color-Scheme": "dark",
         "Sec-Ch-Ua":

@@ -1,6 +1,7 @@
 import fs from "fs";
-import path from "path";
 import { tempPath } from "../../../core/storagePath";
+import { downloadYoutubeVideo } from "./sing";
+import j2download, { J2DownloadResponse, J2DownloadMedia } from "../../../services/j2";
 
 function urlify(text: unknown): string[] {
   if (typeof text !== "string") {
@@ -12,6 +13,36 @@ function urlify(text: unknown): string[] {
 }
 
 let musicSent = false;
+
+interface DouyinAttachment {
+  type?: "Video" | "Photo" | string;
+  url?: string;
+}
+
+interface DouyinStatistics {
+  digg_count?: number;
+  comment_count?: number;
+  share_count?: number;
+  play_count?: number;
+}
+
+interface DouyinAuthor {
+  nickname?: string;
+  unique_id?: string;
+}
+
+interface DouyinMusic {
+  title?: string;
+  url?: string;
+}
+
+interface DouyinDownResult {
+  attachments?: DouyinAttachment[];
+  statistics?: DouyinStatistics;
+  author?: DouyinAuthor;
+  message?: string;
+  music?: DouyinMusic;
+}
 
 
 const PLATFORM_GROUPS: Record<string, string[]> = {
@@ -402,18 +433,38 @@ const atd = {
       }
       if (/youtube\.com/.test(url) || /youtu\.be/.test(url)) {
         if (!(await isPlatformEnabled("youtube", threadData, threadID))) return;
-        function getId(u: string): string | null {
-          const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube.com\/shorts\/)([a-zA-Z0-9_-]{11})/;
-          const match = u.match(regex);
-          return match && match[1] ? match[1] : null;
+
+        try {
+          const result = await downloadYoutubeVideo(url);
+          const info = result.manifest.info;
+          const duration = Number(info.duration || 0);
+
+          const lines = [
+            `🎬 ${info.title || result.title}`,
+            info.channel && `👤 ${info.channel}`,
+            duration ? `⏱️ ${Math.floor(duration / 60)}:${String(duration % 60).padStart(2, "0")}` : "",
+            info.viewCount ? `👀 ${Number(info.viewCount).toLocaleString("de-DE")}` : "",
+          ].filter(Boolean);
+
+          const body = `YOUTUBE (MP4 via API):\n${lines.join("\n")}`;
+          const stream = fs.createReadStream(result.path);
+
+          await reply({ body, attachment: stream });
+
+          stream.on("close", () => {
+            setTimeout(() => {
+              try {
+                fs.unlinkSync(result.path);
+              } catch {
+                // ignore
+              }
+            }, 30000);
+          });
+        } catch (err: any) {
+          await reply({
+            body: `❎ Không thể tải YouTube MP4 qua API: ${err?.message || String(err)}`,
+          });
         }
-        const id = getId(url);
-        if (!id) return;
-        const res = await api.youtube.getMp4(id);
-        reply({
-          body: `YOUTUBE: ${res.title}`,
-          attachment: await utils.stream(res.url, "mp4"),
-        });
       } else if (
         /^https:\/\/(www\.|m\.)?(facebook|fb)\.(com|watch)\/(?!.*\/(profile\.php|[\w.-]+\/$))(share\/(p\/[\w-]+\/?|[\w-]+\/?|))|(stories\/[\w-]+\/?|page\.\w+\/?|story\.php\?[\w=&]+|[\w\/]+)/.test(
           url
@@ -635,46 +686,110 @@ const atd = {
       }
       if (/douyin\.com/i.test(url)) {
         if (!(await isPlatformEnabled("douyin", threadData, threadID))) return;
-        const res = await api.douyin.down(url);
-        if (!res || !res.attachments) {
-          return;
-        }
-        const attachment: any[] = [];
-        for (const at of res.attachments) {
-          if (at.url) {
+
+        const douyinRes = (await api.douyin.down(url)) as DouyinDownResult | null;
+        const attachment: unknown[] = [];
+        let bodyText = "";
+        let musicUrl: string | undefined;
+
+        if (douyinRes && Array.isArray(douyinRes.attachments) && douyinRes.attachments.length > 0) {
+          const hasVideo = douyinRes.attachments.some(
+            (at: DouyinAttachment) => at.type === "Video" && !!at.url
+          );
+          let videoSent = false;
+
+          for (const at of douyinRes.attachments) {
+            if (!at.url) continue;
             try {
-              if (at.type === "Video") {
-                attachment.push(await utils.stream(at.url, "mp4"));
-              } else if (at.type === "Photo") {
-                attachment.push(await utils.stream(at.url, "jpg"));
+              if (hasVideo) {
+                // Nếu có video: chỉ tải 1 video đầu tiên, bỏ qua ảnh
+                if (at.type === "Video" && !videoSent) {
+                  attachment.push(await utils.stream(at.url, "mp4"));
+                  videoSent = true;
+                }
+              } else {
+                // Không có video: chỉ tải ảnh (có thể nhiều ảnh), bỏ qua loại khác
+                if (at.type === "Photo") {
+                  attachment.push(await utils.stream(at.url, "jpg"));
+                }
               }
             } catch (error) {
               console.error(`Error downloading ${at.type}:`, error);
             }
           }
+
+          if (attachment.length > 0) {
+            const stats = [
+              douyinRes.statistics?.digg_count && `❤️ ${douyinRes.statistics.digg_count}`,
+              douyinRes.statistics?.comment_count && `💬 ${douyinRes.statistics.comment_count}`,
+              douyinRes.statistics?.share_count && `🔄 ${douyinRes.statistics.share_count}`,
+              douyinRes.statistics?.play_count && `👀 ${douyinRes.statistics.play_count}`,
+            ]
+              .filter(Boolean)
+              .join(" | ");
+
+            bodyText = `DOUYIN: ${douyinRes.message || "No title"}\n👤 ${douyinRes.author?.nickname || "Unknown"
+              } (@${douyinRes.author?.unique_id || ""})\n${stats}`;
+            musicUrl = douyinRes.music?.url;
+          }
         }
+
+        // Fallback sang j2download nếu API Douyin chính không trả về attachment
+        if (attachment.length === 0) {
+          try {
+            const j2 = (await j2download(url)) as J2DownloadResponse;
+            const medias = j2.medias || [];
+
+            if (Array.isArray(medias) && medias.length > 0) {
+              const videoMedias = medias.filter(
+                (m: J2DownloadMedia) => m.type === "video" && !!m.url
+              );
+              const imageMedias = medias.filter(
+                (m: J2DownloadMedia) => m.type === "image" && !!m.url
+              );
+
+              if (videoMedias.length > 0) {
+                // Douyin video qua j2: chỉ lấy 1 video, không lấy nhạc/ảnh phụ
+                const v = videoMedias[0];
+                try {
+                  attachment.push(await utils.stream(v.url as string, v.extension || "mp4"));
+                } catch (error) {
+                  console.error("Lỗi khi tải video từ j2:", error);
+                }
+              } else if (imageMedias.length > 0) {
+                // Không có video: chỉ lấy ảnh, bỏ qua audio
+                for (const img of imageMedias) {
+                  try {
+                    attachment.push(await utils.stream(img.url as string, img.extension || "jpg"));
+                  } catch (error) {
+                    console.error("Lỗi khi tải ảnh từ j2:", error);
+                  }
+                }
+              }
+
+              if (attachment.length > 0) {
+                bodyText = `DOUYIN (J2): ${j2.title || "Không có tiêu đề"}\nTác giả: ${j2.author || "Null"}`;
+                musicUrl = undefined;
+              }
+            }
+          } catch (error) {
+            console.error("Lỗi khi gọi j2download cho Douyin:", error);
+          }
+        }
+
         if (attachment.length > 0) {
-          const stats = [
-            res.statistics?.digg_count && `❤️ ${res.statistics.digg_count}`,
-            res.statistics?.comment_count && `💬 ${res.statistics.comment_count}`,
-            res.statistics?.share_count && `🔄 ${res.statistics.share_count}`,
-            res.statistics?.play_count && `👀 ${res.statistics.play_count}`,
-          ]
-            .filter(Boolean)
-            .join(" | ");
           reply(
             {
-              body: `DOUYIN: ${res.message || "No title"}\n👤 ${res.author?.nickname || "Unknown"
-                } (@${res.author?.unique_id || ""})\n${stats}`,
+              body: bodyText || "DOUYIN",
               attachment,
             },
             (_err: any, dataMsg: any) => {
-              if (res.music?.url) {
+              if (musicUrl) {
                 main.onReact.set(dataMsg.messageID, {
                   commandName,
                   messageID: dataMsg.messageID,
-                  title: res.music.title || "",
-                  url: res.music.url,
+                  title: douyinRes?.music?.title || "",
+                  url: musicUrl,
                   type: "DOUYIN",
                 });
                 musicSent = false;
@@ -686,7 +801,7 @@ const atd = {
         const apps = getPlatformName(url);
         if (!apps) return;
         if (!(await isPlatformEnabled("j2", threadData, threadID))) return;
-        const res = await api.j2(url);
+        const res = await j2download(url);
         if (!res || !res.medias) {
           return;
         }

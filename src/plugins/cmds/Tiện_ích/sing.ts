@@ -427,6 +427,56 @@ export async function downloadYoutubeAudio(
   return dlAudio(videoId, givenTitle || "");
 }
 
+/** Tải video YouTube MP4 dùng YouTube Player API (giới hạn 15 phút, 25MB). */
+export async function downloadYoutubeVideo(
+  videoIdOrUrl: string,
+  givenTitle?: string
+): Promise<DownloadResult> {
+  const videoId = isYoutubeUrl(videoIdOrUrl) ? extractVideoId(videoIdOrUrl) : videoIdOrUrl;
+  if (!videoId) throw new Error("Không thể lấy Video ID");
+
+  const manifest = await fetchYoutubePlayer(videoId);
+  if (!manifest.info.title && !givenTitle) {
+    throw new Error("Không thể lấy thông tin video");
+  }
+
+  const title = sanitize(givenTitle || manifest.info.title || `video_${Date.now()}`);
+  const duration = Number(manifest.info.duration || 0);
+  if (duration > MAX_DURATION) {
+    throw new Error("Video dài quá 15 phút");
+  }
+
+  const base = path.join(tempRoot(), title);
+  const outputPath = `${base}.mp4`;
+
+  const progressiveStream = manifest.smallestProgressive || manifest.bestProgressive;
+  if (!progressiveStream || !progressiveStream.url) {
+    throw new Error("Không tìm thấy stream video phù hợp");
+  }
+
+  const estimatedSize = Number(progressiveStream.contentLength || 0);
+  if (estimatedSize > MAX_SIZE) {
+    throw new Error(`File video quá lớn (${(estimatedSize / 1024 / 1024).toFixed(2)}MB > 25MB)`);
+  }
+
+  const actualSize = await headTotal(progressiveStream.url);
+  if (actualSize > 0 && actualSize > MAX_SIZE) {
+    throw new Error(`File video quá lớn (${(actualSize / 1024 / 1024).toFixed(2)}MB > 25MB)`);
+  }
+
+  const { size } = await downloadToFile(progressiveStream.url, outputPath);
+  if (size > MAX_SIZE) {
+    try {
+      fs.unlinkSync(outputPath);
+    } catch {
+      // ignore
+    }
+    throw new Error(`File video quá lớn (${(size / 1024 / 1024).toFixed(2)}MB > 25MB)`);
+  }
+
+  return { path: outputPath, title, manifest, size };
+}
+
 const singCommand: Command = {
   name: "sing",
   alias: ["music", "musicapi", "musicyoutube"],

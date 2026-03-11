@@ -28,13 +28,21 @@ async function fetchNotesMusic(
   endCursor: string | null,
   browseSessionId: string
 ): Promise<MusicPickerResult> {
-  const token = getConfig().token?.EAAD;
+  const config = getConfig();
+  const token =
+    config.token?.EAAD ||
+    config.token?.EAAD6V7 ||
+    config.token?.EAAAAU ||
+    Object.values(config.token || {})[0];
+
   if (!token) {
-    throw new Error("Thiếu token EAAD trong config, không thể lấy danh sách nhạc ghi chú.");
+    throw new Error(
+      "Thiếu access token (EAAD/EAAD6V7/EAAAAU) trong config, không thể lấy danh sách nhạc ghi chú."
+    );
   }
 
   const result = await fetchMessengerMusicPickerOptimalQuery({
-    accessToken: token,
+    accessToken: String(token),
     searchText,
     pageSize,
     endCursor,
