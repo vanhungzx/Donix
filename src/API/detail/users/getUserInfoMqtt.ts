@@ -246,7 +246,6 @@ export default function (
           null,
           2
         );
-        fs.writeFileSync("./userMqtt.json", payloadString);
       } catch {
         
       }
