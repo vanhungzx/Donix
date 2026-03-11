@@ -1,9 +1,13 @@
 "use strict";
 
 import type { Command, CommandOnCallContext } from '@types';
+import axios from "axios";
 import fs from "fs-extra";
 import path from "path";
 import { storagePath } from "../../../core/storagePath";
+
+const DEFAULT_OM_GIF_URL =
+  "https://i.postimg.cc/KzzvL4G7/hug.gif";
 
 const omCommand: Command = {
   name: "ôm",
@@ -37,8 +41,19 @@ const omCommand: Command = {
 
     try {
       if (!fs.existsSync(gifPath)) {
-        await reply("Không tìm thấy file gif");
-        return;
+        try {
+          await fs.ensureDir(path.dirname(gifPath));
+          const res = await axios.get<ArrayBuffer>(DEFAULT_OM_GIF_URL, {
+            responseType: "arraybuffer",
+            timeout: 30000,
+          });
+          await fs.writeFile(gifPath, Buffer.from(res.data));
+        } catch {
+          await reply(
+            `Không tìm thấy file gif.\nHãy đặt file tại: ${gifPath}`
+          );
+          return;
+        }
       }
 
       await reply({
