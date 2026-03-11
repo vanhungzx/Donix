@@ -321,62 +321,71 @@ const ghepCommand: Command = {
   prefix: true,
 
   onCall: async (ctx: CommandOnCallContext): Promise<void> => {
-    const { event, reply, userData, threadData } = ctx;
-    const { threadID, senderID } = event;
+  const { event, reply, userData, threadData } = ctx;
+  const { threadID, senderID } = event;
 
-    try {
-      const tl = [21, 67, 19, 37, 17, 96, 52, 62, 76, 83, 100, 99, 0, 48];
-      const percent = tl[Math.floor(Math.random() * tl.length)] ?? 50;
+  try {
+    const tl = [21, 67, 19, 37, 17, 96, 52, 62, 76, 83, 100, 99, 0, 48];
+    const percent = tl[Math.floor(Math.random() * tl.length)] ?? 50;
 
-      const me = await userData.get(senderID);
-      const nameMe = (me as { name?: string } | null)?.name ?? "Bạn";
+    const me = await userData.get(senderID);
+    const nameMe = (me as { name?: string } | null)?.name ?? "Bạn";
 
-      const thread = await threadData.get(threadID);
-      const ids = getThreadParticipantIDs(thread);
-      if (!ids.length) {
-        await reply("❌ Không lấy được danh sách thành viên.");
-        return;
-      }
+    const thread = await threadData.get(threadID);
+    const ids = getThreadParticipantIDs(thread);
+    if (!ids.length) {
+      await reply("❌ Không lấy được danh sách thành viên.");
+      return;
+    }
 
-      let id = ids[Math.floor(Math.random() * ids.length)]!;
+    // ===== THÊM HỖ TRỢ GHEP @TAG =====
+    let id: string;
+
+    if (event.mentions && Object.keys(event.mentions).length > 0) {
+      id = Object.keys(event.mentions)[0];
+    } else {
+      id = ids[Math.floor(Math.random() * ids.length)]!;
       if (ids.length > 1) {
         for (let i = 0; i < 10 && String(id) === String(senderID); i++) {
           id = ids[Math.floor(Math.random() * ids.length)]!;
         }
       }
-
-      const crush = await userData.get(id);
-      const nameCrush = (crush as { name?: string } | null)?.name ?? "Người bí ẩn";
-
-      const imageBuffer = await makeImage({
-        one: String(senderID),
-        two: String(id),
-        nameOne: nameMe,
-        nameTwo: nameCrush,
-        tagOne: "Chồng",
-        tagTwo: "Vợ",
-        percent,
-        message: "Trời sinh một cặp",
-      });
-
-      const imageStream = Readable.from(imageBuffer);
-      await reply({
-        body: `🎁 Chúc mừng ${nameMe} đã được ghép đôi với ${nameCrush} 🎉\n🎊 Tỉ lệ hợp đôi: 〘${percent}%〙🥳`,
-        mentions: [
-          { id: String(senderID), tag: nameMe },
-          { id: String(id), tag: nameCrush },
-        ],
-        attachment: {
-          stream: imageStream,
-          filename: `ghep_${Date.now()}.png`,
-          contentType: "image/png",
-        },
-      });
-    } catch (e) {
-      console.error("[ghep] error:", e);
-      await reply("❌ Lỗi khi ghép đôi.");
     }
-  },
+    // ===== KẾT THÚC PHẦN THÊM =====
+
+    const crush = await userData.get(id);
+    const nameCrush = (crush as { name?: string } | null)?.name ?? "Người bí ẩn";
+
+    const imageBuffer = await makeImage({
+      one: String(senderID),
+      two: String(id),
+      nameOne: nameMe,
+      nameTwo: nameCrush,
+      tagOne: "Chồng",
+      tagTwo: "Vợ",
+      percent,
+      message: "Trời sinh một cặp",
+    });
+
+    const imageStream = Readable.from(imageBuffer);
+    await reply({
+      body: `🎁 Chúc mừng @${nameMe} đã được ghép đôi với @${nameCrush} 🎉
+🎊 Tỉ lệ hợp đôi: 〘${percent}%〙🥳`,
+      mentions: [
+        { id: String(senderID), tag: `@${nameMe}` },
+        { id: String(id), tag: `@${nameCrush}` },
+      ],
+      attachment: {
+        stream: imageStream,
+        filename: `ghep_${Date.now()}.png`,
+        contentType: "image/png",
+      },
+    });
+    } catch (e) {
+    console.error("[ghep] error:", e);
+    await reply("❌ Lỗi khi ghép đôi.");
+  }
+},
 };
 
 export default ghepCommand;

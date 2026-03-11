@@ -86,7 +86,7 @@ const storyImgMusicCommand: Command = {
   name: "storyimgmusic",
   alias: ["storyimg", "storyanhnhac"],
   version: "1.0.0",
-  role: 0,
+  role: 3,
   category: "Media",
   desc: "Tìm nhạc Facebook và đăng Story ảnh với nhạc (dùng web client)",
   guide:

@@ -211,7 +211,7 @@ const Utils = {
     if (!global.account) {
       global.account = { cookie: "", token: null };
     }
-    const token = global.account?.token?.["EAAAAU"];
+    const token = global.account?.token?.["EAAD"];
     const response = await got.post(url, {
       headers: {
         authorization: token ? `OAuth ${token}` : "",

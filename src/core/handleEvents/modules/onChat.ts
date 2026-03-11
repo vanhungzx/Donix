@@ -204,7 +204,8 @@ export const createOnChat =
             } catch (e: unknown) {
               // Log lỗi nếu có nhưng không dừng các handler khác
               const error = e instanceof Error ? e : new Error(String(e));
-              scopedLogger?.error?.(`onChat:${commandName}`, error.message || String(e));
+              console.log(e);
+              //scopedLogger?.error?.(`onChat:${commandName}`, error.message || String(e));
             }
           })();
 

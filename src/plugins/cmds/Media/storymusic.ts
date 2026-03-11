@@ -1042,7 +1042,7 @@ const storyMusicCommand: Command = {
   name: "storymusic",
   alias: ["storynhac", "mstory", "storym"],
   version: "1.0.0",
-  role: 0,
+  role: 3,
   desc: "Đăng Story ảnh với nhạc Facebook",
   guide:
     "{pn} [ảnh] [nhạc_id hoặc tên nhạc]\n" +

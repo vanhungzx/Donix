@@ -3,7 +3,7 @@ import axios, { AxiosInstance, Method } from "axios";
 import * as cheerio from "cheerio";
 
 const cookie =
-  'datr=fcDbZ3-hg5AvtjmQuCE89Oe2; ig_did=7F80C0A8-D59E-436F-9B5B-782294AF56B7; ig_nrcb=1; fbm_124024574287414=base_domain=.instagram.com; ps_l=1; ps_n=1; ds_user_id=69502195242; mid=aImvkwALAAF5PgnwVluNsm7pe-JG; csrftoken=9SEk0DtcYolZuvQle3baAOK8oW7PfxBT; rur="CCO\x2c69502195242\x2c1792691041:01fed704a9d49b8faf50564e06d6359e91796f3bb28b76878757486b5443c739860b82b9"; sessionid=69502195242%3AZ3niheKnHBtxRc%3A5%3AAYhO1Prv-J0XSKZax8fsgAtXrEQx7MFAdHy25VJjZUE; wd=953x919';
+  'csrftoken=E_xtHbWKacXuCxtC-49_HC; datr=sEmxaZ73UX5ffSRlu8aTWNwj; ig_did=9914C10B-88C4-4ECD-9E3B-7D8B3049673B; mid=abFJsAALAAEi55_B5Fd3HoTaBgDG; ig_nrcb=1; ps_l=1; ps_n=1; ds_user_id=73749735606; sessionid=73749735606%3Ajuo3Mh1ZJE3bA0%3A23%3AAYjCx2T71HDQaGewSkZZRNG-6ZAM7w7VPdi6VU2ylw; rur="VCN\05473749735606\0541804762838:01fecfa4ad900652f74bf28ace5aa53e4ca4f039cbf552ec556b2f4d099ea6f0d0977d12"; wd=181x1298';
 
 class getID {
   static BASE64URL_CHARMAP =

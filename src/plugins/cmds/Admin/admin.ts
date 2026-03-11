@@ -178,7 +178,7 @@ const adminCommand: Command = {
         void reply(
           {
             body:
-              `[ CHỦ BOT ]\n\nTên: Phạm Minh Đồng (Donix)\nFacebook: fb.com/minhdong.dev\n\n[ DANH SÁCH ADMIN ]\n\n${adminListText}\nReply tin nhắn này với stt để xoá admin`,
+              `[ CHỦ BOT ]\n\nTên: Gia Long (Obito)\nFacebook: fb.com/guns.lol/deptraiboy.zz\n\n[ DANH SÁCH ADMIN ]\n\n${adminListText}\nReply tin nhắn này với stt để xoá admin`,
           },
           (error: any, info: any) => {
             if (!error) {
