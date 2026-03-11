@@ -2,6 +2,53 @@ import axios from 'axios'
 import TiktokService from './lib/tiktok'
 import { STORAGE_COOKIES } from '../core/storagePath'
 
+type TikTokStats = {
+  views: number
+  likes: number
+  comments: number
+  shares: number
+  collects: number
+}
+
+type TikTokVideo = {
+  mp4Uri?: string
+  coverUri?: string
+  duration?: number
+}
+
+type TikTokAweme = {
+  id: string
+  type: string
+  url?: string
+  description?: string
+  desc?: string
+  createdAt: number
+  stats: TikTokStats
+  video?: TikTokVideo
+  imagesUri?: string[]
+  musicUri?: string
+  thumbnail?: string
+  thumb?: string
+  attachments?: unknown
+}
+
+type TikTokAuthor = {
+  nickname: string
+  uniqueId: string
+}
+
+type TikTokMusic = {
+  title: string
+  author: string
+  duration: number
+  playUrl: string
+}
+
+type TikTokAwemeDetail = TikTokAweme & {
+  author?: TikTokAuthor
+  music?: TikTokMusic
+}
+
 function extractTikTokVideoId(inputUrl: string): string | null {
   if (!inputUrl || typeof inputUrl !== 'string') return null
 
@@ -129,12 +176,12 @@ class TikTokMobileClient {
         count: count.toString()
       })
 
-      return awemeList.map((item) => {
+      return (awemeList as TikTokAweme[]).map((item: TikTokAweme) => {
         const attachments: { type: string; url: string }[] = []
         if (item.type === 'VIDEO' && item.video) {
           attachments.push({
             type: 'Video',
-            url: item.video.mp4Uri
+            url: item.video.mp4Uri || ''
           })
         } else if (item.imagesUri?.length) {
           item.imagesUri.forEach((url) => {
@@ -162,7 +209,7 @@ class TikTokMobileClient {
           video: item.video
             ? {
                 cover: item.video.coverUri,
-                play_addr: { url_list: [item.video.mp4Uri] }
+                play_addr: item.video.mp4Uri ? { url_list: [item.video.mp4Uri] } : undefined
               }
             : undefined,
           music: item.musicUri
@@ -193,7 +240,7 @@ class TikTokMobileClient {
         count: limit
       })
       const list = searchResult.awemeList || []
-      return list.map((item) => {
+      return (list as TikTokAweme[]).map((item: TikTokAweme) => {
         const thumb = item.thumbnail || item.thumb || item.video?.coverUri || ''
         const vid = item.video
         return {
@@ -340,15 +387,15 @@ class TikTokMobileClient {
         type: 0
       })
 
-      return feedResult.awemeList.map((item) => {
+      return (feedResult.awemeList as TikTokAweme[]).map((item: TikTokAweme) => {
         const attachments: { type: string; url: string }[] = []
         if (item.type === 'VIDEO' && item.video) {
           attachments.push({
             type: 'Video',
-            url: item.video.mp4Uri
+            url: item.video.mp4Uri || ''
           })
         } else if (item.imagesUri?.length) {
-          item.imagesUri.forEach((url) => {
+          item.imagesUri.forEach((url: string) => {
             attachments.push({ type: 'Photo', url })
           })
         }
@@ -374,7 +421,7 @@ class TikTokMobileClient {
           video: item.video
             ? {
                 cover: item.video.coverUri,
-                play_addr: { url_list: [item.video.mp4Uri] }
+                play_addr: item.video.mp4Uri ? { url_list: [item.video.mp4Uri] } : undefined
               }
             : undefined,
           music: item.musicUri
@@ -394,7 +441,7 @@ class TikTokMobileClient {
 
   async down2(videoId: string) {
     try {
-      const awemeDetail = await TiktokService.getAwemeDetails(videoId)
+      const awemeDetail = (await TiktokService.getAwemeDetails(videoId)) as TikTokAwemeDetail
 
       const attachments: { type: string; url: string; buffer?: Buffer }[] = []
       let vdbuffer: Buffer | undefined
@@ -409,7 +456,7 @@ class TikTokMobileClient {
           ...(buffer && { buffer })
         })
       } else if (awemeDetail.imagesUri?.length) {
-        awemeDetail.imagesUri.forEach((url) => {
+        awemeDetail.imagesUri.forEach((url: string) => {
           attachments.push({ type: 'Photo', url })
         })
       }
@@ -449,7 +496,7 @@ class TikTokMobileClient {
               }
             }
           : undefined,
-        url: awemeDetail.imagesUri
+        images: awemeDetail.imagesUri
       }
     } catch (err) {
       wrapError(err, 'Failed to download video')
