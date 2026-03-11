@@ -134,3 +134,32 @@ Test.local.js
 model.onnx
 main.wasm
 storage/gemini.config.json
+
+# Temp files (thống nhất dùng ./temp ở root project)
+temp/
+src/temp/
+
+# Runtime data (không commit)
+userMqtt.json
+acp.json
+notifications.json
+
+# AI database runtime memories
+src/core/AI-Database/data/*.json
+
+# SQLite runtime files
+storage/sqlite/*.sqlite
+storage/sqlite/*.sqlite-*
+storage/sqlite/*.sqlite-*-*
+storage/sqlite/*.sqlite-shm
+storage/sqlite/*.sqlite-wal
+
+# Rent/Bank runtime state
+storage/rent/*.json
+storage/bank/data/*.json
+
+# Gemini runtime quota/history
+storage/gemini/**
+
+# Cauca2 runtime data
+storage/cauca2/**
