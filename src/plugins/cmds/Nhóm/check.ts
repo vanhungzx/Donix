@@ -230,6 +230,63 @@ const checkCommand = {
         return latest?.threadInfo ?? threadDataResult?.threadInfo ?? null;
       };
 
+      // --- Subcommand: check die (thống kê mem die theo kiểu ndfb, KHÔNG kick) ---
+      if (["die", "ndfb", "memdie"].includes(query)) {
+        const info = await getThreadInfo();
+        if (!info) {
+          await reply("❎ Không lấy được thông tin nhóm (threadInfo trống), hãy thử gửi vài tin nhắn rồi dùng lệnh lại.");
+          return;
+        }
+
+        const userInfo: Array<{ id: string | number; gender?: string | null; name?: string }> =
+          Array.isArray((info as any).userInfo) ? (info as any).userInfo : [];
+
+        if (userInfo.length === 0) {
+          await reply("❎ Nhóm chưa có dữ liệu userInfo, vui lòng thử lại sau hoặc dùng lại lệnh sau khi bot hoạt động thêm một thời gian.");
+          return;
+        }
+
+        const lockedUsers = userInfo.filter((u) => u && (u.gender === undefined || u.gender === null));
+
+        if (lockedUsers.length === 0) {
+          await reply("✅ Trong nhóm hiện tại không phát hiện tài khoản bị khoá (không có user nào có gender null/undefined trong threadInfo).");
+          return;
+        }
+
+        const botID = client.id;
+        const adminIDs = Array.isArray((info as any).adminIDs)
+          ? (info as any).adminIDs.map((a: any) => String(a?.id || a))
+          : [];
+        const isBotAdmin = adminIDs.includes(String(botID));
+
+        const lines: string[] = [];
+        for (let i = 0; i < lockedUsers.length; i += 1) {
+          const u = lockedUsers[i];
+          const uid = String(u.id);
+          let name = u.name as string | undefined;
+          if (!name) {
+            try {
+              name = (await (userData.getName as any)?.(uid)) ?? "Người dùng Facebook";
+            } catch {
+              name = "Người dùng Facebook";
+            }
+          }
+          lines.push(`${i + 1}. ${name} (${uid})`);
+        }
+
+        const header = [
+          "🔎 THỐNG KÊ TÀI KHOẢN CÓ NGUY CƠ BỊ KHÓA",
+          "",
+          `📌 Số lượng phát hiện: ${lockedUsers.length}`,
+          `👮 Bot là quản trị viên nhóm: ${isBotAdmin ? "Có" : "Không"}`,
+          "",
+          "📋 Danh sách (theo threadInfo.userInfo):",
+        ];
+
+        await reply([...header, ...lines].join("\n"));
+        return;
+      }
+
       if (query === "compare") {
         const uid1 = await parseUID(false, 1);
         const uid2 = await parseUID(false, 2);

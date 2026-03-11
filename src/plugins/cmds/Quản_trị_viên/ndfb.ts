@@ -25,15 +25,14 @@ const ndfbCommand: Command = {
   prefix: true,
 
   async onCall(ctx: CommandOnCallContext): Promise<void> {
-    const { threadData, event, reply } = ctx;
-    const bot = (globalThis as any).Donix
-      ?.bot as import("@types").FacebookClient | undefined;
+    const { threadData, event, reply, client } = ctx;
+    const bot = client;
 
     if (!bot) {
       if (reply) {
-        await reply("❌ Bot chưa được khởi tạo, vui lòng thử lại sau");
+        await reply("❌ Không tìm thấy client Facebook, vui lòng thử lại sau");
       } else {
-        console.error("❌ Donix bot instance is not available");
+        console.error("❌ Facebook client is not available in CommandOnCallContext");
       }
       return;
     }
@@ -59,7 +58,7 @@ const ndfbCommand: Command = {
 
     if (lockedUserIds.length === 0) {
       await bot.sendMessage(
-        "❎ Trong nhóm không tồn tại tài khoản bị khóa",
+        "❎ Trong nhóm không tồn tại tài khoản bị khóa (không thấy user nào có gender null/undefined trong threadInfo)",
         event.threadID,
         event.messageID
       );
@@ -72,7 +71,7 @@ const ndfbCommand: Command = {
       async () => {
         if (!isBotAdmin) {
           await bot.sendMessage(
-            "❎ Nhưng bot không phải là quản trị viên nên không thể lọc",
+            "❎ Nhóm hiện có tài khoản bị khoá nhưng bot không phải là quản trị viên nên không thể lọc.\n👉 Hãy cấp quyền quản trị viên cho bot rồi thử lại.",
             event.threadID
           );
           return;

@@ -289,11 +289,14 @@ if (bodyStr === pre || (isBotMentioned && !bodyWithoutBotTag)) {
   ];
 
   if (reply) {
-    await reply({
+    const sent = await reply({
       body: arr[Math.floor(Math.random() * arr.length)],
       attachment: global.Donix.vdanime?.splice?.(0, 1) || [],
       effect: "fire"
     });
+    if (unsend && sent?.messageID) {
+      setTimeout(() => unsend(String(sent.messageID)), 60 * 1000);
+    }
   }
 
   return;
@@ -411,7 +414,8 @@ if (bodyStr === pre || (isBotMentioned && !bodyWithoutBotTag)) {
     }
     const exp = (cmd.cd || 1) * 1000;
     const lastTime = ts.get(sid);
-    if (lastTime !== undefined && now < lastTime + exp) {
+    // Owner không bị giới hạn cooldown (không bắt "chậm lại")
+    if (!isOwner && lastTime !== undefined && now < lastTime + exp) {
       react("⏱️");
       return temp(client, "Thao tác quá nhanh, chậm lại!", tid, mid, undefined, scopedLogger);
     }

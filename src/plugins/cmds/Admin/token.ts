@@ -96,7 +96,7 @@ const tokenCommand: Command = {
   guide: `
 • {pn} check [type]: Kiểm tra token từ config (nếu không có type thì check tất cả)
 • {pn} get <type>: Lấy token mới (EAAAAU, EAAD, EAAD6V7, ...)
-• {pn} convert: Đổi token EAAD (gốc, từ config) sang EAAD6V7 và ghi vào config
+• {pn} convert: Đổi token EAAD (gốc, từ config) sang EAAAAU + EAAD6V7 qua createSessionForApp và ghi vào config
   `,
   cd: 2,
   prefix: true,
@@ -324,40 +324,57 @@ const tokenCommand: Command = {
         const raw = tokensFromConfig.EAAD ?? tokensFromConfig.EAAAAU ?? tokensFromConfig.EAAD6V7;
         if (!raw || typeof raw !== "string") {
           await reply({
-            body: "⚠️ Không có token EAAD trong config. Thêm token EAAD (gốc) vào config rồi thử lại."
+            body: "⚠️ Không có token EAAD/EAAAAU trong config. Thêm token gốc (EAAD hoặc EAAAAU) vào config rồi thử lại."
           });
           return;
         }
         const accessToken = String(raw).trim();
 
-        await reply({ body: "⏳ Đang convert EAAD (gốc) → EAAD6V7..." });
+        await reply({ body: "⏳ Đang convert token gốc → EAAAAU + EAAD6V7 (createSessionForApp)..." });
 
         const uid = (ctx.event?.senderID ?? (donix as any)?.userID) as string | undefined;
-        const appTarget = CONVERT_APP_MAP.EAAD6V7;
+        const targets: Array<{ key: string; label: string; app: { newAppId: string; apiKey: string } }> = [
+          { key: "EAAAAU", label: "EAAAAU", app: CONVERT_APP_MAP.EAAAAU },
+          { key: "EAAD6V7", label: "EAAD6V7", app: CONVERT_APP_MAP.EAAD6V7 },
+        ];
 
-        try {
-          const result = await api.createSessionForApp({
-            accessToken,
-            newAppId: appTarget.newAppId,
-            apiKey: appTarget.apiKey,
-            currentlyLoggedInUserId: uid,
-          });
-          const newAccessToken = result?.access_token;
-          if (!newAccessToken) {
-            await reply({
-              body: `❌ Convert thất bại: không nhận được access_token.\n${JSON.stringify(result || {}, null, 2).slice(0, 400)}`
+        const updated: string[] = [];
+        const failed: string[] = [];
+
+        for (const { key, label, app } of targets) {
+          try {
+            const result = await api.createSessionForApp({
+              accessToken,
+              newAppId: app.newAppId,
+              apiKey: app.apiKey,
+              currentlyLoggedInUserId: uid,
             });
-            return;
+            const newAccessToken = result?.access_token;
+            if (!newAccessToken) {
+              failed.push(label);
+              continue;
+            }
+            const ok = await writeTokenKey(CONFIG_PATH, "token", key, newAccessToken, logger);
+            if (ok) updated.push(label);
+            else failed.push(label);
+          } catch {
+            failed.push(label);
           }
-          const ok = await writeTokenKey(CONFIG_PATH, "token", "EAAD6V7", newAccessToken, logger);
+        }
+
+        const pn = ctx.commandName || "token";
+        if (updated.length > 0) {
           await reply({
-            body: `✅ Convert EAAD → EAAD6V7 xong!\n\n🔑 EAAD6V7: ${newAccessToken}${ok ? "\n\n📁 Đã ghi EAAD6V7 vào config." : "\n\n⚠️ Ghi config thất bại."}\n\n💡 Dùng "{pn} check" để kiểm tra.`.replace(/{pn}/g, ctx.commandName || "token")
+            body: `✅ Convert xong!\n\n` +
+              (updated.length ? `📁 Đã ghi vào config: ${updated.join(", ")}\n` : "") +
+              (failed.length ? `⚠️ Không lấy được: ${failed.join(", ")}\n` : "") +
+              `\n💡 Dùng "${pn} check" để kiểm tra.`
           });
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          logger?.error?.(`Convert EAAD → EAAD6V7: ${msg}`);
+        } else {
           await reply({
-            body: `❌ Lỗi convert: ${msg}`
+            body: `❌ Convert thất bại: không nhận được access_token cho EAAAAU và EAAD6V7.\n` +
+              (failed.length ? `Đích lỗi: ${failed.join(", ")}` : "") +
+              `\n\n💡 Kiểm tra token gốc (EAAD) còn Live và có quyền đổi session.`
           });
         }
         return;
@@ -365,7 +382,7 @@ const tokenCommand: Command = {
 
 
       await reply({
-        body: `⚠️ Lệnh không hợp lệ.\n\n📝 Cú pháp:\n• {pn} check [type] - Kiểm tra token từ config\n• {pn} get <type> - Lấy token mới\n• {pn} convert - Đổi EAAD (gốc) sang EAAD6V7 và ghi config`.replace(/{pn}/g, ctx.commandName || "token")
+        body: `⚠️ Lệnh không hợp lệ.\n\n📝 Cú pháp:\n• {pn} check [type] - Kiểm tra token từ config\n• {pn} get <type> - Lấy token mới\n• {pn} convert - Đổi EAAD (gốc) sang EAAAAU + EAAD6V7 và ghi config`.replace(/{pn}/g, ctx.commandName || "token")
       });
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);

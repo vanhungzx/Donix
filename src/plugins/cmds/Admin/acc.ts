@@ -2,6 +2,7 @@ import type { Command } from "@types";
 import fs from "node:fs";
 import path from "node:path";
 import { login as loginMessengerApp } from "../../../core/auth_login/messenger_app";
+import { enrichTokensFromEaad } from "../../../core/auth_login/auto_relogin";
 
 const configPath = path.resolve(process.cwd(), "src/core/config/config.json");
 
@@ -115,9 +116,10 @@ async function performLoginWithMethod(
   await reply(`⏳ Đang đăng nhập acc #${idx + 1} bằng messenger...`);
 
   let cookie: string | null = null;
+  let result: Awaited<ReturnType<typeof loginMessengerApp>> | null = null;
 
   if (["msg", "messenger", "messenger_app"].includes(normalized)) {
-    const result = await loginMessengerApp(email, password, secret2FA || "");
+    result = await loginMessengerApp(email, password, secret2FA || "");
     if (!result.success) {
       reply(`❌ Đăng nhập bằng Messenger thất bại: ${result.message}`);
       return;
@@ -133,7 +135,42 @@ async function performLoginWithMethod(
     return;
   }
 
+  // Cập nhật cookie + fbAccounts như cũ
   applyCookieToConfigAndGlobal(cookie, idx, cfg);
+
+  // Nếu login qua messenger_app có trả về access_token thì auto convert EAAD -> EAAAAU & EAAD6V7
+  const eaad = result && "access_token" in result ? result.access_token : undefined;
+  if (eaad && eaad.trim()) {
+    try {
+      const freshCfg = loadFreshConfig();
+      const existingToken =
+        freshCfg.token && typeof freshCfg.token === "object" && !Array.isArray(freshCfg.token)
+          ? ({ ...(freshCfg.token as AccountTokens) } as AccountTokens)
+          : {};
+      const enriched = await enrichTokensFromEaad(eaad.trim(), existingToken);
+      const nextCfg: DonixConfig = {
+        ...freshCfg,
+        token: enriched,
+      };
+      saveConfig(nextCfg);
+
+      // Đồng bộ lại global.account.token để các API dùng ngay được
+      try {
+        const globalState = global as typeof globalThis & {
+          account?: { cookie?: string; token?: AccountTokens | null };
+        };
+        globalState.account = {
+          cookie: nextCfg.cookie || cookie,
+          token: enriched,
+        };
+      } catch {
+        // ignore
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      reply(`⚠️ Đăng nhập thành công nhưng lỗi khi auto convert token EAAD→EAAAAU/EAAD6V7: ${msg}`);
+    }
+  }
 
   const uid = extractUserIdFromCookie(cookie);
   reply(

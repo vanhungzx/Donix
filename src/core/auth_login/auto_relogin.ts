@@ -1,7 +1,77 @@
 import { CookieJar } from "tough-cookie";
+import axios from "axios";
 import log from "../../utils/log";
 import { getConfig, updateConfigKey } from "../configManager";
 import { login as loginMessengerApp } from "./messenger_app";
+
+/** App ID cho từng loại token (Facebook) */
+const TOKEN_APP_IDS: Record<string, string> = {
+  EAAAAU: "350685531728",
+  EAAD: "256002347743983",
+  EAAD6V7: "275254692598279",
+};
+
+/**
+ * Đổi access token sang app khác qua auth.getSessionforApp.
+ * Trả về token mới hoặc null nếu lỗi.
+ */
+async function exchangeTokenForApp(
+  sourceToken: string,
+  newAppId: string
+): Promise<string | null> {
+  try {
+    const url = "https://api.facebook.com/method/auth.getSessionforApp";
+    const res = await axios.get(url, {
+      params: {
+        access_token: sourceToken,
+        format: "json",
+        new_app_id: newAppId,
+        generate_session_cookies: "0",
+      },
+      timeout: 15000,
+      validateStatus: (s) => s === 200,
+    });
+    const data = res?.data;
+    if (data?.error_code || !data?.access_token) {
+      return null;
+    }
+    return String(data.access_token).trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Từ token EAAD (hoặc EAAAAU), lấy thêm EAAAAU và EAAD6V7 rồi merge vào object token.
+ * Giữ nguyên token gốc, ghi đè EAAAAU và EAAD6V7 nếu lấy được.
+ * Export để lệnh admin `acc` cũng có thể tái sử dụng logic này.
+ */
+export async function enrichTokensFromEaad(
+  eaadOrEaaauToken: string,
+  currentToken: TokenConfig
+): Promise<TokenConfig> {
+  const out = { ...currentToken };
+  const source = eaadOrEaaauToken.trim();
+  if (!source) return out;
+
+  const isEaaau = /^EAAAAU/i.test(source) || /^EAAAU/i.test(source);
+
+  if (isEaaau) {
+    out.EAAAAU = source;
+    const eaad6v7 = await exchangeTokenForApp(source, TOKEN_APP_IDS.EAAD6V7);
+    if (eaad6v7) out.EAAD6V7 = eaad6v7;
+    const eaad = await exchangeTokenForApp(source, TOKEN_APP_IDS.EAAD);
+    if (eaad) out.EAAD = eaad;
+    return out;
+  }
+
+  out.EAAD = source;
+  const eaaau = await exchangeTokenForApp(source, TOKEN_APP_IDS.EAAAAU);
+  if (eaaau) out.EAAAAU = eaaau;
+  const eaad6v7 = await exchangeTokenForApp(source, TOKEN_APP_IDS.EAAD6V7);
+  if (eaad6v7) out.EAAD6V7 = eaad6v7;
+  return out;
+}
 
 export interface AutoReloginContext {
   jar?: CookieJar & {
@@ -54,8 +124,18 @@ async function updateConfigAfterLogin(
         ? { ...(cfg.token as TokenConfig) }
         : {};
       existingToken.EAAD = accessToken.trim();
-      await updateConfigKey("token", existingToken);
-      log.success("AUTO-LOGIN: Đã ghi cookie và access_token vào config.json");
+
+      // Auto convert EAAD -> EAAAAU và EAAD6V7 rồi ghi hết vào config
+      const enriched = await enrichTokensFromEaad(accessToken.trim(), existingToken);
+      await updateConfigKey("token", enriched);
+
+      const extra = [];
+      if (enriched.EAAAAU) extra.push("EAAAAU");
+      if (enriched.EAAD6V7) extra.push("EAAD6V7");
+      log.success(
+        "AUTO-LOGIN: Đã ghi cookie và token vào config.json" +
+        (extra.length ? ` (${extra.join(", ")})` : " (EAAD)")
+      );
     } else {
       log.success("AUTO-LOGIN: Đã ghi cookie vào config.json");
     }

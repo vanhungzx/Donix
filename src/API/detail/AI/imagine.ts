@@ -72,7 +72,6 @@ export async function imagineGenerate({
   prompt: string;
 }): Promise<ImagineResult> {
   const locale = "vi_VN";
-  const token = getAccessTokenFromConfig("EAAD");
   const surfaceSessionId = uuidv4();
   const clientMutationId = uuidv4();
   const genAiEventId = uuidv4();
@@ -111,65 +110,119 @@ export async function imagineGenerate({
   body.set("client_trace_id", clientTraceId);
   const bodyString = body.toString();
 
-  const { data: json } = await axios.post<ImagineGenerateResponse>(
-    "https://graph.facebook.com/graphql",
-    bodyString,
-    {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent":
-          "Dalvik/2.1.0 (Linux; U; Android 9; 23113RKC6C Build/PQ3A.190605.06171036) [FBAN/Orca-Android;FBAV/536.0.0.46.216;FBPN/com.facebook.orca;FBLC/vi_VN;FBBV/840054738;FBCR/MobiFone;FBMF/Redmi;FBBD/Redmi;FBDV/23113RKC6C;FBSV/9;FBCA/x86_64:arm64-v8a;FBDM/{density=3.0,width=1080,height=1920};FB_FW/1;]",
-        "Accept-Encoding": "gzip, deflate",
-        "x-fb-request-analytics-tags":
-          '{"network_tags":{"product":"256002347743983","request_category":"graphql","purpose":"none","retry_attempt":"0"},"application_tags":"graphservice"}',
-        "x-fb-rmd": "state=URL_ELIGIBLE",
-        priority: "u=3, i",
-        "x-fb-friendly-name": "GenAIImagineGenerateMutation",
-        "x-zero-f-device-id": "0b0dce82-584e-47f0-85fe-d33102ca196f",
-        "x-graphql-client-library": "graphservice",
-        "x-zero-eh":
-          "2,,AUqef4VGdZqt4ULqfRDDP1QpP71ByUAfpLRV04zexspdGzfzNsBdi_aNneElAW0yP9U",
-        "x-fb-net-hni": "45201",
-        "x-fb-sim-hni": "45201",
-        "app-scope-id-header": "86b2535b-8fc5-4b84-9476-112a5a8c4e72",
-        "x-fb-connection-type": "WIFI",
-        authorization: `OAuth ${token}`,
-        "x-tigon-is-retry": "False",
-        "x-fb-http-engine": "Tigon/Liger",
-        "x-fb-client-ip": "True",
-        "x-fb-server-cluster": "True"
-      },
-      decompress: true,
-      responseType: "json"
+  // Thử lần lượt nhiều access token trong config để tăng khả năng thành công
+  const cfg = getConfig();
+  const tokenObj = (cfg?.token || {}) as Record<string, string | undefined>;
+  const allKeys = Object.keys(tokenObj).filter(k => !!tokenObj[k]);
+  if (allKeys.length === 0) {
+    throw new Error("Không tìm thấy accessToken trong config (token.EAAD / token.EAAAAU / token.EAAD6V7 ...)");
+  }
+
+  const preferredOrder = ["EAAD", "EAAD6V7", "EAAAAU"];
+  const orderedKeys: string[] = [];
+  const pushed = new Set<string>();
+  for (const k of preferredOrder) {
+    if (tokenObj[k] && !pushed.has(k)) {
+      orderedKeys.push(k);
+      pushed.add(k);
     }
-  );
+  }
+  for (const k of allKeys) {
+    if (!pushed.has(k)) {
+      orderedKeys.push(k);
+      pushed.add(k);
+    }
+  }
 
-  if (!json?.data?.xfb_genai_imagine_for_intents?.success) {
+  let lastError: unknown = null;
+  let lastResponse: ImagineGenerateResponse | null = null;
+
+  for (const key of orderedKeys) {
+    const token = tokenObj[key];
+    if (!token) continue;
+    try {
+      const { data: json } = await axios.post<ImagineGenerateResponse>(
+        "https://graph.facebook.com/graphql",
+        bodyString,
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent":
+              "Dalvik/2.1.0 (Linux; U; Android 9; 23113RKC6C Build/PQ3A.190605.06171036) [FBAN/Orca-Android;FBAV/536.0.0.46.216;FBPN/com.facebook.orca;FBLC/vi_VN;FBBV/840054738;FBCR/MobiFone;FBMF/Redmi;FBBD/Redmi;FBDV/23113RKC6C;FBSV/9;FBCA/x86_64:arm64-v8a;FBDM/{density=3.0,width=1080,height=1920};FB_FW/1;]",
+            "Accept-Encoding": "gzip, deflate",
+            "x-fb-request-analytics-tags":
+              '{"network_tags":{"product":"256002347743983","request_category":"graphql","purpose":"none","retry_attempt":"0"},"application_tags":"graphservice"}',
+            "x-fb-rmd": "state=URL_ELIGIBLE",
+            priority: "u=3, i",
+            "x-fb-friendly-name": "GenAIImagineGenerateMutation",
+            "x-zero-f-device-id": "0b0dce82-584e-47f0-85fe-d33102ca196f",
+            "x-graphql-client-library": "graphservice",
+            "x-zero-eh":
+              "2,,AUqef4VGdZqt4ULqfRDDP1QpP71ByUAfpLRV04zexspdGzfzNsBdi_aNneElAW0yP9U",
+            "x-fb-net-hni": "45201",
+            "x-fb-sim-hni": "45201",
+            "app-scope-id-header": "86b2535b-8fc5-4b84-9476-112a5a8c4e72",
+            "x-fb-connection-type": "WIFI",
+            authorization: `OAuth ${token}`,
+            "x-tigon-is-retry": "False",
+            "x-fb-http-engine": "Tigon/Liger",
+            "x-fb-client-ip": "True",
+            "x-fb-server-cluster": "True"
+          },
+          decompress: true,
+          responseType: "json"
+        }
+      );
+
+      lastResponse = json;
+
+      if (!json?.data?.xfb_genai_imagine_for_intents?.success) {
+        // Thử token khác nếu có
+        lastError = new Error(
+          `Imagine API failed with token ${key}: ` + JSON.stringify(json, null, 2)
+        );
+        continue;
+      }
+
+      const success =
+        json.data.xfb_genai_imagine_for_intents.response?.[0]
+          ?.imagine_result_success;
+
+      if (!success) {
+        lastError = new Error(
+          `No imagine_result_success returned with token ${key}: ` +
+          JSON.stringify(json, null, 2)
+        );
+        continue;
+      }
+
+      return {
+        uri: success.uri,
+        response_id: success.response_id,
+        image_id: success.image_id,
+        request_id: success.request_id,
+        media_type: success.media_type,
+        imagine_type: success.imagine_type,
+        prompt: success.prompt,
+        source_prompt: success.source_prompt
+      };
+    } catch (err) {
+      lastError = err;
+      // thử token khác
+      continue;
+    }
+  }
+
+  // Nếu đến đây là mọi token đều fail
+  if (lastError) {
     throw new Error(
-      "Imagine API failed: " + JSON.stringify(json, null, 2)
+      `Imagine API failed for all tokens. Last error: ${String(
+        (lastError as any)?.message || lastError
+      )}${lastResponse ? " | Last response: " + JSON.stringify(lastResponse, null, 2) : ""}`
     );
   }
 
-  const success =
-    json.data.xfb_genai_imagine_for_intents.response?.[0]
-      ?.imagine_result_success;
-
-  if (!success) {
-    throw new Error(
-      "No imagine_result_success returned: " + JSON.stringify(json, null, 2)
-    );
-  }
-
-  return {
-    uri: success.uri,
-    response_id: success.response_id,
-    image_id: success.image_id,
-    request_id: success.request_id,
-    media_type: success.media_type,
-    imagine_type: success.imagine_type,
-    prompt: success.prompt,
-    source_prompt: success.source_prompt
-  };
+  throw new Error("Imagine API failed for all tokens (unknown error).");
 }
 
 export async function imagineSuggestions({
