@@ -11,6 +11,7 @@ import type {
 import { createCanvas, loadImage } from "canvas";
 import fs from "fs-extra";
 import path from "path";
+import { TEMP_DIR } from "../../../core/storagePath";
 import { storagePath } from "../../../core/storagePath";
 
 interface Question {
@@ -405,7 +406,7 @@ async function createGameImage(
   ctx.fillText(`${timer}`, circleX, circleY + 10 * scaleY);
 
 
-  const tempDir = path.join(process.cwd(), "src/temp");
+  const tempDir = TEMP_DIR();
   await fs.ensureDir(tempDir);
   const outputPath = path.join(
     tempDir,
