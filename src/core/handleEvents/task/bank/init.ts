@@ -13,6 +13,7 @@ export async function initBank(
   const accDir = STORAGE_BANK();
   const metaDir = STORAGE_BANK_DATA();
   const mark = path.join(metaDir, "last_update.json");
+  const legacyMark = path.join(process.cwd(), "bot", "data", "bank", "data", "last_update.json");
   const periodMs = Math.max(1, Number(BANK.H_PER_D || 24)) * 3600000;
   const maxSteps = Math.max(1, Number(BANK.MAX_STEPS || 14));
   const conc = Math.max(1, Number(BANK.CONC || 10));
@@ -20,6 +21,18 @@ export async function initBank(
 
   await fs.ensureDir(accDir);
   await fs.ensureDir(metaDir);
+
+  // Migrate legacy meta mark (bot/data/bank/data) -> storage/bank/data
+  try {
+    if (!(await fs.pathExists(mark)) && (await fs.pathExists(legacyMark))) {
+      await fs.ensureDir(path.dirname(mark));
+      await fs.move(legacyMark, mark, { overwrite: false });
+      // try cleanup empty legacy dirs
+      try {
+        await fs.remove(path.join(process.cwd(), "bot", "data", "bank", "data"));
+      } catch { }
+    }
+  } catch { }
 
   const processStep = async (stepTs: number) => {
     const dh = await fs.opendir(accDir);

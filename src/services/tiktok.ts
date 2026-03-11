@@ -1,5 +1,6 @@
 import axios from 'axios'
 import TiktokService from './lib/tiktok'
+import { STORAGE_COOKIES } from '../core/storagePath'
 
 function extractTikTokVideoId(inputUrl: string): string | null {
   if (!inputUrl || typeof inputUrl !== 'string') return null
@@ -68,7 +69,7 @@ function wrapError(err: unknown, message: string): never {
   const errorMsg = err instanceof Error ? err.message : String(err) || message
   if (errorMsg.includes('cookie') || errorMsg.includes('Cookie')) {
     throw new Error(
-      `TikTok API error: Cookie không hợp lệ hoặc thiếu. Vui lòng kiểm tra storage/cookies/tiktok.txt - ${errorMsg}`
+      `TikTok API error: Cookie không hợp lệ hoặc thiếu. Vui lòng kiểm tra ${STORAGE_COOKIES()}/tiktok.txt - ${errorMsg}`
     )
   }
   throw new Error(`TikTok API error: ${errorMsg}`)

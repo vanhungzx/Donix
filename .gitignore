@@ -158,6 +158,14 @@ storage/sqlite/*.sqlite-wal
 storage/rent/*.json
 storage/bank/data/*.json
 
+# Legacy bank meta path (migrated to storage/)
+bot/data/bank/data/**
+
+# Cookies (sensitive) - unify under storage/cookies
+storage/cookies/**
+cookies/**
+src/cookies/**
+
 # Gemini runtime quota/history
 storage/gemini/**
 

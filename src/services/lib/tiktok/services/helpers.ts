@@ -6,12 +6,20 @@ import { TIKTOK_API_URL } from '../constants/index.js'
 import createMobileHeadersSignature, { getBaseMobileParams } from '../tiktok-signer/signHeadersMobile.js'
 import tiktokUtils from '../utils/tiktok.util.js'
 import type { TikTokCredentials, BaseOptions } from '../types/index.js'
+import { STORAGE_COOKIES } from '../../../../core/storagePath'
 
 export const getTiktokCredentials = (): TikTokCredentials => {
   try {
-    const cookieFilePath = path.join(process.cwd(), 'storage', 'cookies', 'tiktok.txt')
+    const cookieFilePath = path.join(STORAGE_COOKIES(), 'tiktok.txt')
     const legacyCookieFilePath = path.join(process.cwd(), 'main', 'cookies', 'tiktok.txt')
-    const finalCookiePath = fs.existsSync(cookieFilePath) ? cookieFilePath : legacyCookieFilePath
+    const legacyCookieFilePath2 = path.join(process.cwd(), 'cookies', 'tiktok.txt')
+    const legacyCookieFilePath3 = path.join(process.cwd(), 'src', 'cookies', 'tiktok.txt')
+    const finalCookiePath =
+      (fs.existsSync(cookieFilePath) && cookieFilePath) ||
+      (fs.existsSync(legacyCookieFilePath) && legacyCookieFilePath) ||
+      (fs.existsSync(legacyCookieFilePath2) && legacyCookieFilePath2) ||
+      (fs.existsSync(legacyCookieFilePath3) && legacyCookieFilePath3) ||
+      cookieFilePath
 
     if (!fs.existsSync(finalCookiePath)) {
       throw new Error(

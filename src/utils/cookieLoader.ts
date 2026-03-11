@@ -1,8 +1,38 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import log from "./log";
+import { STORAGE_COOKIES } from "../core/storagePath";
 
-const COOKIES_DIR = path.join(process.cwd(), "cookies");
+const COOKIES_DIR = STORAGE_COOKIES();
+
+const LEGACY_DIRS = [
+  path.join(process.cwd(), "cookies"),
+  path.join(process.cwd(), "src", "cookies"),
+];
+
+async function migrateLegacyCookies(): Promise<void> {
+  for (const legacyDir of LEGACY_DIRS) {
+    if (legacyDir === COOKIES_DIR) continue;
+    try {
+      await fs.access(legacyDir);
+    } catch {
+      continue;
+    }
+    try {
+      await fs.mkdir(COOKIES_DIR, { recursive: true });
+      const files = await fs.readdir(legacyDir);
+      const txtFiles = files.filter((f) => f.endsWith(".txt"));
+      for (const f of txtFiles) {
+        const from = path.join(legacyDir, f);
+        const to = path.join(COOKIES_DIR, f);
+        try {
+          // copy (không xóa) để tránh mất cookie nếu đang dùng song song
+          await fs.copyFile(from, to);
+        } catch { }
+      }
+    } catch { }
+  }
+}
 
 /**
  * Loads all cookie files from the cookies directory
@@ -13,6 +43,7 @@ export async function loadCookies(): Promise<Record<string, string>> {
   const cookies: Record<string, string> = {};
 
   try {
+    await migrateLegacyCookies();
     // Check if cookies directory exists
     try {
       await fs.access(COOKIES_DIR);

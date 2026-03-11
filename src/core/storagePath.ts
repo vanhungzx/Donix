@@ -49,6 +49,9 @@ export const STORAGE_GAME = () => storagePath("game");
 /** Gemini */
 export const STORAGE_GEMINI = () => storagePath("gemini");
 
+/** Cookies (nhạy cảm, không commit) */
+export const STORAGE_COOKIES = () => storagePath("cookies");
+
 /** Temp (thống nhất: ./temp ở root project) */
 export const TEMP_DIR = () => path.join(process.cwd(), "temp");
 export function tempPath(...segments: string[]): string {
