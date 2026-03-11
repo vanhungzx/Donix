@@ -12,8 +12,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import { database } from "../../../core/AI-Database";
-import { STORAGE_GEMINI } from "../../../core/storagePath";
-import { TEMP_DIR } from "../../../core/storagePath";
+import { STORAGE_GEMINI, STORAGE_MEDIA, TEMP_DIR } from "../../../core/storagePath";
 import { generateAIThemesFromPrompt } from "../../../API/detail/AI/generateAIThemes";
 import { imagineGenerate } from "../../../API/detail/AI/imagine";
 
@@ -23,7 +22,7 @@ import { downloadYoutubeAudio } from "../Tiện_ích/sing";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const MEDIA_DIR = path.join(process.cwd(), "src/bot/data/gemini/media");
+const MEDIA_DIR = path.join(STORAGE_MEDIA(), "gemini");
 const INLINE_IMAGE_LIMIT_BYTES = 18 * 1024 * 1024;
 
 type GenAIModels = {

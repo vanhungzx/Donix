@@ -3,6 +3,7 @@
 import type { Command, CommandOnCallContext } from '@types';
 import fs from "fs-extra";
 import path from "path";
+import { storagePath } from "../../../core/storagePath";
 
 const omCommand: Command = {
   name: "ôm",
@@ -32,7 +33,7 @@ const omCommand: Command = {
     }
     const tag = (mentions?.[mentionId] || "").replace("@", "");
 
-    const gifPath = path.join(process.cwd(), "src/bot/data/image/om.gif");
+    const gifPath = storagePath("image", "om.gif");
 
     try {
       if (!fs.existsSync(gifPath)) {

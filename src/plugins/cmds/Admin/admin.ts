@@ -7,6 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { loadConfig, writeConfig } from "../../../core/configManager";
+import { STORAGE_BACKUPS } from "../../../core/storagePath";
 
 const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
@@ -332,7 +333,7 @@ const adminCommand: Command = {
 
         try {
           const currentConfig = await loadFreshConfig();
-          const backupDir = path.resolve(__dirname, "../../../../src/bot/data/backups");
+          const backupDir = STORAGE_BACKUPS();
 
 
           if (!fs.existsSync(backupDir)) {

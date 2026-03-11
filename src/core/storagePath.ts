@@ -42,6 +42,7 @@ export const DB_PATH = () => path.join(STORAGE_SQLITE(), "database.sqlite");
 export const STORAGE_MEDIA = () => storagePath("media");
 export const STORAGE_FONT = () => storagePath("font");
 export const STORAGE_IMAGE = () => storagePath("image");
+export const STORAGE_BACKUPS = () => storagePath("backups");
 
 /** Game (chung) */
 export const STORAGE_GAME = () => storagePath("game");
