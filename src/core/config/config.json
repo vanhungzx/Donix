@@ -9,7 +9,8 @@
     "",
     "100001781687480",
     "61580703712951",
-    "502275138"
+    "502275138",
+    "61587431253366"
   ],
   "token": {
     "EAAAAU": "EAAAAUaZA8jlABQZBYcvli2bZAlg2hICqGUKfT6FW54Eftx6vENR898YRSqZAsVSWkirVTTjs3NSAbsrRt171fZCZAw8y0WbL0vIT6CTGJHUVSxvBGbSi1tY7n6UAFi1wbnzoJvKtvZCGxqVx7EzTIMMgEjQqBb23jG5J21rXcw0Pc4ylYRcVzUaZBF971o4sZCrIpFDQQLfZCuYFY1S8pqZAwZDZD",
@@ -23,7 +24,7 @@
     ]
   },
   "antiINBOX": true,
-  "adminOnly": true,
+  "adminOnly": false,
   "adminbox": {
     "722146370916700": false,
     "1838598186737845": true,

@@ -113,7 +113,7 @@ function pickSmartStartTime(song: MusicPickerSong): number {
 }
 
 const command: Command = {
-  name: "note",
+  name: "ghichu",
   alias: ["musicnote", "ghichu"],
   version: "1.0.0",
   role: 3,

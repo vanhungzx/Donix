@@ -32,6 +32,22 @@
           "text": "Olá! Como posso ajudar você hoje?"
         }
       ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "á hả"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Olá! Parece que você está digitando caracteres aleatórios. Você gostaria de me dizer o que precisa? Posso ajudar com diversas coisas, como:\n\n*   Responder a perguntas.\n*   Gerar textos criativos.\n*   Traduzir idiomas.\n*   Resumir informações.\n\nÉ só me dizer!"
+        }
+      ]
     }
   ]
 }
