@@ -1040,6 +1040,7 @@ function cleanJsonResponse(text: string) {
     "info",
     "check",
     "kick",
+    "add",
     "set_color",
     "set_nicknames",
     "set_threadname",
@@ -4293,7 +4294,9 @@ async function executeActions(
   messageID: string,
   main: any,
   commandName: string,
-  utils: any
+  utils: any,
+  threadData: any,
+  config: any
 ) {
   console.log("Executing actions:", actions);
 
@@ -4585,6 +4588,91 @@ async function executeActions(
               body: "❎ Lỗi khi kick người dùng. Có thể bot không có quyền hoặc người dùng không tồn tại trong nhóm."
             });
           }
+        }
+      } else if (action.type === "add") {
+        if (!action.targetID && !action.url && !action.link) {
+          console.log("Add action missing target");
+          return;
+        }
+        try {
+          let raw = String(action.targetID || action.url || action.link || "").trim();
+          if (!raw) {
+            console.log("Add action empty target");
+            return;
+          }
+          let uidUser: string;
+          if (raw.includes(".com/")) {
+            const getUID = client.getUID as ((url: string) => Promise<string>) | undefined;
+            if (!getUID) {
+              await reply({
+                body: "❎ Không thể lấy UID từ link"
+              });
+              return;
+            }
+            uidUser = String(await getUID(raw));
+          } else {
+            uidUser = String(raw);
+          }
+          const t = await threadData.get(threadID);
+          const info = t?.data?.threadInfo || t?.threadInfo || {};
+          const participantIDs = Array.isArray(info.participantIDs)
+            ? info.participantIDs.map((v: any) => String(v?.id || v))
+            : [];
+          const approvalMode = !!info.approvalMode;
+          const adminIDs = (Array.isArray(info.adminIDs) ? info.adminIDs : []).map((v: any) =>
+            String(v?.id || v)
+          );
+          const botCurrentID = String(client.getCurrentUserID());
+          const isOwner = Array.isArray(config.OWNER)
+            ? config.OWNER.includes(String(senderID))
+            : String(config.OWNER) === String(senderID);
+          if (!adminIDs.includes(String(senderID)) && !isOwner) {
+            await reply({
+              body: "❌ Chỉ QTV nhóm hoặc admin bot mới được yêu cầu thêm thành viên."
+            });
+            return;
+          }
+          if (!adminIDs.includes(botCurrentID)) {
+            await reply({
+              body: "❌ Bot cần là quản trị viên nhóm để thêm thành viên."
+            });
+            return;
+          }
+          const addUserToGroup = client.addUserToGroup as ((userID: string, threadID: string, callback: (err: Error | null) => void) => void) | undefined;
+          if (!addUserToGroup) {
+            await reply({
+              body: "❎ Không thể thêm thành viên vào nhóm"
+            });
+            return;
+          }
+          if (participantIDs.includes(uidUser)) {
+            await reply({
+              body: "❎ Thành viên đã có mặt trong nhóm"
+            });
+            return;
+          }
+          addUserToGroup(uidUser, threadID, async (err: Error | null) => {
+            if (err) {
+              await reply({
+                body: "❎ Không thể thêm thành viên vào nhóm. Có thể bot không có quyền hoặc người dùng đã chặn lời mời."
+              });
+              return;
+            }
+            if (approvalMode && !adminIDs.includes(botCurrentID)) {
+              await reply({
+                body: "✅ Đã thêm người dùng vào danh sách phê duyệt"
+              });
+              return;
+            }
+            await reply({
+              body: "✅ Thêm thành viên vào nhóm thành công"
+            });
+          });
+        } catch (e: any) {
+          console.log("Error adding user:", e?.message || e);
+          await reply({
+            body: "❎ Có lỗi xảy ra khi xử lý yêu cầu thêm thành viên"
+          });
         }
       } else if (action.type === "sing") {
         try {
@@ -5190,6 +5278,80 @@ const command = {
       return reply({
         body: "Đã tắt chế độ chửi. Em sẽ giữ lời nói văn minh nhé. 🤝"
       });
+    } else if (lowerPrompt.startsWith("add ")) {
+      const raw = prompt.split(" ").slice(1).join(" ").trim();
+      if (!raw) {
+        return reply({
+          body: "❎ Thiếu tham số UID hoặc link profile để thêm vào nhóm"
+        });
+      }
+      try {
+        let uidUser: string;
+        if (raw.includes(".com/")) {
+          const getUID = client.getUID as ((url: string) => Promise<string>) | undefined;
+          if (!getUID) {
+            return reply({
+              body: "❎ Không thể lấy UID từ link"
+            });
+          }
+          uidUser = String(await getUID(raw));
+        } else {
+          uidUser = String(raw);
+        }
+        const t = await threadData.get(threadID);
+        const info = t?.data?.threadInfo || t?.threadInfo || {};
+        const participantIDs = Array.isArray(info.participantIDs)
+          ? info.participantIDs.map((v: any) => String(v?.id || v))
+          : [];
+        const approvalMode = !!info.approvalMode;
+        const adminIDs = (Array.isArray(info.adminIDs) ? info.adminIDs : []).map((v: any) =>
+          String(v?.id || v)
+        );
+        const botCurrentID = String(client.getCurrentUserID());
+        const isOwner = Array.isArray(config.OWNER)
+          ? config.OWNER.includes(String(senderID))
+          : String(config.OWNER) === String(senderID);
+        if (!adminIDs.includes(String(senderID)) && !isOwner) {
+          return reply({
+            body: "❌ Chỉ QTV nhóm hoặc admin bot mới được yêu cầu thêm thành viên."
+          });
+        }
+        if (!adminIDs.includes(botCurrentID)) {
+          return reply({
+            body: "❌ Bot cần là quản trị viên nhóm để thêm thành viên."
+          });
+        }
+        const addUserToGroup = client.addUserToGroup as ((userID: string, threadID: string, callback: (err: Error | null) => void) => void) | undefined;
+        if (!addUserToGroup) {
+          return reply({
+            body: "❎ Không thể thêm thành viên vào nhóm"
+          });
+        }
+        if (participantIDs.includes(uidUser)) {
+          return reply({
+            body: "❎ Thành viên đã có mặt trong nhóm"
+          });
+        }
+        addUserToGroup(uidUser, threadID, async (err: Error | null) => {
+          if (err) {
+            return reply({
+              body: "❎ Không thể thêm thành viên vào nhóm. Có thể bot không có quyền hoặc người dùng đã chặn lời mời."
+            });
+          }
+          if (approvalMode && !adminIDs.includes(botCurrentID)) {
+            return reply({
+              body: "✅ Đã thêm người dùng vào danh sách phê duyệt"
+            });
+          }
+          return reply({
+            body: "✅ Thêm thành viên vào nhóm thành công"
+          });
+        });
+      } catch {
+        return reply({
+          body: "❎ Có lỗi xảy ra khi xử lý yêu cầu thêm thành viên"
+        });
+      }
     } else if (lowerPrompt.startsWith("dịch ") || lowerPrompt.startsWith("translate ")) {
       const parts = prompt.split(" ").slice(1);
       const maybeLang = (parts[0] || "").trim();
@@ -5472,7 +5634,9 @@ const command = {
         messageID,
         main,
         commandName,
-        utils
+        utils,
+        threadData,
+        config
       );
     } catch (err: any) {
       console.log(err);
@@ -5503,7 +5667,8 @@ const command = {
     commandName,
     threadData,
     userData,
-    utils
+    utils,
+    config
   }: any) {
     const state = getGroupState(event.threadID);
     if (!state?.data?.repliesEnabled) return;
@@ -5681,7 +5846,9 @@ const command = {
         messageID,
         main,
         commandName,
-        utils
+        utils,
+        threadData,
+        config
       );
     } catch (err: any) {
       console.log(err);
