@@ -114,7 +114,7 @@ RSS: ${(rss / 1048576).toFixed(1)}MB`;
 
     await reply({
       body: status,
-      attachment: global.Donix.vdgai?.splice?.(0, 1) || [],
+      attachment: global.Donix.vdanime?.splice?.(0, 1) || [],
       effect: "love",
     });
   },
