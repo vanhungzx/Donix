@@ -1,9 +1,17 @@
 import type {
+  BotConfig,
   Command,
   CommandOnCallContext,
   CommandOnReactContext,
   CommandOnReplyContext,
+  MessageForm,
+  ReactData,
+  ReplyData,
+  SendMessageResult,
+  ThreadDataModel,
 } from '@types';
+import type { UserData } from '../../../core/database/user-data';
+import type { UserInfo as FbGraphUserInfo } from '../../../types/client';
 import moment from "moment-timezone";
 
 const TZ = "Asia/Ho_Chi_Minh";
@@ -25,6 +33,9 @@ interface MessageCountItem {
 }
 
 type MessageCountStore = Record<SectionKey, MessageCountItem[]>;
+
+/** OWNER/ADMIN mở rộng so với BotConfig tối thiểu. */
+type DonixBotConfig = BotConfig & { OWNER?: string | string[]; ADMIN?: string[] };
 
 const formatNumber = (value: number | undefined | null): string => {
   if (!Number.isFinite(value)) return "0";
@@ -79,33 +90,93 @@ const limitFrom = (value: string | undefined, defaultLimit = 50): number => {
   return Math.min(Math.max(parsed, 1), 200);
 };
 
-const ensureMessageCount = (store: any): MessageCountStore => {
+interface ThreadUserInfoRow {
+  id?: string | number;
+  name?: string;
+  gender?: string | null;
+}
+
+interface ThreadInfoWithParticipants {
+  userInfo?: ThreadUserInfoRow[];
+  adminIDs?: unknown;
+}
+
+type ThreadDataWithIdAll = ThreadDataModel & { idAll?: () => Promise<string[]> };
+
+const ensureMessageCount = (store: unknown): MessageCountStore => {
   if (!store || typeof store !== "object") return createDefaultMessageCount();
   const result: MessageCountStore = createDefaultMessageCount();
+  const raw = store as Record<string, unknown>;
   for (const key of SECTIONS) {
-    const section = store[key];
+    const section = raw[key];
     result[key] = Array.isArray(section) ? (section as MessageCountItem[]) : [];
   }
   return result;
 };
 
-const deriveRoleTag = (id: string, botID: string, config: any): string => {
+/** Chuẩn hoá adminIDs (string[] hoặc { id }[]) thành danh sách UID. */
+const threadAdminIds = (info: ThreadInfoWithParticipants | null | undefined): string[] => {
+  const raw = info?.adminIDs;
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((a) => {
+      if (typeof a === "string" || typeof a === "number") return String(a);
+      if (a && typeof a === "object" && "id" in a) return String((a as { id: unknown }).id ?? "");
+      return "";
+    })
+    .filter(Boolean);
+};
+
+const isThreadAdmin = (info: ThreadInfoWithParticipants | null | undefined, userId: string): boolean =>
+  threadAdminIds(info).includes(String(userId));
+
+const deriveRoleTag = (id: string, botID: string, config: DonixBotConfig): string => {
   if (String(id) === String(botID)) return "Bot";
-  const owners = Array.isArray(config?.OWNER)
-    ? config.OWNER.map(String)
-    : [String(config?.OWNER ?? "")];
+  const ownerRaw = config.OWNER;
+  const owners = Array.isArray(ownerRaw) ? ownerRaw.map(String) : [String(ownerRaw ?? "")];
   if (owners.filter(Boolean).includes(String(id))) return "Chủ bot";
-  if (Array.isArray(config?.ADMIN) && config.ADMIN.map(String).includes(String(id))) {
+  const adminList = config.ADMIN;
+  if (Array.isArray(adminList) && adminList.map(String).includes(String(id))) {
     return "Admin bot";
   }
   return "";
 };
 
+/** Tên hiển thị theo thread (userData.getName thường trống với nhiều UID). */
+const participantNameMapFromThreadInfo = (
+  threadInfo: ThreadInfoWithParticipants | null | undefined,
+): Map<string, string> => {
+  const map = new Map<string, string>();
+  const list = Array.isArray(threadInfo?.userInfo) ? threadInfo.userInfo : [];
+  for (const u of list) {
+    if (u?.id != null && u.name) map.set(String(u.id), String(u.name));
+  }
+  return map;
+};
+
+const getUserInfoRows = (info: unknown): ThreadUserInfoRow[] => {
+  if (!info || typeof info !== "object") return [];
+  const u = (info as ThreadInfoWithParticipants).userInfo;
+  return Array.isArray(u) ? u : [];
+};
+
+async function allThreadIds(threadData: ThreadDataModel): Promise<string[]> {
+  const idAll = (threadData as ThreadDataWithIdAll).idAll;
+  if (typeof idAll !== "function") return [];
+  try {
+    const ids = await idAll();
+    return Array.isArray(ids) ? ids : [];
+  } catch {
+    return [];
+  }
+}
+
+
 const checkCommand = {
   name: "check",
   desc: "Thống kê & xếp hạng tương tác (ngày/tuần/tháng/toàn bộ, trong nhóm & toàn hệ thống)",
   alias: ["checktt", "cou", "count"],
-  version: "1.2.4",
+  version: "1.2.6",
   role: 0,
   cd: 5,
   prefix: true,
@@ -125,12 +196,15 @@ const checkCommand = {
       commandName,
     } = ctx;
 
+    const botConfig = config as DonixBotConfig;
+
     const isOwner = (id: string | number): boolean => {
       const target = String(id);
-      if (Array.isArray(config?.OWNER)) {
-        return config.OWNER.map(String).includes(target);
+      const owner = botConfig.OWNER;
+      if (Array.isArray(owner)) {
+        return owner.map(String).includes(target);
       }
-      return String(config?.OWNER) === target;
+      return String(owner ?? "") === target;
     };
 
     const parseUID = async (fallbackSelf = true, index = 1): Promise<string | null> => {
@@ -143,7 +217,10 @@ const checkCommand = {
       if (candidate) {
         try {
           new URL(candidate);
-          return String(await (client.getUID as any)?.(candidate) || candidate);
+          if (client.getUID) {
+            return String((await client.getUID(candidate)) || candidate);
+          }
+          return candidate;
         } catch {
           if (/^\d+$/.test(candidate)) return candidate;
         }
@@ -152,12 +229,7 @@ const checkCommand = {
     };
 
     const computeServerRank = async (targetId: string, section: SectionKey = "total") => {
-      let threadIDs: string[] = [];
-      try {
-        threadIDs = (await (threadData.idAll as any)?.()) || [];
-      } catch {
-        threadIDs = [];
-      }
+      const threadIDs = await allThreadIds(threadData);
 
       const aggregated: Record<string, number> = {};
 
@@ -238,8 +310,7 @@ const checkCommand = {
           return;
         }
 
-        const userInfo: Array<{ id: string | number; gender?: string | null; name?: string }> =
-          Array.isArray((info as any).userInfo) ? (info as any).userInfo : [];
+        const userInfo = getUserInfoRows(info);
 
         if (userInfo.length === 0) {
           await reply("❎ Nhóm chưa có dữ liệu userInfo, vui lòng thử lại sau hoặc dùng lại lệnh sau khi bot hoạt động thêm một thời gian.");
@@ -254,9 +325,7 @@ const checkCommand = {
         }
 
         const botID = client.id;
-        const adminIDs = Array.isArray((info as any).adminIDs)
-          ? (info as any).adminIDs.map((a: any) => String(a?.id || a))
-          : [];
+        const adminIDs = threadAdminIds(info);
         const isBotAdmin = adminIDs.includes(String(botID));
 
         const lines: string[] = [];
@@ -266,7 +335,7 @@ const checkCommand = {
           let name = u.name as string | undefined;
           if (!name) {
             try {
-              name = (await (userData.getName as any)?.(uid)) ?? "Người dùng Facebook";
+              name = (await userData.getName(uid)) ?? "Người dùng Facebook";
             } catch {
               name = "Người dùng Facebook";
             }
@@ -295,8 +364,8 @@ const checkCommand = {
           return;
         }
 
-        const name1 = (await (userData.getName as any)?.(uid1)) ?? "Người dùng";
-        const name2 = (await (userData.getName as any)?.(uid2)) ?? "Người dùng";
+        const name1 = (await userData.getName(uid1)) ?? "Người dùng";
+        const name2 = (await userData.getName(uid2)) ?? "Người dùng";
 
         const pick = (section: MessageCountItem[], id: string) =>
           section.find((entry) => entry?.id === id)?.count ?? 0;
@@ -380,7 +449,7 @@ const checkCommand = {
         }
 
         await threadData.update(threadID, { messageCount });
-        const name = (await (userData.getName as any)?.(uid)) ?? "Người dùng";
+        const name = (await userData.getName(uid)) ?? "Người dùng";
         await reply(`✅ Đã trừ ${percent}% tương tác của ${name} ở mọi mốc.`);
         return;
       }
@@ -413,7 +482,7 @@ const checkCommand = {
         }
 
         await threadData.update(threadID, { messageCount });
-        const name = (await (userData.getName as any)?.(uid)) ?? "Người dùng";
+        const name = (await userData.getName(uid)) ?? "Người dùng";
         await reply(`✅ Đã cộng ${formatNumber(increment)} tin cho ${name} ở mọi mốc.`);
         return;
       }
@@ -446,7 +515,7 @@ const checkCommand = {
         }
 
         await threadData.update(threadID, { messageCount });
-        const name = (await (userData.getName as any)?.(uid)) ?? "Người dùng";
+        const name = (await userData.getName(uid)) ?? "Người dùng";
         await reply(`✅ Đã đặt ${formatNumber(targetCount)} tin cho ${name} ở mọi mốc.`);
         return;
       }
@@ -455,12 +524,12 @@ const checkCommand = {
         const info = await getThreadInfo();
         const botID = client.id;
 
-        if (!info?.adminIDs?.some((entry: any) => entry.id === botID)) {
+        if (!isThreadAdmin(info, String(botID))) {
           await reply("❎ Cần cấp quyền Quản trị viên cho bot.");
           return;
         }
 
-        if (!info?.adminIDs?.some((entry: any) => entry.id === senderID) && !isOwner(senderID)) {
+        if (!isThreadAdmin(info, String(senderID)) && !isOwner(senderID)) {
           await reply("❎ Bạn không đủ quyền để lọc thành viên.");
           return;
         }
@@ -493,8 +562,25 @@ const checkCommand = {
           return;
         }
 
+        const nameByParticipant = participantNameMapFromThreadInfo(info);
+        let fromGraph: Record<string, FbGraphUserInfo> = {};
+        try {
+          fromGraph = await client.getUserInfo(removed);
+        } catch {
+          fromGraph = {};
+        }
+
         const names = await Promise.all(
-          removed.map(async (id) => (await (userData.getName as any)?.(id)) ?? "Người dùng"),
+          removed.map(async (id) => {
+            const sid = String(id);
+            const fromThread = nameByParticipant.get(sid);
+            if (fromThread) return fromThread;
+            const record = messageCount.total.find((entry) => String(entry?.id) === sid);
+            if (record?.name) return record.name;
+            const g = fromGraph[sid];
+            if (g?.name) return g.name;
+            return (await userData.getName(id)) ?? "Người dùng";
+          }),
         );
 
         const output = [
@@ -504,7 +590,7 @@ const checkCommand = {
           `📉 Ngưỡng: ≤ ${formatNumber(min)} tin`,
           "",
           "📋 Danh sách:",
-          ...names.map((name, index) => `${index + 1}. ${name}`),
+          ...names.map((name: string, index: number) => `${index + 1}. ${name}`),
         ].join("\n");
 
         await reply(output);
@@ -513,7 +599,7 @@ const checkCommand = {
 
       if (query === "refresh") {
         const info = await getThreadInfo();
-        if (!info?.adminIDs?.some((entry: any) => entry.id === senderID) && !isOwner(senderID)) {
+        if (!isThreadAdmin(info, String(senderID)) && !isOwner(senderID)) {
           await reply("❎ Bạn không đủ quyền để làm mới dữ liệu.");
           return;
         }
@@ -556,11 +642,11 @@ const checkCommand = {
             return;
           }
 
-          const adminIDs = threadInfo.adminIDs ?? [];
+          const adminIdList = threadAdminIds(threadInfo);
           const adminNames = await Promise.all(
-            adminIDs.map(async (admin: any) => {
+            adminIdList.map(async (adminId) => {
               try {
-                return (await (userData.getName as any)?.(admin.id)) ?? "Unknown Admin";
+                return (await userData.getName(adminId)) ?? "Unknown Admin";
               } catch (error) {
                 console.error("Error getting admin name:", error);
                 return "Unknown Admin";
@@ -589,7 +675,7 @@ const checkCommand = {
             }
           }
 
-          const replyData: any = {
+          const replyData: MessageForm = {
             body: [
               `Nhóm: ${threadInfo.threadName ?? "không có"}`,
               `ID: ${threadInfo.threadID ?? threadID}`,
@@ -598,7 +684,7 @@ const checkCommand = {
               `Số thành viên: ${threadInfo.participantIDs?.length ?? 0} (Nam: ${genderMale.length}, Nữ: ${genderFemale.length})`,
               "",
               "Quản trị viên:",
-              adminNames.map((name) => `- ${name}`).join("\n"),
+              adminNames.map((name: string) => `- ${name}`).join("\n"),
               "",
               "Tin nhắn:",
               `- Hôm nay: ${totals.day.toLocaleString("vi-VN")}`,
@@ -615,16 +701,21 @@ const checkCommand = {
 
           if (threadInfo.imageSrc && utils?.stream) {
             try {
-              replyData.attachment = await (utils.stream as any)(threadInfo.imageSrc, "jpg");
+              const stream = utils.stream as (url: string, ext: string) => Promise<unknown>;
+              const att = await stream(threadInfo.imageSrc, "jpg");
+              if (typeof replyData === "object" && replyData !== null && !Array.isArray(replyData)) {
+                (replyData as Record<string, unknown>).attachment = att;
+              }
             } catch (error) {
               console.error("Error loading group image:", error);
             }
           }
 
           await reply(replyData);
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error("Error in box command:", error);
-          await reply(`❎ Không thể lấy thông tin nhóm của bạn!\n${error?.message ?? error}`);
+          const msg = error instanceof Error ? error.message : String(error);
+          await reply(`❎ Không thể lấy thông tin nhóm của bạn!\n${msg}`);
         }
 
         return;
@@ -632,7 +723,7 @@ const checkCommand = {
 
       if (query === "reset") {
         const info = await getThreadInfo();
-        if (!info?.adminIDs?.some((entry: any) => entry.id === senderID) && !isOwner(senderID)) {
+        if (!isThreadAdmin(info, String(senderID)) && !isOwner(senderID)) {
           await reply("❎ Bạn không đủ quyền để đặt lại dữ liệu.");
           return;
         }
@@ -647,7 +738,7 @@ const checkCommand = {
 
       if (query === "call") {
         const info = await getThreadInfo();
-        if (!info?.adminIDs?.some((entry: any) => entry.id === senderID) && !isOwner(senderID)) {
+        if (!isThreadAdmin(info, String(senderID)) && !isOwner(senderID)) {
           await reply("❎ Bạn không đủ quyền dùng tính năng này.");
           return;
         }
@@ -669,7 +760,7 @@ const checkCommand = {
         for (let i = 0; i < lowIDs.length; i += 1) {
           const id = lowIDs[i];
           if (!id) continue;
-          const name: string = (await (userData.getName as any)?.(id)) ?? "Người dùng";
+          const name: string = (await userData.getName(id)) ?? "Người dùng";
           mentions.push({ tag: name, id });
           lines.push(`${i + 1}. @${name}`);
         }
@@ -693,11 +784,11 @@ const checkCommand = {
         const botID = client.id;
         for (const entry of top) {
           try {
-            entry.name = (await (userData.getName as any)?.(entry.id)) ?? "Người dùng";
+            entry.name = (await userData.getName(entry.id)) ?? "Người dùng";
           } catch {
             entry.name = "Người dùng";
           }
-          entry.roleTag = deriveRoleTag(String(entry.id), String(botID), config);
+          entry.roleTag = deriveRoleTag(String(entry.id), String(botID), botConfig);
         }
 
         const totalMessages = full.reduce((sum, item) => sum + (item.count ?? 0), 0);
@@ -757,7 +848,7 @@ const checkCommand = {
             .sort((a, b) => (b?.count ?? 0) - (a?.count ?? 0));
 
           const record = sortedTotal.find((entry) => entry?.id === uid);
-          const name = (await (userData.getName as any)?.(uid)) ?? "Người dùng";
+          const name = (await userData.getName(uid)) ?? "Người dùng";
 
           const countTotal = record?.count ?? 0;
           const countDay = messageCount.day.find((entry) => entry?.id === uid)?.count ?? 0;
@@ -772,30 +863,42 @@ const checkCommand = {
           const info = await getThreadInfo();
           let role = "Thành viên";
           if (isOwner(uid)) role = "Chủ bot";
-          else if (Array.isArray(config?.ADMIN) && config.ADMIN.map(String).includes(String(uid))) {
+          else if (Array.isArray(botConfig.ADMIN) && botConfig.ADMIN.map(String).includes(String(uid))) {
             role = "Quản trị viên bot";
-          } else if (info?.adminIDs?.some((entry: any) => entry.id === uid)) {
+          } else if (isThreadAdmin(info, String(uid))) {
             role = "Quản trị viên nhóm";
           }
 
           let userStore = await userData.get(uid);
           if (!userStore) {
-            const newStore = { joinedThreads: { [threadID]: Date.now() } } as any;
+            const newStore: Partial<UserData> = { joinedThreads: { [threadID]: Date.now() } };
             await userData.set(uid, newStore);
-            userStore = newStore;
+            userStore = (await userData.get(uid)) ?? null;
           }
           if (!userStore?.joinedThreads) {
-            const updatedStore = { ...(userStore || {}), joinedThreads: { [threadID]: Date.now() } } as any;
+            const updatedStore: Partial<UserData> = {
+              ...(userStore || {}),
+              joinedThreads: { [threadID]: Date.now() },
+            };
             await userData.set(uid, updatedStore);
-            userStore = updatedStore;
+            userStore = (await userData.get(uid)) ?? null;
           }
           if (userStore && !userStore.joinedThreads?.[threadID]) {
-            const updatedStore = { ...userStore, joinedThreads: { ...(userStore.joinedThreads || {}), [threadID]: Date.now() } } as any;
+            const updatedStore: Partial<UserData> = {
+              ...userStore,
+              joinedThreads: { ...(userStore.joinedThreads || {}), [threadID]: Date.now() },
+            };
             await userData.set(uid, updatedStore);
-            userStore = updatedStore;
+            userStore = (await userData.get(uid)) ?? null;
           }
 
-          const joinedAt = userStore?.joinedThreads?.[threadID] || Date.now();
+          const joinedRaw = userStore?.joinedThreads?.[threadID];
+          const joinedAt =
+            typeof joinedRaw === "number"
+              ? joinedRaw
+              : typeof joinedRaw === "string"
+                ? Number.parseInt(joinedRaw, 10) || Date.now()
+                : Date.now();
           const joinMoment = moment.tz(joinedAt, TZ);
           const now = moment.tz(TZ);
           const diff = {
@@ -842,17 +945,15 @@ const checkCommand = {
             "💡 Mẹo: Thả cảm xúc 😆 vào tin nhắn này để xem bảng xếp hạng tổng của nhóm",
           ];
 
-          await reply(lines.join("\n"), (error: any, infoCallback: any) => {
+          await reply(lines.join("\n"), (error: Error | null, infoCallback?: SendMessageResult) => {
             if (!error && infoCallback?.messageID) {
-              main.onReact.set(
-                infoCallback.messageID,
-                {
-                  commandName,
-                  messageID: infoCallback.messageID,
-                  author: event.senderID,
-                  iduser: uid,
-                } as any,
-              );
+              const payload: ReactData & { iduser: string } = {
+                commandName,
+                messageID: infoCallback.messageID,
+                author: event.senderID,
+                iduser: uid,
+              };
+              main.onReact.set(infoCallback.messageID, payload);
             }
           });
 
@@ -865,7 +966,7 @@ const checkCommand = {
 
         for (const entry of filtered) {
           try {
-            entry.name = (await (userData.getName as any)?.(entry.id)) ?? "Người dùng";
+            entry.name = (await userData.getName(entry.id)) ?? "Người dùng";
           } catch {
             entry.name = "Người dùng";
           }
@@ -879,7 +980,7 @@ const checkCommand = {
         const botID = client.id;
 
         for (const entry of displayed) {
-          entry.roleTag = deriveRoleTag(String(entry.id), String(botID), config);
+          entry.roleTag = deriveRoleTag(String(entry.id), String(botID), botConfig);
         }
 
         const sumShown = displayed.reduce((sum, entry) => sum + (entry.count ?? 0), 0);
@@ -902,36 +1003,36 @@ const checkCommand = {
 
         const output = body;
 
-        await reply(output, (error: any, infoCallback: any) => {
+        await reply(output, (error: Error | null, infoCallback?: SendMessageResult) => {
           if (!error && infoCallback?.messageID) {
-            main.onReply.set(
-              infoCallback.messageID,
-              {
-                commandName,
-                messageID: infoCallback.messageID,
-                tag: "locmen",
-                thread: event.threadID,
-                author: event.senderID,
-                storage: sorted,
-              } as any,
-            );
+            const payload = {
+              commandName,
+              messageID: infoCallback.messageID,
+              tag: "locmen",
+              thread: event.threadID,
+              author: event.senderID,
+              storage: sorted,
+            } as unknown as ReplyData;
+            main.onReply.set(infoCallback.messageID, payload);
           }
         });
       } else {
         await reply("❎ Không có dữ liệu để hiển thị.");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error in check command:", error);
-      await reply(`❎ Đã xảy ra lỗi: ${error?.message ?? error}`);
+      const msg = error instanceof Error ? error.message : String(error);
+      await reply(`❎ Đã xảy ra lỗi: ${msg}`);
     }
   },
 
   async onReact(ctx: CommandOnReactContext) {
     const { unsend, reply, event, userData, client, Reaction, commandName, main, threadData, config } = ctx;
+    const botConfig = config as DonixBotConfig;
 
     try {
-      const reactionData = Reaction as any;
-      const reactorID = (event as any)?.userID ?? event.senderID;
+      const reactionData = Reaction as ReactData & { iduser?: string };
+      const reactorID = event.userID ?? event.senderID;
       if (reactorID !== reactionData?.author) return;
       if (event.reaction !== "😆") return;
 
@@ -945,7 +1046,7 @@ const checkCommand = {
       for (const entry of data) {
         if (!entry?.id) continue;
         try {
-          entry.name = (await (userData.getName as any)?.(entry.id)) ?? "Người dùng";
+          entry.name = (await userData.getName(entry.id)) ?? "Người dùng";
         } catch {
           entry.name = "Người dùng";
         }
@@ -957,12 +1058,14 @@ const checkCommand = {
         .sort((a, b) => b.count - a.count);
 
       const yourRank = sorted.findIndex((entry) => entry?.id === reactionData?.iduser);
-      const youName = (await (userData.getName as any)?.(reactionData?.iduser)) ?? "Bạn";
+      const youName = reactionData.iduser
+        ? ((await userData.getName(reactionData.iduser)) ?? "Bạn")
+        : "Bạn";
       const target = event.senderID === reactionData?.iduser ? "Bạn" : youName;
       const botID = client.getCurrentUserID();
 
       for (const entry of sorted) {
-        entry.roleTag = deriveRoleTag(String(entry.id), String(botID), config);
+        entry.roleTag = deriveRoleTag(String(entry.id), String(botID), botConfig);
       }
 
       const totalMessages = sorted.reduce((sum, entry) => sum + (entry.count ?? 0), 0);
@@ -984,19 +1087,17 @@ const checkCommand = {
 
       const output = body;
 
-      await reply(output, (error: any, infoCallback: any) => {
+      await reply(output, (error: Error | null, infoCallback?: SendMessageResult) => {
         if (!error && infoCallback?.messageID) {
-          main.onReply.set(
-            infoCallback.messageID,
-            {
-              commandName,
-              messageID: infoCallback.messageID,
-              tag: "locmen",
-              thread: event.threadID,
-              author: event.senderID,
-              storage: sorted,
-            } as any,
-          );
+          const payload = {
+            commandName,
+            messageID: infoCallback.messageID,
+            tag: "locmen",
+            thread: event.threadID,
+            author: event.senderID,
+            storage: sorted,
+          } as unknown as ReplyData;
+          main.onReply.set(infoCallback.messageID, payload);
         }
       });
 
@@ -1013,7 +1114,10 @@ const checkCommand = {
     const { client, event, Reply, threadData, userData, reply } = ctx;
 
     try {
-      const replyData = Reply as any;
+      const replyData = Reply as ReplyData & {
+        tag?: string;
+        storage?: MessageCountItem[];
+      };
       if (!Reply || event.senderID !== replyData.author) return;
 
       const { threadID } = event;
@@ -1028,12 +1132,12 @@ const checkCommand = {
       const botID = client.getCurrentUserID();
 
       if (replyData.tag === "locmen") {
-        if (!info?.adminIDs?.some((entry: any) => entry.id === botID)) {
+        if (!isThreadAdmin(info, String(botID))) {
           await reply("❎ Bot cần quyền Quản trị viên.");
           return;
         }
 
-        if (!info?.adminIDs?.some((entry: any) => entry.id === event.senderID)) {
+        if (!isThreadAdmin(info, String(event.senderID))) {
           await reply("❎ Bạn không đủ quyền xoá thành viên.");
           return;
         }
@@ -1061,7 +1165,7 @@ const checkCommand = {
           }
 
           try {
-            const name = (await (userData.getName as any)?.(target.id)) ?? "Người dùng";
+            const name = (await userData.getName(target.id)) ?? "Người dùng";
             await client.removeUserFromGroup(target.id, threadID);
             removed.push(`${index}. ${name}`);
             await new Promise((resolve) => setTimeout(resolve, 600));

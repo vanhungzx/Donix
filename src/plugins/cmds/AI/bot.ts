@@ -12,7 +12,18 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import { database } from "../../../core/AI-Database";
-import { STORAGE_GEMINI, STORAGE_MEDIA, TEMP_DIR } from "../../../core/storagePath";
+import {
+  GEMINI_MODEL_FLASH,
+  GEMINI_MODEL_LITE,
+  geminiTemperature,
+  geminiThinkingConfig,
+} from "../../../core/geminiModelConfig";
+import {
+  GEMINI_API_QUOTA_JSON,
+  GEMINI_API_QUOTA_JSON_ALT,
+  STORAGE_MEDIA,
+  TEMP_DIR,
+} from "../../../core/storagePath";
 import { generateAIThemesFromPrompt } from "../../../API/detail/AI/generateAIThemes";
 import { imagineGenerate } from "../../../API/detail/AI/imagine";
 
@@ -433,7 +444,8 @@ async function generateRoast(target: string, allowToxic: boolean) {
       contents: [{ role: "user", parts: [{ text: `Roast ${safeTarget} nhé.` }] }],
       config: {
         safetySettings,
-        thinkingConfig: { thinkingBudget: 0 },
+        thinkingConfig: geminiThinkingConfig(picked.modelName),
+        temperature: geminiTemperature(picked.modelName, 1.0),
         systemInstruction: `Bạn là Hương, genZ, biết cà khịa. Viết đoạn chửi/roast ngắn gọn bằng tiếng Việt, hài hước, không xúc phạm nhóm yếu thế, không đe dọa bạo lực. ${allowToxic
           ? "Có thể dùng từ lóng, chửi nhẹ nhưng tránh quá đà."
           : "Giữ mức độ mỉa mai nhẹ, tránh tục tĩu vì chế độ chửi đang tắt."
@@ -474,9 +486,8 @@ const groupStates = database.createCollection("group_states");
 type ModelKind = "flash" | "lite";
 
 const MODEL_NAMES: Record<ModelKind, string> = {
-  flash: "gemini-2.5-flash",
-  // bản nhẹ hơn theo quota dashboard
-  lite: "gemini-2.5-flash-lite"
+  flash: GEMINI_MODEL_FLASH,
+  lite: GEMINI_MODEL_LITE,
 };
 
 const DAILY_RPD_PER_MODEL = 20;
@@ -486,54 +497,41 @@ type ApiKeyState = {
   remaining: Record<ModelKind, number>;
 };
 
-// Thống nhất storage bên ngoài root (./storage/...)
-const QUOTA_STATE_FILE = path.join(STORAGE_GEMINI(), "api-quota.json");
+/** Chỉ dùng ./storage/gemini/api-quota.json (không dùng src/storage). */
+const QUOTA_STATE_FILE = GEMINI_API_QUOTA_JSON();
+/** Bản cũ (trước khi thống nhất path) — migrate một lần rồi xóa. */
+const LEGACY_QUOTA_SRC = path.join(process.cwd(), "src", "storage", "gemini", "api-quota.json");
 
-const API_KEYS: ApiKeyState[] = [
-  {
-    key: "AIzaSyA4TdYmWcBDoSC722ievzkYJ3e8AnUtNFA",
-    remaining: { flash: DAILY_RPD_PER_MODEL, lite: DAILY_RPD_PER_MODEL }
-  },
-  {
-    key: "AIzaSyA6qBZ2IL-iRnoSBh_OllGteCIF2PfKRC0",
-    remaining: { flash: DAILY_RPD_PER_MODEL, lite: DAILY_RPD_PER_MODEL }
-  },
-  {
-    key: "AIzaSyCv8FdD-Mj_bujfyxCXedf7jas4j8DDZ3E",
-    remaining: { flash: DAILY_RPD_PER_MODEL, lite: DAILY_RPD_PER_MODEL }
-  },
-  {
-    key: "AIzaSyCjHC9xWZQ_SrNjRCuCRAbhdUQfaFwqGec",
-    remaining: { flash: DAILY_RPD_PER_MODEL, lite: DAILY_RPD_PER_MODEL }
-  },
-  {
-    key: "AIzaSyD-qDcHahDjIP86Uxitzqti9paKikXXDyo",
-    remaining: { flash: DAILY_RPD_PER_MODEL, lite: DAILY_RPD_PER_MODEL }
-  },
-  {
-    key: "AIzaSyCwKAMyfYE2hBcOUxdrVN-WJ5hjrJMA-6U",
-    remaining: { flash: DAILY_RPD_PER_MODEL, lite: DAILY_RPD_PER_MODEL }
-  },
-  {
-    key: "AIzaSyB6y9ACMpD0L491pzd1sVLBcDvdIJUAkxo",
-    remaining: { flash: DAILY_RPD_PER_MODEL, lite: DAILY_RPD_PER_MODEL }
-  },
-  {
-    key: "AIzaSyBkCM7i1mefmjdbWs9X2GdK_vO5mE6dCZQ",
-    remaining: { flash: DAILY_RPD_PER_MODEL, lite: DAILY_RPD_PER_MODEL }
-  },
-  {
-    key: "AIzaSyBtBG45ThRDad1b24PkMHC_kpbx5KhoQ20",
-    remaining: { flash: DAILY_RPD_PER_MODEL, lite: DAILY_RPD_PER_MODEL }
-  },
-  {
-    key: "AIzaSyBd1LN6jQJapVNjRV9fdC7nYzReVGFiPwo",
-    remaining: { flash: DAILY_RPD_PER_MODEL, lite: DAILY_RPD_PER_MODEL }
-  }
-];
+let API_KEYS: ApiKeyState[] = [];
 
 let currentKeyIndex = 0;
 let lastDailyReset = new Date().toDateString();
+
+function migrateLegacyGeminiQuotaFile(): void {
+  try {
+    if (!fs.existsSync(LEGACY_QUOTA_SRC)) return;
+    if (!fs.existsSync(QUOTA_STATE_FILE)) {
+      fs.ensureDirSync(path.dirname(QUOTA_STATE_FILE));
+      fs.copyFileSync(LEGACY_QUOTA_SRC, QUOTA_STATE_FILE);
+    }
+    fs.unlinkSync(LEGACY_QUOTA_SRC);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Nhiều key, phân tách bằng dấu phẩy hoặc khoảng trắng (khi chưa có file quota). */
+function bootstrapKeysFromEnv(): void {
+  if (API_KEYS.length > 0) return;
+  const raw = process.env.GEMINI_API_KEYS?.trim();
+  if (!raw) return;
+  const keys = raw.split(/[\s,]+/).filter(Boolean);
+  if (keys.length === 0) return;
+  API_KEYS = keys.map((key) => ({
+    key,
+    remaining: { flash: DAILY_RPD_PER_MODEL, lite: DAILY_RPD_PER_MODEL },
+  }));
+}
 
 function saveQuotaToFile() {
   try {
@@ -541,44 +539,89 @@ function saveQuotaToFile() {
     fs.ensureDirSync(dir);
     const data = {
       lastDailyReset,
-      keys: API_KEYS.map(k => ({
+      keys: API_KEYS.map((k) => ({
         key: k.key,
-        remaining: k.remaining
-      }))
+        remaining: k.remaining,
+      })),
     };
     fs.writeJSONSync(QUOTA_STATE_FILE, data, { spaces: 2 });
   } catch { }
 }
 
-function loadQuotaFromFile() {
+function parseQuotaKeyList(
+  data: {
+    lastDailyReset?: string;
+    keys?: Array<{ key?: string; remaining?: { flash?: number; lite?: number } }>;
+  } | null | undefined,
+): ApiKeyState[] {
+  if (!data || !Array.isArray(data.keys)) return [];
+  const next: ApiKeyState[] = [];
+  for (const item of data.keys) {
+    if (!item?.key) continue;
+    const rf = item.remaining?.flash;
+    const rl = item.remaining?.lite;
+    next.push({
+      key: String(item.key),
+      remaining: {
+        flash: typeof rf === "number" && Number.isFinite(rf) ? rf : DAILY_RPD_PER_MODEL,
+        lite: typeof rl === "number" && Number.isFinite(rl) ? rl : DAILY_RPD_PER_MODEL,
+      },
+    });
+  }
+  return next;
+}
+
+/** Gộp `storage/gemini.api-quota.json` (hay nhầm) với file chuẩn; trùng key thì ưu tiên bản ghi sau (alt). */
+function mergeQuotaFromAlternateFile(): boolean {
+  const altPath = GEMINI_API_QUOTA_JSON_ALT();
+  if (!fs.existsSync(altPath)) return false;
   try {
-    if (!fs.existsSync(QUOTA_STATE_FILE)) return;
-    const data: any = fs.readJSONSync(QUOTA_STATE_FILE);
+    const data = fs.readJSONSync(altPath) as {
+      lastDailyReset?: string;
+      keys?: Array<{ key?: string; remaining?: { flash?: number; lite?: number } }>;
+    };
     if (typeof data?.lastDailyReset === "string") {
       lastDailyReset = data.lastDailyReset;
     }
-    if (Array.isArray(data?.keys)) {
-      const byKey: Record<string, any> = {};
-      for (const item of data.keys) {
-        if (item?.key) byKey[String(item.key)] = item;
+    const fromAlt = parseQuotaKeyList(data);
+    if (fromAlt.length === 0) return false;
+    const byKey = new Map(API_KEYS.map((k) => [k.key, { ...k }]));
+    for (const item of fromAlt) {
+      byKey.set(item.key, item);
+    }
+    API_KEYS = [...byKey.values()];
+    console.info(
+      "[Gemini] Đã gộp key từ storage/gemini.api-quota.json. Chuẩn: storage/gemini/api-quota.json — nên dồn key vào file đó và xóa key leak.",
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function loadQuotaFromFile() {
+  try {
+    migrateLegacyGeminiQuotaFile();
+    if (fs.existsSync(QUOTA_STATE_FILE)) {
+      const data = fs.readJSONSync(QUOTA_STATE_FILE) as {
+        lastDailyReset?: string;
+        keys?: Array<{ key?: string; remaining?: { flash?: number; lite?: number } }>;
+      };
+      if (typeof data?.lastDailyReset === "string") {
+        lastDailyReset = data.lastDailyReset;
       }
-      API_KEYS.forEach(k => {
-        const saved = byKey[k.key];
-        if (
-          saved &&
-          saved.remaining &&
-          typeof saved.remaining.flash === "number" &&
-          typeof saved.remaining.lite === "number"
-        ) {
-          k.remaining.flash = saved.remaining.flash;
-          k.remaining.lite = saved.remaining.lite;
-        }
-      });
+      const fromCanonical = parseQuotaKeyList(data);
+      if (fromCanonical.length > 0) API_KEYS = fromCanonical;
+    }
+    const mergedAlt = mergeQuotaFromAlternateFile();
+    bootstrapKeysFromEnv();
+    if (mergedAlt && API_KEYS.length > 0) {
+      saveQuotaToFile();
     }
   } catch { }
 }
 
-// load trạng thái quota từ file (nếu có) khi module được nạp
+// load trạng thái quota từ ./storage/gemini/api-quota.json (và env GEMINI_API_KEYS nếu cần)
 loadQuotaFromFile();
 
 export function resetGeminiDailyQuota() {
@@ -793,6 +836,19 @@ function markKeyRateLimited(picked: PickedKey | null | undefined) {
   k.remaining.flash = 0;
   k.remaining.lite = 0;
   saveQuotaToFile();
+}
+
+/** Key bị Google suspend (CONSUMER_SUSPENDED) hoặc 403 không dùng được — không nhầm với key leaked. */
+function isGeminiKeySuspendedError(e: unknown): boolean {
+  const status = (e as { status?: number })?.status;
+  const raw = String((e as { message?: string })?.message ?? e ?? "");
+  if (status !== 403) return false;
+  if (/leaked|reported as leaked|please use another api key/i.test(raw)) return false;
+  return (
+    raw.includes("CONSUMER_SUSPENDED") ||
+    /has been suspended/i.test(raw) ||
+    (/PERMISSION_DENIED/i.test(raw) && /suspended/i.test(raw))
+  );
 }
 
 function removeLeakedKey(picked: PickedKey | null | undefined) {
@@ -1646,6 +1702,59 @@ function sessionKey(threadID: string, userID: string): string {
   return `${threadID}:${userID}`;
 }
 
+/** Khớp chat cache với key + model hiện tại — tránh dùng session cũ sau khi xoay key/quota. */
+function geminiChatBindingId(picked: PickedKey): string {
+  return `${picked.key}:${picked.modelName}`;
+}
+
+/** Khi Gemini chặn prompt/đầu ra (safety) — tránh parsed=[] hoặc throw → user thấy "có lỗi". */
+const GEMINI_SAFETY_FALLBACK_CHAT =
+  "Em không thể tiếp tục theo hướng đó — mình nói chuyện lịch sự hơn một chút nhé! 😊";
+
+function readGeminiResultText(result: unknown): string {
+  const r = result as { text?: string | (() => string) };
+  try {
+    if (typeof r?.text === "function") return String(r.text() ?? "").trim();
+    if (typeof r?.text === "string") return String(r.text).trim();
+  } catch {
+    return "";
+  }
+  return "";
+}
+
+function geminiCandidateHasTextParts(result: unknown): boolean {
+  const parts = (result as { candidates?: Array<{ content?: { parts?: unknown[] } }> })?.candidates?.[0]
+    ?.content?.parts;
+  if (!Array.isArray(parts)) return false;
+  return parts.some(
+    (p: unknown) =>
+      typeof p === "object" &&
+      p !== null &&
+      "text" in p &&
+      String((p as { text?: string }).text ?? "").trim() !== ""
+  );
+}
+
+/** Prompt bị chặn, output safety, hoặc không còn nội dung text hợp lệ. */
+function shouldUseGeminiSafetyFallback(result: unknown, rawText: string): boolean {
+  const r = result as {
+    promptFeedback?: { blockReason?: string };
+    candidates?: Array<{ finishReason?: string }>;
+  };
+  if (r?.promptFeedback?.blockReason) return true;
+  const fr = String(r?.candidates?.[0]?.finishReason ?? "");
+  if (
+    fr === "SAFETY" ||
+    fr === "BLOCKLIST" ||
+    fr === "PROHIBITED_CONTENT" ||
+    fr === "IMAGE_SAFETY"
+  ) {
+    return true;
+  }
+  if (!rawText.trim() && !geminiCandidateHasTextParts(result)) return true;
+  return false;
+}
+
 function buildHistoryContents(recent: any[], _userName: string): any[] {
   return recent
     .filter((m: any) => m?.sender && m?.content)
@@ -2281,10 +2390,10 @@ Yêu cầu:
       model: picked.modelName,
       contents: helperPrompt,
       config: {
-        temperature: 0.7,
+        temperature: geminiTemperature(picked.modelName, 0.7),
         topP: 0.9,
         maxOutputTokens: 500,
-        thinkingConfig: { thinkingBudget: 0 },
+        thinkingConfig: geminiThinkingConfig(picked.modelName),
         tools: useSearch ? [{ googleSearch: {} }] : undefined
       }
     } as any);
@@ -2315,6 +2424,9 @@ Yêu cầu:
     if (isLeakedKey) {
       // key bị leak: xóa luôn key khỏi danh sách
       removeLeakedKey(picked);
+    } else if (isGeminiKeySuspendedError(e)) {
+      markKeyRateLimited(picked);
+      console.warn("[Gemini] Key suspended (helper), đã bỏ qua key này.");
     }
     console.log("Error asking Gemini for info:", e?.message || e);
     return null;
@@ -4012,16 +4124,22 @@ ${geminiAnswer}`;
       parts = [{ text: media.finalText }, ...media.parts];
     }
     const keySession = sessionKey(threadID, userID);
+    const binding = geminiChatBindingId(picked);
     let chat: { sendMessage: (params: { message: unknown[] }) => Promise<unknown> } | undefined = CHAT_SESSIONS.get(keySession) as { sendMessage: (params: { message: unknown[] }) => Promise<unknown> } | undefined;
+    if (chat && (chat as { _geminiBinding?: string })._geminiBinding !== binding) {
+      CHAT_SESSIONS.delete(keySession);
+      CHAT_SESSION_TIMESTAMPS.delete(keySession);
+      chat = undefined;
+    }
     if (!chat) {
       cleanupChatSessions();
       const hist = buildHistoryContents(recent, userName);
       const baseConfig = {
         systemInstruction: SYSTEM_INSTRUCTION,
         safetySettings,
-        temperature: 0.9,
+        temperature: geminiTemperature(picked.modelName, 0.9),
         topP: 0.95,
-        thinkingConfig: { thinkingBudget: 0 },
+        thinkingConfig: geminiThinkingConfig(picked.modelName),
         tools: [{ googleSearch: {} }]
       };
       chat = (ai as any).chats.create({
@@ -4029,17 +4147,42 @@ ${geminiAnswer}`;
         config: baseConfig,
         history: hist
       }) as { sendMessage: (params: { message: unknown[] }) => Promise<unknown> };
-      (chat as any)._hasSearchTools = true;
+      (chat as { _hasSearchTools?: boolean; _geminiBinding?: string })._hasSearchTools = true;
+      (chat as { _hasSearchTools?: boolean; _geminiBinding?: string })._geminiBinding = binding;
       CHAT_SESSIONS.set(keySession, chat);
       CHAT_SESSION_TIMESTAMPS.set(keySession, Date.now());
     } else {
       CHAT_SESSION_TIMESTAMPS.set(keySession, Date.now());
     }
-    const result: any = await chat.sendMessage({ message: parts });
-    const rawText =
-      typeof result?.text === "function"
-        ? result.text()
-        : result?.text || "";
+    const returnGeminiSafetyFallback = async () => {
+      chatData.data.messages.push({
+        sender: "bot",
+        content: GEMINI_SAFETY_FALLBACK_CHAT,
+        timestamp: new Date().toISOString()
+      });
+      if (chatData.data.messages.length > 20)
+        chatData.data.messages = chatData.data.messages.slice(-20);
+      await personalChatHistory.updateOneUsingId(
+        historySessionKey,
+        chatData
+      );
+      markRequestSuccess(picked);
+      return [{ type: "chat", content: GEMINI_SAFETY_FALLBACK_CHAT }];
+    };
+    let result: any;
+    try {
+      result = await chat.sendMessage({ message: parts });
+    } catch (sendErr: unknown) {
+      const msg = String((sendErr as { message?: string })?.message ?? sendErr);
+      if (/safety|blocked|content policy|harmful|Responsible|prohibited/i.test(msg)) {
+        return await returnGeminiSafetyFallback();
+      }
+      throw sendErr;
+    }
+    const rawText = readGeminiResultText(result);
+    if (shouldUseGeminiSafetyFallback(result, rawText)) {
+      return await returnGeminiSafetyFallback();
+    }
     let parsed: any[] = [];
     try {
       parsed = JSON.parse(rawText);
@@ -4250,6 +4393,7 @@ ${geminiAnswer}`;
       (msg.includes("leaked") ||
         msg.includes("reported as leaked") ||
         msg.includes("please use another api key"));
+    const isSuspendedKey = isGeminiKeySuspendedError(e);
     if (isLeakedKey) {
       // key bị leak: xóa luôn key khỏi danh sách
       removeLeakedKey(picked);
@@ -4258,7 +4402,24 @@ ${geminiAnswer}`;
       // key dính 429: set hết quota để tránh dùng lại
       markKeyRateLimited(picked);
     }
-    if ((isRateLimit || is503) && retry < API_KEYS.length * 2 && hasAnyAvailableKey()) {
+    if (isSuspendedKey && !isLeakedKey) {
+      markKeyRateLimited(picked);
+      console.warn(
+        "[Gemini] Key suspended / CONSUMER_SUSPENDED — đã tắt quota key này, thử key khác."
+      );
+    }
+    if (process.env.GOOGLE_API_KEY && isSuspendedKey && !isLeakedKey) {
+      throw new Error(
+        "GOOGLE_API_KEY bị Google suspend (CONSUMER_SUSPENDED). Tạo API key mới trong Google AI Studio hoặc dùng danh sách key trong storage/gemini/api-quota.json."
+      );
+    }
+    const shouldRetryWithOtherKey =
+      isRateLimit ||
+      is503 ||
+      (isSuspendedKey && !isLeakedKey) ||
+      (isLeakedKey && API_KEYS.length > 0);
+    if (shouldRetryWithOtherKey && retry < API_KEYS.length * 2 && hasAnyAvailableKey()) {
+      CHAT_SESSIONS.delete(sessionKey(threadID, userID));
       const delay = Math.min(2000 * (retry + 1), 10000);
       await new Promise(resolve => setTimeout(resolve, delay));
       return handleChat(
@@ -4282,6 +4443,33 @@ ${geminiAnswer}`;
     }
     throw e;
   }
+}
+
+/** Đăng ký onReply với createdAt — tránh bị main.ts cleanup xóa nhầm (entry không timestamp = coi là cũ nhất). */
+function registerBotOnReply(
+  main: { onReply: Map<string, unknown> },
+  info: { messageID?: string } | null | undefined,
+  senderID: string,
+  commandName: string,
+  data: Record<string, unknown> = {}
+) {
+  const raw = info?.messageID;
+  if (raw === undefined || raw === null || raw === "") return;
+  const id = String(raw);
+  main.onReply.set(id, {
+    commandName,
+    author: String(senderID),
+    messageID: id,
+    createdAt: Date.now(),
+    data
+  });
+}
+
+/** Chỉ bỏ qua onReply khi user gọi lệnh kiểu !bot / bot ... ở đầu tin — không chặn mọi câu có chữ "bot". */
+function isLikelyBotCommandInvocation(body: string): boolean {
+  const t = String(body ?? "").trim();
+  if (!t) return false;
+  return /^\s*[!/\\.,:;]*\s*bot\b/i.test(t);
 }
 
 async function executeActions(
@@ -4418,7 +4606,19 @@ async function executeActions(
     console.log("Error while auto-injecting createphoto action:", e);
   }
 
-  for (const action of actions) {
+  /** Ưu tiên sing/video/tiktok trước chat — bắt đầu tải sớm (Gemini hay trả [chat, sing]). */
+  const mediaActionPriority = (type: string | undefined) => {
+    if (type === "sing") return 0;
+    if (type === "video") return 1;
+    if (type === "tiktok") return 2;
+    if (type === "createphoto") return 3;
+    return 100;
+  };
+  const orderedActions = [...actions].sort(
+    (a, b) => mediaActionPriority(a?.type) - mediaActionPriority(b?.type)
+  );
+
+  for (const action of orderedActions) {
     try {
       if (action.type === "chat") {
         // Đảm bảo không gửi JSON string ra ngoài
@@ -4453,11 +4653,7 @@ async function executeActions(
             messageObj,
             (err: any, info: any) => {
               if (!err && info?.messageID)
-                main.onReply.set(info.messageID, {
-                  commandName,
-                  author: senderID,
-                  data: {}
-                });
+                registerBotOnReply(main, info, senderID, commandName, {});
             }
           );
         if (action.delay && typeof action.delay === "number")
@@ -4693,22 +4889,13 @@ async function executeActions(
           // Dùng chung logic tải audio YouTube ổn định như lệnh sing.ts
           const r = await downloadYoutubeAudio(videoUrl, videoTitle);
 
-          if (!videoAuthor) {
-            const videoId = extractVideoId(videoUrl);
-            if (videoId) {
-              try {
-                const manifest = await fetchYoutubePlayer(videoId);
-                // 2 nguồn info khác nhau, ưu tiên channel/author nếu có
-                videoAuthor =
-                  (manifest.info as any).author ||
-                  (manifest.info as any).channel ||
-                  "";
-                if (!videoTitle) {
-                  videoTitle = manifest.info.title || r.title || "";
-                }
-              } catch {
-                // ignore metadata errors
-              }
+          const info = r.manifest?.info as
+            | { author?: string; channel?: string | null; title?: string | null }
+            | undefined;
+          if (info) {
+            videoAuthor = info.author || info.channel || "";
+            if (!videoTitle) {
+              videoTitle = info.title || r.title || "";
             }
           }
 
@@ -5122,11 +5309,7 @@ const command = {
         },
         (err: any, info: any) => {
           if (!err && info?.messageID)
-            main.onReply.set(info.messageID, {
-              commandName,
-              author: senderID,
-              data: {}
-            });
+            registerBotOnReply(main, info, senderID, commandName, {});
         }
       );
     }
@@ -5543,13 +5726,9 @@ const command = {
             },
             (err: any, info: any) => {
               if (!err && info?.messageID) {
-                main.onReply.set(info.messageID, {
-                  commandName,
-                  author: senderID,
-                  data: {
-                    type: "personality_select",
-                    personalities: personalityList
-                  }
+                registerBotOnReply(main, info, senderID, commandName, {
+                  type: "personality_select",
+                  personalities: personalityList
                 });
               }
             }
@@ -5643,6 +5822,9 @@ const command = {
       const errMsg = String(err?.message || err || "");
       if (
         errMsg.includes("Đã thử hết tất cả key") ||
+        errMsg.includes("Đã dùng hết quota cho tất cả key") ||
+        errMsg.includes("NO_KEY_WITH_REMAINING_QUOTA") ||
+        errMsg.includes("NO_GOOGLE_API_KEYS") ||
         errMsg.includes("quota") ||
         errMsg.includes("rate limit")
       ) {
@@ -5673,9 +5855,9 @@ const command = {
     const state = getGroupState(event.threadID);
     if (!state?.data?.repliesEnabled) return;
     if (
-      event.senderID !== Reply.author ||
-      event.body?.toLowerCase().includes("bot") ||
-      event.senderID == client.uid
+      String(event.senderID) !== String(Reply.author) ||
+      isLikelyBotCommandInvocation(String(event.body ?? "")) ||
+      String(event.senderID) === String(client.uid)
     )
       return;
     const { threadID, messageID, senderID } = event;
@@ -5855,6 +6037,9 @@ const command = {
       const errMsg = String(err?.message || err || "");
       if (
         errMsg.includes("Đã thử hết tất cả key") ||
+        errMsg.includes("Đã dùng hết quota cho tất cả key") ||
+        errMsg.includes("NO_KEY_WITH_REMAINING_QUOTA") ||
+        errMsg.includes("NO_GOOGLE_API_KEYS") ||
         errMsg.includes("quota") ||
         errMsg.includes("rate limit")
       ) {

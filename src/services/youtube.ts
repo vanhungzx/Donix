@@ -417,12 +417,17 @@ export async function downloadv1(url: string): Promise<any> {
   }
   async function getInfo(id: string): Promise<any> {
     try {
+      const apiKey = process.env.YOUTUBE_API_KEY || process.env.GOOGLE_API_KEY;
+      if (!apiKey) {
+        console.error("YOUTUBE_API_KEY hoặc GOOGLE_API_KEY chưa cấu hình (env).");
+        return null;
+      }
       const { data } = await axios.get(
         "https://www.googleapis.com/youtube/v3/videos",
         {
           params: {
             id,
-            key: "AIzaSyDp7rbDJT_L60Yrj55mTCfov2eEfXQVwYA",
+            key: apiKey,
             part: "snippet,contentDetails,statistics"
           }
         }

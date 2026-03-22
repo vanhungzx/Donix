@@ -47,8 +47,17 @@ export const STORAGE_BACKUPS = () => storagePath("backups");
 /** Game (chung) */
 export const STORAGE_GAME = () => storagePath("game");
 
-/** Gemini */
+/** Gemini (chỉ dùng thư mục gốc ./storage/gemini — không dùng src/storage) */
 export const STORAGE_GEMINI = () => storagePath("gemini");
+/** Trạng thái quota + danh sách key (JSON runtime, gitignored) — đây là file chuẩn bot đọc/ghi. */
+export const GEMINI_API_QUOTA_JSON = () => storagePath("gemini", "api-quota.json");
+
+/**
+ * File hay bị nhầm: `storage/gemini.api-quota.json` (cùng tên, không nằm trong thư mục gemini/).
+ * Bot sẽ gộp key từ file này với file chuẩn khi khởi động.
+ */
+export const GEMINI_API_QUOTA_JSON_ALT = () =>
+  path.join(STORAGE_ROOT, "gemini.api-quota.json");
 
 /** Cookies (nhạy cảm, không commit) */
 export const STORAGE_COOKIES = () => storagePath("cookies");

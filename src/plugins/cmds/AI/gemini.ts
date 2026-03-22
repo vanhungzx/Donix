@@ -6,6 +6,11 @@ import {
   HarmCategory,
   createPartFromUri,
 } from "@google/genai";
+import {
+  GEMINI_MODEL_FLASH,
+  geminiTemperature,
+  geminiThinkingConfig,
+} from "../../../core/geminiModelConfig";
 import type {
   Command,
   CommandOnChatContext,
@@ -16,17 +21,64 @@ import axios from "axios";
 import cheerio from "cheerio";
 import fs from "fs";
 import path from "path";
-import { STORAGE_GEMINI } from "../../../core/storagePath";
+import {
+  GEMINI_API_QUOTA_JSON,
+  GEMINI_API_QUOTA_JSON_ALT,
+  STORAGE_GEMINI,
+} from "../../../core/storagePath";
 
-const API_KEYS = [
-  { key: "AIzaSyA4TdYmWcBDoSC722ievzkYJ3e8AnUtNFA", requestsLeft: 60 },
-  { key: "AIzaSyA6qBZ2IL-iRnoSBh_OllGteCIF2PfKRC0", requestsLeft: 60 },
-  { key: "AIzaSyCv8FdD-Mj_bujfyxCXedf7jas4j8DDZ3E", requestsLeft: 60 },
-  { key: "AIzaSyCjHC9xWZQ_SrNjRCuCRAbhdUQfaFwqGec", requestsLeft: 60 },
-  { key: "AIzaSyD-qDcHahDjIP86Uxitzqti9paKikXXDyo", requestsLeft: 60 },
-  { key: "AIzaSyCwKAMyfYE2hBcOUxdrVN-WJ5hjrJMA-6U", requestsLeft: 60 },
-  { key: "AIzaSyB6y9ACMpD0L491pzd1sVLBcDvdIJUAkxo", requestsLeft: 60 }
-];
+const DEFAULT_REQUESTS_CAP = 60;
+
+type QuotaKeyEntry = { key: string; requestsLeft: number };
+
+function parseQuotaFileToEntries(pathFile: string): QuotaKeyEntry[] {
+  if (!fs.existsSync(pathFile)) return [];
+  try {
+    const raw = JSON.parse(fs.readFileSync(pathFile, "utf8")) as {
+      keys?: Array<{ key?: string; remaining?: { flash?: number } }>;
+    };
+    if (!Array.isArray(raw?.keys)) return [];
+    return raw.keys
+      .filter((e) => e?.key)
+      .map((e) => {
+        const flash = e.remaining?.flash;
+        const left =
+          typeof flash === "number" && Number.isFinite(flash)
+            ? Math.min(DEFAULT_REQUESTS_CAP, Math.max(0, flash))
+            : DEFAULT_REQUESTS_CAP;
+        return { key: String(e.key), requestsLeft: left };
+      });
+  } catch {
+    return [];
+  }
+}
+
+function loadKeysFromStorageQuota(): QuotaKeyEntry[] {
+  const canonical = parseQuotaFileToEntries(GEMINI_API_QUOTA_JSON());
+  const alt = parseQuotaFileToEntries(GEMINI_API_QUOTA_JSON_ALT());
+  if (canonical.length === 0 && alt.length === 0) return [];
+  const byKey = new Map(canonical.map((k) => [k.key, { ...k }]));
+  for (const k of alt) {
+    byKey.set(k.key, k);
+  }
+  return [...byKey.values()];
+}
+
+function loadKeysFromEnvList(): QuotaKeyEntry[] {
+  const raw = process.env.GEMINI_API_KEYS?.trim();
+  if (!raw) return [];
+  return raw
+    .split(/[\s,]+/)
+    .filter(Boolean)
+    .map((key) => ({ key, requestsLeft: DEFAULT_REQUESTS_CAP }));
+}
+
+/** Key chỉ lấy từ storage/gemini/api-quota.json hoặc GEMINI_API_KEYS — không hardcode trong code. */
+let API_KEYS: QuotaKeyEntry[] = (() => {
+  const fromFile = loadKeysFromStorageQuota();
+  if (fromFile.length > 0) return fromFile;
+  return loadKeysFromEnvList();
+})();
 
 let currentKeyIndex = 0;
 let triedKeys = new Set<number>();
@@ -35,7 +87,7 @@ const RESET_INTERVAL = 60 * 60 * 1000;
 
 function resetKeys() {
   triedKeys.clear();
-  API_KEYS.forEach(k => (k.requestsLeft = 60));
+  API_KEYS.forEach((k) => (k.requestsLeft = DEFAULT_REQUESTS_CAP));
   lastResetTime = Date.now();
 }
 
@@ -327,12 +379,13 @@ async function summarizeIfNeeded(
   const systemInstruction = buildSystemInstruction(persona, state.summary);
 
   const res = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: GEMINI_MODEL_FLASH,
     contents: sumPrompt,
     config: {
       systemInstruction: systemInstruction || undefined,
       safetySettings,
-      thinkingConfig: { thinkingBudget: 0 },
+      temperature: geminiTemperature(GEMINI_MODEL_FLASH, 0.7),
+      thinkingConfig: geminiThinkingConfig(GEMINI_MODEL_FLASH),
       maxOutputTokens: 2048,
     },
   } as any);
@@ -494,13 +547,14 @@ async function getAnswer({
     }
 
     const res = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: GEMINI_MODEL_FLASH,
       contents: [...history, { role: "user", parts: userParts }] as any,
       config: {
         systemInstruction: systemInstruction || undefined,
         safetySettings,
         tools: [{ googleSearch: {} }],
-        thinkingConfig: { thinkingBudget: 0 },
+        temperature: geminiTemperature(GEMINI_MODEL_FLASH, 0.9),
+        thinkingConfig: geminiThinkingConfig(GEMINI_MODEL_FLASH),
         maxOutputTokens: 8192,
       },
     } as any);
@@ -748,7 +802,7 @@ const geminiCommand: Command = {
   alias: ["genimi"],
   version: "2.1.0",
   role: 0,
-  desc: "Gemini 2.5 Flash đa phương thức với bộ nhớ thông minh và persona",
+  desc: "Gemini (Flash preview) đa phương thức với bộ nhớ thông minh và persona",
   guide:
     "{pn} <nội dung>\n{pn} system <tính cách>\n{pn} clear\n{pn} memory",
   cd: 5,
