@@ -147,13 +147,6 @@ notifications.json
 # AI database runtime memories
 src/core/AI-Database/data/*.json
 
-# SQLite runtime files
-storage/sqlite/*.sqlite
-storage/sqlite/*.sqlite-*
-storage/sqlite/*.sqlite-*-*
-storage/sqlite/*.sqlite-shm
-storage/sqlite/*.sqlite-wal
-
 # Rent/Bank runtime state
 storage/rent/*.json
 storage/bank/data/*.json
