@@ -11,7 +11,8 @@
     "61587431253366",
     "61564114700108",
     "61584033911297",
-    "61576693311022"
+    "61574857936692",
+    "61578552283067"
   ],
   "token": {
     "EAAAAU": "EAAAAUaZA8jlABQ7EecKlHs3dWfhZCPr41ZBnqe70fDwa8AEtFZBD9drHQ5AVCELc2X9wW3cQlrnkNPZCPS2qZBBuKQBCt0lspnCfEnZAPahpWPrDvmUZAz8NbERAq595RfRpzcJqkySzNMpw1kuQ3hus4FIlZC8cjTxUEVRnCfPrBGyaKrwxbjpZB9MntrdC266wGetFC8mFLKKAQ36AZDZD",
@@ -86,7 +87,7 @@
         "type": "at",
         "time": "00:00",
         "send": {
-          "enabled": true
+          "enabled": false
         }
       },
       "resetGeminiQuota": {

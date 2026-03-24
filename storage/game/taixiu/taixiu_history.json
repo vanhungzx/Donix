@@ -5764,21 +5764,30 @@
   "61586845605819": [
     {
       "bet": "tài",
-      "diceResult": "tài",
-      "gameResult": "win",
-      "win": true,
-      "winAmount": "20000",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "100000",
       "jackpotWin": false,
-      "timestamp": 1773720096383
+      "timestamp": 1774331179202
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "100000",
+      "jackpotWin": false,
+      "timestamp": 1774331244573
     },
     {
       "bet": "tài",
-      "diceResult": "tài",
-      "gameResult": "win",
-      "win": true,
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
       "winAmount": "100000",
       "jackpotWin": false,
-      "timestamp": 1773720239059
+      "timestamp": 1774331283352
     },
     {
       "bet": "tài",
@@ -5787,16 +5796,61 @@
       "win": true,
       "winAmount": "200000",
       "jackpotWin": false,
-      "timestamp": 1773720249578
+      "timestamp": 1774331295808
     },
     {
       "bet": "tài",
-      "diceResult": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "100000",
+      "jackpotWin": false,
+      "timestamp": 1774331301264
+    },
+    {
+      "bet": "tài",
+      "diceResult": "xỉu",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "100000",
+      "jackpotWin": false,
+      "timestamp": 1774331306597
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
       "gameResult": "win",
       "win": true,
-      "winAmount": "400000",
+      "winAmount": "200000",
       "jackpotWin": false,
-      "timestamp": 1773720260770
+      "timestamp": 1774331313089
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "100000",
+      "jackpotWin": false,
+      "timestamp": 1774331322088
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "tài",
+      "gameResult": "lose",
+      "win": false,
+      "winAmount": "100000",
+      "jackpotWin": false,
+      "timestamp": 1774331330486
+    },
+    {
+      "bet": "xỉu",
+      "diceResult": "xỉu",
+      "gameResult": "win",
+      "win": true,
+      "winAmount": "200000",
+      "jackpotWin": false,
+      "timestamp": 1774331352378
     }
   ],
   "61587226437761": [

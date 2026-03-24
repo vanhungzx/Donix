@@ -30,17 +30,6 @@ const uptCommand: Command = {
 
     let botStatus = "Không ổn định";
 
-    const eff = [
-      'fire',
-      'love',
-      'giftwrap',
-      'celebration',
-      'avatar_love',
-      'avatar_angry',
-      'avatar_laugh',
-      'avatar_cry'
-    ];
-
     try {
       if (global.mqttClient) {
         const isConnected = global.mqttClient.connected === true;
@@ -102,15 +91,25 @@ const uptCommand: Command = {
       ping = "N/A";
     }
 
-    const status = `Uptime: ${h}:${m}:${s}
-Ping: ${ping}ms | DNS: ${dnsPing}ms
-Status: ${botStatus}
-CPU Load: ${cpuLoad}
-RAM: ${ramPercent}%
-Total RAM: ${totalRam.toFixed(1)}GB
-Used RAM: ${usedRam.toFixed(1)}GB
-Heap: ${(heapUsed / 1048576).toFixed(1)}MB
-RSS: ${(rss / 1048576).toFixed(1)}MB`;
+    const now = new Date();
+    const time = now.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+
+    const status = `⏰ Thời gian hiện tại: ${time}
+⏳ Bot đã hoạt động: ${h}:${m}:${s}
+📊 Ping: ${ping}ms | DNS: ${dnsPing}ms
+📡 Trạng thái: ${botStatus}
+
+💾 MEMORY USAGES:
+├─ RSS: ${(rss / 1048576).toFixed(0)}MB
+├─ Heap: ${(heapUsed / 1048576).toFixed(0)}MB
+├─ RAM hệ thống: ${usedRam.toFixed(1)}GB / ${totalRam.toFixed(1)}GB
+└─ Sử dụng tổng: ${ramPercent}%
+
+⚙️ SYSTEM INFO:
+├─ Platform: ${os.platform()} ${os.arch()}
+├─ Node.js: ${process.version}
+├─ CPU Load: ${cpuLoad}
+└─ Hostname: ${os.hostname()}`;
 
     await reply({
       body: status,

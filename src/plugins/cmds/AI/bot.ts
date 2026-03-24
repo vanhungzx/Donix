@@ -2214,11 +2214,11 @@ function refineChatMessage(
       .trim();
     if (text && text[0]) text = text[0].toUpperCase() + text.slice(1);
   }
-  if (isAdminTong && !/anh\s*đồng/i.test(text)) {
+  if (isAdminTong && !/anh\s*Long/i.test(text)) {
     if (/^dạ\s*/i.test(text)) {
-      text = text.replace(/^dạ\s*/i, "Dạ anh Đồng, ");
-    } else if (!text.toLowerCase().startsWith("dạ anh đồng")) {
-      text = `Dạ anh Đồng, ${text}`;
+      text = text.replace(/^dạ\s*/i, "Dạ anh Long, ");
+    } else if (!text.toLowerCase().startsWith("dạ anh Long")) {
+      text = `Dạ anh Long, ${text}`;
     }
   } else if (!isAdminTong && displayName && !structured) {
     const fullName = displayName.trim();
@@ -3977,7 +3977,7 @@ Ví dụ gửi voice:
 - Có thể kết hợp với chat: [{ "type": "chat", "content": "Dạ em tìm ngay!" }, { "type": "tiktok", "content": "patoo.204" }]
 
 **VÍ DỤ SAI - TUYỆT ĐỐI KHÔNG LÀM:**
-- [{ "type": "chat", "content": "Dạ em đang tìm video TikTok của patoo.204 cho anh Đồng đây ạ!" }] mà không có action "tiktok" → ĐÂY LÀ LỖI NGHIÊM TRỌNG!
+- [{ "type": "chat", "content": "Dạ em đang tìm video TikTok của patoo.204 cho anh Long đây ạ!" }] mà không có action "tiktok" → ĐÂY LÀ LỖI NGHIÊM TRỌNG!
 - [{ "type": "chat", "content": "Dạ em tìm ngay đây! TikTok của..." }] mà không có action "tiktok" → ĐÂY LÀ LỖI NGHIÊM TRỌNG!
 - [{ "type": "chat", "content": "Em sẽ tìm video TikTok cho anh!" }] mà không có action "tiktok" → ĐÂY LÀ LỖI NGHIÊM TRỌNG!
 
