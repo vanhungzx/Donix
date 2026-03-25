@@ -20,6 +20,10 @@ export interface FetchMessengerMusicPickerOptimalQueryOptions {
   locale?: string;
   userAgent?: string;
   xZeroEh?: string;
+  /** Mặc định `MSGR_NOTES` (ghi chú). Dùng `MSGR_DIRECT_MUSIC_STICKER` cho sticker nhạc trong chat. */
+  product?: string;
+  /** Mặc định `https://b-graph.facebook.com/graphql`. */
+  graphqlUrl?: string;
 }
 
 export interface MessengerMusicPickerPageInfo {
@@ -58,6 +62,8 @@ export async function fetchMessengerMusicPickerOptimalQuery(
     locale = "vi_VN",
     userAgent = DEFAULT_ORCA_UA,
     xZeroEh = DEFAULT_X_ZERO_EH,
+    product = "MSGR_NOTES",
+    graphqlUrl = "https://b-graph.facebook.com/graphql",
   } = options;
 
   if (!accessToken) {
@@ -84,7 +90,7 @@ export async function fetchMessengerMusicPickerOptimalQuery(
     JSON.stringify({
       params: {
         search_text: searchText,
-        product: "MSGR_NOTES",
+        product,
         page_size: pageSize,
         end_cursor: endCursor,
       },
@@ -128,7 +134,7 @@ export async function fetchMessengerMusicPickerOptimalQuery(
 
   const response = await axios({
     method: "POST",
-    url: "https://b-graph.facebook.com/graphql",
+    url: graphqlUrl,
     data: form.toString(),
     headers,
     responseType: "json",

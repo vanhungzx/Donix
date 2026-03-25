@@ -487,7 +487,7 @@ export interface UserRecord {
 }
 
 export type { ServicesMap } from "./api";
-export type { FacebookClient, MessageForm } from "./client";
+export type { FacebookClient, MessageForm, MusicStickerItem } from "./client";
 export type { ThreadDataModel, UserDataModel } from "./database";
 export type { BotEvent as BotEventType, ExtendedMessageEvent } from "./event";
 export type { Logger } from "./logger";

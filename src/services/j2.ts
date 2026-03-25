@@ -1,6 +1,5 @@
-import axios, { AxiosInstance } from "axios";
-import { wrapper } from "axios-cookiejar-support";
-import { CookieJar } from "tough-cookie";
+import axios, { AxiosError } from "axios";
+import { TextEncoder } from "node:util";
 
 const BASE_URL = "https://j2download.com";
 
@@ -19,126 +18,179 @@ export interface J2DownloadResponse {
   [key: string]: unknown;
 }
 
+interface J2BootstrapResponse {
+  powChallenge: string;
+  powDifficulty: number;
+  nonce: string;
+  [key: string]: unknown;
+}
+
 interface J2IssueResponse {
   accessToken?: string;
-  token?: string;
-  access_token?: string;
-  jwt?: string;
-  data?: {
-    token?: string;
-    [key: string]: unknown;
-  };
   [key: string]: unknown;
 }
 
 type ExtraHeaders = Record<string, string>;
 
-const buildHeaders = (extra: ExtraHeaders = {}): Record<string, string> => ({
-  accept: "application/json, text/plain, */*",
-  "accept-language": "vi,en-US;q=0.9,en;q=0.8,fr-FR;q=0.7,fr;q=0.6",
-  "sec-ch-ua": '"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"',
-  "sec-ch-ua-mobile": "?0",
-  "sec-ch-ua-platform": '"Windows"',
-  "sec-fetch-dest": "empty",
-  "sec-fetch-mode": "cors",
-  "sec-fetch-site": "same-origin",
-  "user-agent":
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
-  origin: BASE_URL,
-  referer: `${BASE_URL}/vi/douyin`,
-  priority: "u=1, i",
-  ...extra,
-});
+function j2h(t: Uint8Array, u: number): number {
+  let a = (2783036115 + u) | 0;
+  let h = 2134608921 ^ u;
+  let i = (3572102818 + (u << 16)) | 0;
 
-function extractPageNonce(html: string): string | null {
-  let m = html.match(/<meta[^>]+name=["']page-nonce["'][^>]+content=["']([a-f0-9]+)["']/i);
-  if (m) return m[1];
+  for (let l = 0; l < u; l++) {
+    a = (a ^ t[l]) | 0;
+    a = Math.imul(a, 2654435769);
+    a = (a << 13) | (a >>> 19);
 
-  m = html.match(/window\.__nonce__\s*=\s*["']([a-f0-9]+)["']/i);
-  if (m) return m[1];
+    h = (h + a) | 0;
+    h = Math.imul(h, 1367130551);
+    h = (h << 17) | (h >>> 15);
 
-  m = html.match(/pageNonce\s*[=:]\s*["']([a-f0-9]+)["']/i);
-  if (m) return m[1];
+    i = (i ^ (a + h)) | 0;
+    i = Math.imul(i, 1818371886);
+    i = (i << 11) | (i >>> 21);
 
-  m = html.match(/["\s]nonce[":\s]+["']([a-f0-9]{32})["']/i);
-  if (m) return m[1];
+    a = (a + i) | 0;
+  }
+
+  a ^= a >>> 16;
+  a = Math.imul(a, 2246822507);
+  a ^= a >>> 13;
+  a = Math.imul(a, 3266489909);
+  a ^= a >>> 16;
+
+  h ^= h >>> 16;
+  h = Math.imul(h, 3432918353);
+  h ^= h >>> 13;
+  h = Math.imul(h, 461845907);
+  h ^= h >>> 16;
+
+  return (a ^ h ^ i) >>> 0;
+}
+
+function solvePow(challenge: string, difficulty: number): string | null {
+  const shift = 32 - difficulty * 4;
+  const encoder = new TextEncoder();
+
+  const prefix = encoder.encode(`${challenge}:`);
+  const buf = new Uint8Array(prefix.length + 12);
+  buf.set(prefix);
+
+  for (let n = 0; n < 1e8; n++) {
+    let v = n;
+    let pos = prefix.length;
+
+    if (v === 0) {
+      buf[pos++] = 48;
+    } else {
+      const start = pos;
+      while (v > 0) {
+        buf[pos++] = 48 + (v % 10);
+        v = (v / 10) | 0;
+      }
+      for (let l = start, r = pos - 1; l < r; l++, r--) {
+        [buf[l], buf[r]] = [buf[r], buf[l]];
+      }
+    }
+
+    if ((j2h(buf, pos) >>> shift) === 0) return String(n);
+  }
 
   return null;
 }
 
 export async function j2download(url: string): Promise<J2DownloadResponse> {
-  const jar = new CookieJar();
-  const http: AxiosInstance = wrapper(
-    axios.create({
-      jar,
-      withCredentials: true,
-      timeout: 30000,
-    })
-  );
+  const jar: Record<string, string> = {};
 
-  const pageRes = await http.get<string>(`${BASE_URL}/vi`, {
-    headers: {
-      ...buildHeaders(),
-      accept:
-        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-      "content-type": "",
-    },
-    responseType: "text",
+  const updateCookie = (setCookies: string[] = []) => {
+    setCookies.forEach((c) => {
+      const [pair] = c.split(";");
+      const [key, value] = pair.split("=");
+      if (key && value) jar[key.trim()] = value.trim();
+    });
+  };
+
+  const getCookie = () =>
+    Object.entries(jar)
+      .map(([k, v]) => `${k}=${v}`)
+      .join("; ");
+
+  const buildHeaders = (extra: ExtraHeaders = {}): Record<string, string> => ({
+    authority: "j2download.com",
+    accept: "application/json, text/plain, */*",
+    "accept-language": "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7",
+    origin: BASE_URL,
+    referer: `${BASE_URL}/vi`,
+    "sec-ch-ua": '"Chromium";v="137", "Not/A)Brand";v="24"',
+    "sec-ch-ua-mobile": "?1",
+    "sec-ch-ua-platform": '"Android"',
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-origin",
+    "user-agent":
+      "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/137 Mobile Safari/537.36",
+    cookie: getCookie(),
+    ...extra,
   });
 
-  const pageNonce = extractPageNonce(pageRes.data);
-  if (!pageNonce) {
-    throw new Error(
-      "Không tìm thấy x-page-nonce trong trang. Cấu trúc trang có thể đã thay đổi."
-    );
-  }
+  const http = axios.create({ timeout: 30000 });
 
-  const issueRes = await http.post<J2IssueResponse>(
-    `${BASE_URL}/api/auth/issue`,
-    null,
-    {
-      headers: {
-        ...buildHeaders({
-          "content-type": "application/x-www-form-urlencoded",
-          "x-page-nonce": pageNonce,
-        }),
-        "content-length": "0",
-      },
+  try {
+    let res = await http.get(BASE_URL, { headers: buildHeaders() });
+    updateCookie(res.headers["set-cookie"] || []);
+
+    res = await http.post(`${BASE_URL}/api/auth/recover`, "", {
+      headers: buildHeaders(),
+    });
+    updateCookie(res.headers["set-cookie"] || []);
+
+    res = await http.get<J2BootstrapResponse>(`${BASE_URL}/api/auth/bootstrap`, {
+      headers: buildHeaders(),
+    });
+    updateCookie(res.headers["set-cookie"] || []);
+    const boot = res.data;
+
+    const pow = solvePow(boot.powChallenge, boot.powDifficulty);
+    if (pow === null) {
+      throw new Error("Không giải được PoW (j2download).");
     }
-  );
 
-  const issueData = issueRes.data;
-  const bearerToken =
-    issueData.accessToken ||
-    issueData.token ||
-    issueData.access_token ||
-    issueData.data?.token ||
-    issueData.jwt;
-
-  if (!bearerToken) {
-    throw new Error(
-      `Không lấy được Bearer token từ /api/auth/issue. Response: ${JSON.stringify(issueData)}`
-    );
-  }
-
-  const autoRes = await http.post<J2DownloadResponse>(
-    `${BASE_URL}/api/autolink`,
-    {
-      data: {
-        url,
-        unlock: true,
-      },
-    },
-    {
+    res = await http.post<J2IssueResponse>(`${BASE_URL}/api/auth/issue`, "", {
       headers: buildHeaders({
-        "content-type": "application/json",
-        authorization: `Bearer ${bearerToken}`,
+        "x-page-nonce": boot.nonce,
+        "x-pow-solution": pow,
       }),
-    }
-  );
+    });
+    updateCookie(res.headers["set-cookie"] || []);
 
-  return autoRes.data;
+    const token = res.data.accessToken;
+    if (!token) {
+      throw new Error(
+        `Không lấy được accessToken từ /api/auth/issue: ${JSON.stringify(res.data)}`
+      );
+    }
+
+    const autoRes = await http.post<J2DownloadResponse>(
+      `${BASE_URL}/api/autolink`,
+      {
+        data: { url, unlock: true },
+      },
+      {
+        headers: buildHeaders({
+          authorization: `Bearer ${token}`,
+          "content-type": "application/json",
+        }),
+      }
+    );
+
+    return autoRes.data;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const ax = err as AxiosError;
+      throw ax.response?.data ?? ax.message;
+    }
+    throw err;
+  }
 }
 
 export default j2download;
-

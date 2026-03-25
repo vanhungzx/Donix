@@ -60,6 +60,17 @@ export interface SendMessageInfo {
   [key: string]: string | number | undefined;
 }
 
+/** Item từ getMusicStickers (GraphQL music picker — sticker nhạc). */
+export interface MusicStickerItem {
+  song_id: string;
+  audio_cluster_id: string | number;
+  song_title: string;
+  song_subtitle?: string;
+  start_time: string;
+  is_explicit: boolean;
+  [key: string]: unknown;
+}
+
 export interface UploadResult {
   video_id?: string | number;
   audio_id?: string | number;
@@ -111,6 +122,27 @@ export interface FacebookClient {
   unsendMessage: (messageID: string, threadID: string, callback?: (err?: Error) => void) => Promise<void>;
   editMessage: (text: string, messageID: string, callback?: (err?: Error) => void) => Promise<void>;
   setMessageReaction: (emoji: string, messageID: string, threadID: string, callback?: (err?: Error) => void) => Promise<void>;
+
+  /** GraphQL FetchMessengerMusicPickerOptimalQuery — product MSGR_DIRECT_MUSIC_STICKER (sticker nhạc). */
+  getMusicStickers?: (
+    searchText: string | null | undefined,
+    pageSize?: number | ((err: Error | null, data?: MusicStickerItem[]) => void),
+    endCursor?: string | null | ((err: Error | null, data?: MusicStickerItem[]) => void),
+    callback?: (err: Error | null, data?: MusicStickerItem[]) => void
+  ) => Promise<MusicStickerItem[]>;
+
+  /** MQTT: gửi sticker nhạc (metadata từ music picker / song id). */
+  sendMusicSticker?: (
+    musicSticker: {
+      song_id: string;
+      start_time?: string;
+      song_title?: string;
+      song_subtitle?: string;
+      is_explicit?: boolean;
+    },
+    threadID: string | number,
+    callback?: (err?: Error | null, data?: SendMessageInfo) => void
+  ) => Promise<SendMessageInfo>;
 
   uploadAttachment: (input: string | string[]) => Promise<UploadResult[]>;
 
