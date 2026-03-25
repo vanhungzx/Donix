@@ -545,13 +545,48 @@
     "loses": 1
   },
   "61586845605819": {
-    "current": 1,
+    "current": 0,
     "highest": 4,
-    "loses": 0
+    "loses": 2
   },
   "61587226437761": {
     "current": 1,
     "highest": 1,
     "loses": 0
+  },
+  "100089076865173": {
+    "current": 2,
+    "highest": 4,
+    "loses": 0
+  },
+  "100048054492756": {
+    "current": 0,
+    "highest": 7,
+    "loses": 3
+  },
+  "100094183284050": {
+    "current": 0,
+    "highest": 7,
+    "loses": 1
+  },
+  "61577790966876": {
+    "current": 0,
+    "highest": 6,
+    "loses": 1
+  },
+  "61571162589651": {
+    "current": 2,
+    "highest": 3,
+    "loses": 0
+  },
+  "100080074297575": {
+    "current": 0,
+    "highest": 4,
+    "loses": 3
+  },
+  "61579741892225": {
+    "current": 0,
+    "highest": 1,
+    "loses": 2
   }
 }
