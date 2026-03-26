@@ -1,10 +1,36 @@
+const toBI = (value: unknown): bigint => {
+  if (typeof value === "bigint") return value;
+  if (typeof value === "number") return BigInt(Math.trunc(value));
+  if (typeof value === "string") {
+    const raw = value.trim();
+    if (!raw) return 0n;
+    try {
+      return BigInt(raw);
+    } catch {
+      return 0n;
+    }
+  }
+  if (value == null) return 0n;
+  try {
+    return BigInt(value as bigint | number | string);
+  } catch {
+    return 0n;
+  }
+};
+
+const formatNumber = (num: number | bigint): string =>
+  num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
 export default {
   name: "daily",
   alias: ["checkin"],
-  version: "2.0.0",
+  version: "2.1.0",
   role: 0,
-  desc: "Điểm danh hàng ngày và nhận phần thưởng",
-  guide: "{pn} → Điểm danh hàng ngày\n🌅 Sáng: x1.2 | 🌆 Chiều: x1.0 | 🌃 Tối: x0.8 | 🌙 Đêm: x0.6\n📅 Chuỗi ngày liên tiếp | 🎁 Milestone: 7,30,100,365,1000 ngày",
+  desc: "Diem danh hang ngay va nhan phan thuong",
+  guide:
+    "{pn} -> Diem danh hang ngay\n" +
+    "Sang: x1.2 | Chieu: x1.0 | Toi: x0.8 | Dem: x0.6\n" +
+    "Chuoi ngay lien tiep | Milestone: 7,30,100,365,1000 ngay",
   cd: 5,
   prefix: true,
   onCall: async ({ event, userData: uD, reply }: any) => {
@@ -14,7 +40,7 @@ export default {
       const now = new Date();
       const today = getDateOnly(now);
 
-      const dailyData = u.data?.daily || {};
+      const dailyData = u?.data?.daily || {};
       const lastCheckin = dailyData.lastCheckin ? new Date(dailyData.lastCheckin) : null;
       const lastDate = lastCheckin ? getDateOnly(lastCheckin) : null;
 
@@ -23,20 +49,24 @@ export default {
         const timeLeft = nextReset.getTime() - now.getTime();
         const hours = Math.floor(timeLeft / 3600000);
         const minutes = Math.floor((timeLeft % 3600000) / 60000);
-        return reply(`⚠️ Đã điểm danh hôm nay rồi, vui lòng chờ ${hours} giờ ${minutes} phút`);
+        return reply(`Ban da diem danh hom nay, vui long cho ${hours} gio ${minutes} phut.`);
       }
 
       const streak = calculateStreak(lastDate, today, dailyData);
-      const reward = calculateReward(now, streak, u.vip || 0);
+      const reward = calculateReward(now, streak, u?.vip || 0);
       const milestone = checkMilestone(streak.current);
 
       await updateDailyData(uD, id, now, streak, reward.total + milestone.reward);
 
-      const response = formatResponse(reward, streak, milestone, u.money + reward.total + milestone.reward);
+      const newBalance = typeof uD.checkMoney === "function"
+        ? toBI(await uD.checkMoney(id))
+        : toBI(u?.money) + toBI(reward.total + milestone.reward);
+
+      const response = formatResponse(reward, streak, milestone, newBalance);
       return reply(response);
     } catch (error) {
       console.error("Daily reward error:", error);
-      return reply("❌ Có lỗi xảy ra khi điểm danh!");
+      return reply("Co loi xay ra khi diem danh.");
     }
   }
 };
@@ -96,7 +126,7 @@ interface Reward {
 
 function calculateReward(now: Date, streak: Streak, vipLevel: number): Reward {
   const hour = now.getHours();
-  let baseReward = 15000;
+  const baseReward = 15000;
   let timeMultiplier = 1;
   let timeEmoji = "🌆";
 
@@ -141,11 +171,11 @@ interface Milestone {
 
 function checkMilestone(streak: number): Milestone {
   const milestones: Record<number, { reward: number; title: string; emoji: string }> = {
-    7: { reward: 50000, title: "Tuần đầu", emoji: "🎯" },
-    30: { reward: 200000, title: "Tháng đầu", emoji: "🏆" },
-    100: { reward: 1000000, title: "Bách nhật", emoji: "💎" },
-    365: { reward: 5000000, title: "Nhất niên", emoji: "👑" },
-    1000: { reward: 20000000, title: "Thiên nhật", emoji: "🌟" }
+    7: { reward: 50000, title: "Tuan dau", emoji: "🎯" },
+    30: { reward: 200000, title: "Thang dau", emoji: "🏆" },
+    100: { reward: 1000000, title: "Bach nhat", emoji: "💎" },
+    365: { reward: 5000000, title: "Nhat nien", emoji: "👑" },
+    1000: { reward: 20000000, title: "Thien nhat", emoji: "🌟" }
   };
 
   if (milestones[streak]) {
@@ -155,64 +185,69 @@ function checkMilestone(streak: number): Milestone {
   return { achieved: false, reward: 0 };
 }
 
-async function updateDailyData(uD: any, id: string, now: Date, streak: Streak, totalReward: number): Promise<void> {
+async function updateDailyData(
+  uD: any,
+  id: string,
+  now: Date,
+  streak: Streak,
+  totalReward: number
+): Promise<void> {
   const userData = await uD.get(id);
-  const dailyDataPrev: DailyRawData = userData.data?.daily || {};
+  const dailyDataPrev: DailyRawData = userData?.data?.daily || {};
   const dailyData = {
     lastCheckin: now.toISOString(),
     currentStreak: streak.current,
     maxStreak: streak.max,
-    totalCheckins: (dailyDataPrev.totalCheckins || 0) + 1,
-    totalRewards: (dailyDataPrev.totalRewards || 0) + totalReward
+    totalCheckins: (Number(dailyDataPrev.totalCheckins || 0) || 0) + 1,
+    totalRewards: (Number(dailyDataPrev.totalRewards || 0) || 0) + totalReward
   };
 
   await uD.update(id, { data: { daily: dailyData } });
   await uD.addMoney(id, totalReward);
 }
 
-function formatResponse(reward: Reward, streak: Streak, milestone: Milestone, newBalance: number): string {
-  const f = (num: number) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-
-  let response = `${reward.timeEmoji} ĐIỂM DANH THÀNH CÔNG!\n\n`;
-  response += `💰 Thưởng cơ bản: ${f(reward.base)} VNĐ\n`;
+function formatResponse(reward: Reward, streak: Streak, milestone: Milestone, newBalance: bigint): string {
+  let response = `${reward.timeEmoji} DIEM DANH THANH CONG!\n\n`;
+  response += `Thưởng co ban: ${formatNumber(reward.base)} VND\n`;
 
   if (reward.time !== 0) {
     const sign = reward.time > 0 ? "+" : "";
-    response += `⏰ Thưởng giờ vàng: ${sign}${f(reward.time)} VNĐ\n`;
+    response += `Thuong gio vang: ${sign}${formatNumber(reward.time)} VND\n`;
   }
 
   if (reward.streak > 0) {
-    response += `🔥 Thưởng chuỗi (${streak.current} ngày): +${f(reward.streak)} VNĐ\n`;
+    response += `Thuong chuoi (${streak.current} ngay): +${formatNumber(reward.streak)} VND\n`;
   }
 
   if (reward.vip > 0) {
-    response += `💎 Thưởng VIP: +${f(reward.vip)} VNĐ\n`;
+    response += `Thuong VIP: +${formatNumber(reward.vip)} VND\n`;
   }
 
   if (reward.random > 0) {
-    response += `🎲 Thưởng may mắn: +${f(reward.random)} VNĐ\n`;
+    response += `Thuong may man: +${formatNumber(reward.random)} VND\n`;
   }
 
   if (milestone.achieved) {
     response += `\n${milestone.emoji} MILESTONE: ${milestone.title}!\n`;
-    response += `🎁 Thưởng đặc biệt: +${f(milestone.reward)} VNĐ\n`;
+    response += `Thuong dac biet: +${formatNumber(milestone.reward)} VND\n`;
   }
 
-  response += `\n✨ Tổng nhận: ${f(reward.total + milestone.reward)} VNĐ\n`;
-  response += `\n📊 Chuỗi hiện tại: ${streak.current} ngày`;
+  response += `\nTong nhan: ${formatNumber(reward.total + milestone.reward)} VND\n`;
+  response += `So du moi: ${formatNumber(newBalance)} VND\n`;
+  response += `\nChuoi hien tai: ${streak.current} ngay`;
 
   if (streak.max > streak.current) {
-    response += ` (Kỷ lục: ${streak.max} ngày)`;
+    response += ` (Ky luc: ${streak.max} ngay)`;
   }
 
   if (streak.broken) {
-    response += `\n⚠️ Chuỗi đã bị đứt! Hãy duy trì điểm danh mỗi ngày.`;
+    response += `\nChuoi da bi dut. Hay duy tri diem danh moi ngay.`;
   }
 
   const nextMilestones = [7, 30, 100, 365, 1000];
-  const nextMilestone = nextMilestones.find(m => m > streak.current);
+  const nextMilestone = nextMilestones.find((m) => m > streak.current);
   if (nextMilestone) {
-    response += `\n🎯 Milestone tiếp theo: ${nextMilestone} ngày (còn ${nextMilestone - streak.current} ngày)`;
+    response += `\nMilestone tiep theo: ${nextMilestone} ngay (con ${nextMilestone - streak.current} ngay)`;
   }
 
   return response;

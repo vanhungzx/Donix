@@ -1098,8 +1098,10 @@ function cleanJsonResponse(text: string) {
     "kick",
     "add",
     "set_color",
+    "set_theme_image",
     "set_nicknames",
     "set_threadname",
+    "set_thread_emoji",
     "lamnet",
     "change_thread_photo",
     "createphoto",
@@ -2692,6 +2694,11 @@ TIN NHẮN HIỆN TẠI: ${prompt}${inlineAttachments.length
 
 ⚠️⚠️⚠️ QUY TẮC VÀNG QUAN TRỌNG NHẤT - ĐỌC RẤT KỸ TRƯỚC KHI TRẢ LỜI ⚠️⚠️⚠️
 
+0. **FORMAT OUTPUT (BẮT BUỘC): CHỈ TRẢ VỀ JSON THUẦN**
+   - Bạn PHẢI trả về **một JSON array** (ví dụ: [{ "type": "chat", "content": "..." }]).
+   - **CẤM** bọc trong Markdown/codeblock (ví dụ: ba dấu backtick + json), **CẤM** thêm chữ giải thích trước/sau JSON.
+   - Nếu không chắc -> trả về [{ "type": "chat", "content": "..." }] (vẫn phải là JSON array thuần).
+
 1. **MỞ/PHÁT/BẬT NHẠC → BẮT BUỘC PHẢI CÓ ACTION "sing" (KHÔNG ĐƯỢC CHỈ CHAT)**  
    - Nếu người dùng yêu cầu nhạc mà câu trả lời KHÔNG có action \`"type": "sing"\` → coi như TRẢ LỜI SAI HOÀN TOÀN.  
    - Dù có thêm action khác (ví dụ: "chat") thì **vẫn phải có ít nhất 1 action "sing"**.  
@@ -3730,6 +3737,65 @@ Lưu ý:
 4. Nếu không phải admin, trả về thông báo từ chối
 5. Nếu không có ảnh, nhắc user gửi ảnh
 
+### 12b. Doi icon nhom (emoji)
+{
+    "type": "set_thread_emoji",
+    "emoji": "🔥"
+}
+
+### 12c. Doi theme bang anh custom (tu URL hoac anh reply)
+{
+    "type": "set_theme_image",
+    "imageUrl": "https://example.com/theme.jpg"
+}
+
+### 12d. Tao theme AI theo mo ta
+{
+    "type": "set_color",
+    "prompt": "ho tay sunset, chill blue, soft neon"
+}
+
+### 12e. QUY TAC CUNG CHO LENH DOI THONG TIN NHOM (BAT BUOC THUC THI)
+- Neu user yeu cau doi ten nhom/icon nhom/anh nhom/theme nhom: BAT BUOC co action thuc thi ngay trong cung response.
+- **KHI NGƯỜI DÙNG YÊU CẦU ĐỔI ICON/EMOJI NHÓM (doi icon nhom / doi emoji nhom / set icon nhom / set emoji nhom): PHẢI TẠO ACTION \`set_thread_emoji\` NGAY. KHÔNG ĐƯỢC CHỈ TRẢ \`chat\`.**
+  - Nếu trích được emoji rõ ràng (ví dụ: "đổi emoji nhóm thành 👌") -> trả ngay: \`[{ "type": "set_thread_emoji", "emoji": "<EMOJI>" }]\`.
+  - Nếu không trích được emoji rõ ràng -> chỉ trả \`chat\` hỏi user cung cấp emoji, KHÔNG tạo action sai.
+- **KHI NGƯỜI DÙNG YÊU CẦU ĐỔI TÊN NHÓM (doi ten nhom / dat ten nhom / set ten nhom / rename group): PHẢI TẠO ACTION \`set_threadname\` NGAY. KHÔNG ĐƯỢC CHỈ TRẢ \`chat\`.**
+  - Nếu trích được tên rõ ràng (ví dụ: "đổi tên nhóm thành \"Ho Tay Chill\"") -> trả ngay: \`[{ "type": "set_threadname", "name": "<TEN_NHOM>" }]\`.
+  - Nếu không trích được tên rõ ràng -> chỉ trả \`chat\` hỏi user cung cấp tên, KHÔNG tạo action sai.
+- **KHI NGƯỜI DÙNG YÊU CẦU ĐỔI ẢNH/AVT NHÓM (doi anh nhom / doi avatar nhom / doi avt nhom / thay anh nhom / set anh nhom): PHẢI TẠO ACTION \`change_thread_photo\` NGAY. KHÔNG ĐƯỢC CHỈ TRẢ \`chat\`.**
+  - Nếu có ảnh hợp lệ (reply/attachments hoặc có URL ảnh trong tin nhắn) -> trả ngay: \`[{ "type": "change_thread_photo", "url": "<URL_ANH>" }]\`.
+  - Nếu không có ảnh/URL hợp lệ -> chỉ trả \`chat\` nhắc user reply/gửi ảnh hoặc URL ảnh, KHÔNG tạo action sai.
+- CAM HOAN TOAN viec chi tra ve "chat" de hoi nguoc, xin xac nhan, hoac dua lua chon.
+- Khi user noi "doi theme/doi nen/doi mau chat/set theme":
+  + Neu co anh hoac link anh -> BAT BUOC dung "set_theme_image"
+  + Neu khong co anh -> BAT BUOC dung "set_color" voi "color": "random"
+- Khi user noi "theme AI ..." -> BAT BUOC dung "set_color" voi field "prompt" (prompt khong rong).
+- Action "chat" (neu co) chi duoc de thong bao ngan gon sau khi da co action thuc thi.
+- CAM cac kieu chat sau khi da co lenh doi theme:
+  + "anh muon doi theme nhu nao"
+  + "doi bang mot mau hay bang anh"
+  + "hay la tao theme AI"
+  + "noi em nghe di"
+- KHONG BAO GIO chi tra loi "em se doi..." ma thieu action tuong ung.
+
+Chi tiet xu ly anh:
+1. Uu tien lay URL anh dau tien tu fileUrls (anh dinh kem trong tin nhan hien tai hoac anh tu messageReply).
+2. Neu user gui URL anh trong noi dung, dung URL do cho "imageUrl" (set_theme_image) hoac "url" (change_thread_photo).
+3. Neu khong co anh hop le, tra ve action "chat" nhac user reply 1 anh hoac gui URL anh.
+
+Vi du DUNG:
+- "doi ten nhom thanh Ho Tay Chill" -> [{ "type": "set_threadname", "name": "Ho Tay Chill" }]
+- "doi icon nhom thanh 🔥" -> [{ "type": "set_thread_emoji", "emoji": "🔥" }]
+- "doi anh nhom di" + co anh reply -> [{ "type": "change_thread_photo", "url": "URL_ANH_TU_FILEURLS" }]
+- "doi theme bang anh nay" + co anh reply -> [{ "type": "set_theme_image", "imageUrl": "URL_ANH_TU_FILEURLS" }]
+- "doi theme nhom di" -> [{ "type": "set_color", "color": "random" }]
+- "doi theme ai ho tay luc hoang hon" -> [{ "type": "set_color", "prompt": "ho tay luc hoang hon" }]
+
+Vi du SAI:
+- [{ "type": "chat", "content": "Em se doi ngay cho anh" }] (thieu action thuc thi)
+- [{ "type": "chat", "content": "Anh muon doi theme nhu nao ne?" }] (hoi nguoc, khong thuc thi)
+
 ### 13. Làm nét ảnh
 {
     "type": "lamnet",
@@ -4484,9 +4550,35 @@ async function executeActions(
   commandName: string,
   utils: any,
   threadData: any,
-  config: any
+  config: any,
+  event: any
 ) {
   console.log("Executing actions:", actions);
+
+  // Gemini đôi khi bọc JSON actions trong ```json ...``` và nhét vào chat.content.
+  // Nếu gặp trường hợp đó thì parse ra actions thật, không gửi codeblock ra chat.
+  try {
+    if (Array.isArray(actions)) {
+      for (let i = 0; i < actions.length; i += 1) {
+        const a = actions[i];
+        if (!a || a.type !== "chat" || typeof a.content !== "string") continue;
+        const s = a.content.trim();
+        if (!s.startsWith("```")) continue;
+        try {
+          const fixed = cleanJsonResponse(s);
+          const parsed = JSON.parse(fixed);
+          const parsedArr = Array.isArray(parsed) ? parsed : parsed ? [parsed] : [];
+          if (parsedArr.length && parsedArr.every((x: any) => x && typeof x === "object" && typeof x.type === "string")) {
+            actions.splice(i, 1, ...parsedArr);
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
 
   // Nếu bot quên tạo action "sing" nhưng nội dung chat rõ ràng là yêu cầu mở nhạc,
   // tự động chèn thêm action "sing" để đảm bảo vẫn phát nhạc.
@@ -4606,12 +4698,389 @@ async function executeActions(
     console.log("Error while auto-injecting createphoto action:", e);
   }
 
+  const userBody = String(event?.body || "");
+  const normalizeText = (text: string) =>
+    text
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  const normalizedUserBody = normalizeText(userBody);
+  const hasActionType = (type: string) =>
+    Array.isArray(actions) && actions.some(a => a && a.type === type);
+
+  const isHttpUrl = (value: unknown): value is string =>
+    typeof value === "string" && /^https?:\/\/\S+$/i.test(value.trim());
+
+  const pickFirstImageUrl = (attachments: any[] | undefined): string | null => {
+    if (!Array.isArray(attachments)) return null;
+    for (const attachment of attachments) {
+      const type = String(attachment?.type || "").toLowerCase();
+      const mimeType = String(attachment?.mimeType || attachment?.mime || "").toLowerCase();
+      const urlCandidates = [
+        attachment?.url,
+        attachment?.largePreviewUrl,
+        attachment?.previewUrl,
+        attachment?.preview_url,
+        attachment?.image,
+        attachment?.src,
+        attachment?.photoUrl
+      ];
+      const url = urlCandidates.find(candidate => isHttpUrl(candidate));
+      if (!url) continue;
+
+      const isImageType =
+        type === "photo" ||
+        type === "image" ||
+        type === "sticker" ||
+        mimeType.startsWith("image/");
+      if (isImageType) return String(url).trim();
+
+      if (/\.(png|jpe?g|webp|gif)(?:[?#].*)?$/i.test(String(url))) {
+        return String(url).trim();
+      }
+    }
+    return null;
+  };
+
+  const getEventImageUrl = () => {
+    const fromReply = pickFirstImageUrl(event?.messageReply?.attachments);
+    if (fromReply) return fromReply;
+    return pickFirstImageUrl(event?.attachments);
+  };
+
+  const getReplyImageUrl = () => getEventImageUrl();
+
+  const resolveImageUrlFromAction = (
+    action: any,
+    allowReplyFallback = false,
+    preferReplyImage = false
+  ): string | null => {
+    const eventImageUrl = getEventImageUrl();
+    if (preferReplyImage && eventImageUrl) return eventImageUrl;
+
+    const candidates = [
+      action?.imageUrl,
+      action?.image,
+      action?.url,
+      action?.link,
+      action?.data
+    ];
+    for (const candidate of candidates) {
+      if (isHttpUrl(candidate)) return candidate.trim();
+    }
+    const shouldUseReply =
+      allowReplyFallback ||
+      action?.useReplyImage === true ||
+      action?.fromReply === true ||
+      action?.fromMessageReply === true;
+    if (!shouldUseReply) return null;
+    return eventImageUrl;
+  };
+
+  try {
+    const containsAny = (text: string, keywords: string[]) =>
+      keywords.some(keyword => text.includes(keyword));
+    const chatContents = Array.isArray(actions)
+      ? actions
+          .filter(
+            (a) => a && a.type === "chat" && typeof a.content === "string"
+          )
+          .map((a) => String(a.content))
+          .join("\n")
+      : "";
+
+    // Một số trường hợp Gemini chỉ trả action chat, nội dung chat lại chứa "đổi ..."
+    // => gom cả event.body và chat.content để auto-inject chắc chắn hơn.
+    const candidateText = `${userBody}\n${chatContents}`.trim();
+    const normalizedCandidateText = normalizeText(candidateText);
+
+    const replyImageUrl = getReplyImageUrl();
+    const bodyUrlMatch = candidateText.match(/https?:\/\/\S+/i);
+    const bodyImageUrl = bodyUrlMatch?.[0] ? bodyUrlMatch[0].replace(/[),.;!?]+$/, "") : "";
+    const preferredImageUrl = replyImageUrl || (isHttpUrl(bodyImageUrl) ? bodyImageUrl : "");
+    const themePromptStopWords = new Set([
+      "nhom",
+      "group",
+      "chat",
+      "theme",
+      "nen",
+      "mau",
+      "doi",
+      "set",
+      "di",
+      "nhe",
+      "nha",
+      "voi",
+      "dum",
+      "giup",
+      "ho",
+      "em",
+      "anh",
+      "a",
+      "ad",
+      "oi",
+      "bot"
+    ]);
+    const extractMeaningfulThemePrompt = (rawText: string) => {
+      const rawTokens = String(rawText || "")
+        .split(/\s+/)
+        .map(token => token.trim())
+        .filter(Boolean);
+      const keptTokens = rawTokens.filter(token => {
+        const normalizedToken = normalizeText(token).replace(/[^a-z0-9]/g, "");
+        if (!normalizedToken) return false;
+        return !themePromptStopWords.has(normalizedToken);
+      });
+      return keptTokens.join(" ").replace(/[.!?,;:]+$/g, "").trim();
+    };
+
+    if (
+      preferredImageUrl &&
+      !hasActionType("change_thread_photo") &&
+      containsAny(normalizedCandidateText, [
+        "doi anh nhom",
+        "doi hinh nhom",
+        "doi avatar nhom",
+        "doi avt nhom",
+        "thay anh nhom",
+        "set anh nhom",
+        "set avatar nhom",
+        "set avt nhom"
+      ])
+    ) {
+      actions.push({
+        type: "change_thread_photo",
+        url: preferredImageUrl
+      });
+      console.log("Auto-injected change_thread_photo action from message image/url.");
+    }
+
+    if (
+      preferredImageUrl &&
+      !hasActionType("set_color") &&
+      !hasActionType("set_theme_image") &&
+      containsAny(normalizedUserBody, [
+        "doi theme",
+        "doi nen",
+        "doi mau chat",
+        "theme anh",
+        "theme tu anh",
+        "theme bang anh"
+      ])
+    ) {
+      actions.push({
+        type: "set_theme_image",
+        imageUrl: preferredImageUrl,
+        useReplyImage: true
+      });
+      console.log("Auto-injected set_theme_image action from message image/url.");
+    }
+
+    if (
+      !hasActionType("set_color") &&
+      !hasActionType("set_theme_image") &&
+      containsAny(normalizedUserBody, [
+        "theme ai",
+        "ai theme",
+        "doi theme ai",
+        "tao theme ai"
+      ])
+    ) {
+      const aiPrompt = userBody.replace(/.*?(theme ai|ai theme)/i, "").trim();
+      actions.push({
+        type: "set_color",
+        prompt: aiPrompt || userBody.trim()
+      });
+      console.log("Auto-injected set_color AI prompt action from user body.");
+    }
+
+    if (
+      !hasActionType("set_color") &&
+      !hasActionType("set_theme_image") &&
+      containsAny(normalizedUserBody, [
+        "doi theme",
+        "doi nen",
+        "doi mau chat",
+        "set theme"
+      ])
+    ) {
+      const plainThemePrompt = userBody
+        .replace(
+          /.*?(doi theme|đổi theme|doi nen|đổi nền|doi mau chat|đổi màu chat|set theme)/i,
+          ""
+        )
+        .trim()
+        .replace(/[.!?]+$/g, "")
+        .trim();
+      const meaningfulPrompt = extractMeaningfulThemePrompt(plainThemePrompt);
+
+      if (meaningfulPrompt) {
+        actions.push({
+          type: "set_color",
+          prompt: meaningfulPrompt
+        });
+        console.log("Auto-injected set_color prompt action from plain theme command.");
+      } else {
+        actions.push({
+          type: "set_color",
+          color: "random"
+        });
+        console.log("Auto-injected random set_color action from plain theme command.");
+      }
+    }
+
+    const isThemeCommand = containsAny(normalizedUserBody, [
+      "doi theme",
+      "doi nen",
+      "doi mau chat",
+      "set theme"
+    ]);
+    if (isThemeCommand && !hasActionType("set_color") && !hasActionType("set_theme_image")) {
+      if (preferredImageUrl) {
+        actions.push({
+          type: "set_theme_image",
+          imageUrl: preferredImageUrl,
+          useReplyImage: true
+        });
+        console.log("Hard fallback injected set_theme_image for theme command.");
+      } else {
+        actions.push({
+          type: "set_color",
+          color: "random"
+        });
+        console.log("Hard fallback injected random set_color for theme command.");
+      }
+    }
+    if (isThemeCommand) {
+      for (let i = actions.length - 1; i >= 0; i -= 1) {
+        const action = actions[i];
+        if (!action || action.type !== "chat" || typeof action.content !== "string") {
+          continue;
+        }
+        const normalizedChat = normalizeText(action.content);
+        const isThemeClarifyChat =
+          /muon .*theme|muon .*doi mau|doi theme nhu nao|doi bang mot mau|doi bang mot buc anh|tao theme ai|noi em nghe|hay la/.test(
+            normalizedChat
+          ) ||
+          normalizedChat.includes("muon doi theme") ||
+          normalizedChat.includes("doi theme nhu nao") ||
+          normalizedChat.includes("muon doi mau") ||
+          normalizedChat.includes("doi bang mot mau cu the") ||
+          normalizedChat.includes("doi bang mot buc anh") ||
+          normalizedChat.includes("tao theme ai") ||
+          normalizedChat.includes("noi em nghe");
+        if (isThemeClarifyChat) {
+          actions.splice(i, 1);
+        }
+      }
+    }
+
+    if (
+      !hasActionType("set_threadname") &&
+      containsAny(normalizedCandidateText, [
+        "doi ten nhom",
+        "dat ten nhom",
+        "set ten nhom",
+        "rename group"
+      ])
+    ) {
+      // Gemini đôi khi dùng smart quotes “...” hoặc ‘...’, nên bắt cả dấu ngoặc cong.
+      const quotedNameMatch = candidateText.match(
+        /[\"“”‘’]([^\"“”‘’]{2,80})[\"“”‘’]/
+      );
+
+      // Fallback: nếu không có quotes thì thử bắt theo cụm "đổi tên nhóm ... thành ...".
+      // Lấy theo normalized để ignore dấu tiếng Việt.
+      const trailingNameMatch = normalizedCandidateText.match(
+        /(?:doi ten nhom|dat ten nhom|set ten nhom|rename group(?:\s+to)?)\s+(?:thanh\s+)?(.{2,80})/i
+      );
+
+      const rawName = (quotedNameMatch?.[1] ||
+        trailingNameMatch?.[1] ||
+        "").trim();
+      const cleanName = rawName.replace(/[.!?]+$/g, "").trim();
+      if (cleanName) {
+        actions.push({
+          type: "set_threadname",
+          name: cleanName
+        });
+        console.log("Auto-injected set_threadname action from candidate text.");
+      }
+    }
+
+    if (!hasActionType("set_thread_emoji")) {
+      const emojiKeywordList = [
+        "doi icon nhom",
+        "doi emoji nhom",
+        "doi bieu tuong nhom",
+        "set icon nhom",
+        "set emoji nhom"
+      ];
+
+      if (containsAny(normalizedCandidateText, emojiKeywordList)) {
+        const extractEmojiFromText = (text: string): string => {
+          const normalized = normalizeText(text);
+          const afterThanh = normalized.match(
+            /thanh\s*(\p{Extended_Pictographic})/u
+          );
+          if (afterThanh?.[1]) return afterThanh[1];
+          const anyEmoji = normalized.match(/(\p{Extended_Pictographic})/u);
+          return anyEmoji?.[1] || anyEmoji?.[0] || "";
+        };
+
+        const keywordEmojiMap: Array<[string, string]> = [
+          ["trai tim", "❤️"],
+          ["tim", "❤️"],
+          ["heart", "❤️"],
+          ["lua", "🔥"],
+          ["fire", "🔥"],
+          ["like", "👍"],
+          ["thumb", "👍"],
+          ["smile", "😊"],
+          ["cuoi", "😊"],
+          ["star", "⭐"],
+          ["sao", "⭐"]
+        ];
+
+        let nextEmoji = extractEmojiFromText(candidateText);
+        if (!nextEmoji) {
+          const found = keywordEmojiMap.find(([keyword]) =>
+            normalizedCandidateText.includes(keyword)
+          );
+          if (found) nextEmoji = found[1];
+        }
+
+        if (nextEmoji) {
+          actions.push({
+            type: "set_thread_emoji",
+            emoji: nextEmoji
+          });
+          console.log(
+            "Auto-injected set_thread_emoji action from candidate text."
+          );
+        }
+      }
+    }
+  } catch (e) {
+    console.log("Error while auto-injecting group setting actions:", e);
+  }
+
+  console.log(
+    "Executing actions (after auto-inject):",
+    Array.isArray(actions) ? actions.map((a) => a?.type).filter(Boolean) : []
+  );
+
   /** Ưu tiên sing/video/tiktok trước chat — bắt đầu tải sớm (Gemini hay trả [chat, sing]). */
   const mediaActionPriority = (type: string | undefined) => {
     if (type === "sing") return 0;
     if (type === "video") return 1;
     if (type === "tiktok") return 2;
     if (type === "createphoto") return 3;
+    if (type === "set_theme_image" || type === "set_color") return 4;
+    if (type === "change_thread_photo") return 5;
+    if (type === "set_threadname" || type === "set_thread_emoji" || type === "set_nicknames") return 6;
+    if (type === "react") return 90;
+    if (type === "chat") return 99;
     return 100;
   };
   const orderedActions = [...actions].sort(
@@ -4639,6 +5108,7 @@ async function executeActions(
             }
           }
         }
+
         const messageObj: any = { body: content };
         if (action.mentions) messageObj.mentions = action.mentions;
         if (action.effect) messageObj.effect = action.effect;
@@ -4666,29 +5136,99 @@ async function executeActions(
           threadID,
           () => { }
         );
-      } else if (action.type === "set_color") {
+      } else if (action.type === "set_color" || action.type === "set_theme_image") {
         try {
-          if (action.prompt && typeof action.prompt === "string" && action.prompt.trim().length > 0) {
+          const explicitImageRequested =
+            action.type === "set_theme_image" ||
+            action?.mode === "image" ||
+            action?.fromImage === true ||
+            action?.useReplyImage === true ||
+            action?.fromReply === true ||
+            action?.fromMessageReply === true ||
+            isHttpUrl(action?.imageUrl) ||
+            isHttpUrl(action?.image) ||
+            isHttpUrl(action?.url) ||
+            isHttpUrl(action?.link) ||
+            isHttpUrl(action?.data) ||
+            isHttpUrl(action?.color);
+
+          const imageThemeUrl = resolveImageUrlFromAction(
+            {
+              ...action,
+              imageUrl:
+                action?.imageUrl ||
+                action?.image ||
+                (isHttpUrl(action?.color) ? action.color : undefined)
+            },
+            explicitImageRequested,
+            action.type === "set_theme_image" ||
+            action?.useReplyImage === true ||
+            action?.fromReply === true ||
+            action?.fromMessageReply === true
+          );
+
+          if (imageThemeUrl) {
+            if (typeof client.setThemeFromImage !== "function") {
+              await reply({
+                body: "❎ API chua ho tro doi theme bang anh."
+              });
+              continue;
+            }
+            await client.setThemeFromImage(imageThemeUrl, threadID);
+            await reply({
+              body: "✅ Da doi theme bang anh thanh cong."
+            });
+            continue;
+          }
+
+          if (explicitImageRequested) {
+            await reply({
+              body: "❎ Khong tim thay link anh de doi theme. Hay reply 1 anh hoac gui URL anh."
+            });
+            continue;
+          }
+
+          if (
+            action.prompt &&
+            typeof action.prompt === "string" &&
+            action.prompt.trim().length > 0
+          ) {
             const themes = await generateAIThemesFromPrompt({
               prompt: action.prompt.trim(),
               num_themes: 1
             });
             const theme = Array.isArray(themes) && themes.length > 0 ? themes[0] : null;
             if (!theme || !theme.id) {
-              await reply("❌ Không tạo được theme AI từ mô tả, vui lòng thử lại với prompt khác.");
+              await reply("❎ Khong tao duoc theme AI tu mo ta, vui long thu lai voi prompt khac.");
             } else {
-              client.setTheme(theme.id, threadID);
-              await reply(
-                `✅ Đã đổi nền chat bằng theme AI: ${theme.accessibility_label || "AI theme"}`
-              );
+              if (typeof client.setTheme !== "function") {
+                await reply({ body: "❎ API setTheme chua san sang." });
+                continue;
+              }
+              await client.setTheme(theme.id, threadID);
+              await reply(`✅ Da doi nen chat bang theme AI: ${theme.accessibility_label || "AI theme"}`);
             }
           } else {
-            client.setTheme(action.color || "3259963564026002", threadID);
+            if (typeof client.setTheme !== "function") {
+              await reply({ body: "❎ API setTheme chua san sang." });
+              continue;
+            }
+            const themeId =
+              typeof action.color === "string" && action.color.trim().length > 0
+                ? action.color.trim()
+                : "3259963564026002";
+            await client.setTheme(themeId, threadID);
+            await reply({
+              body:
+                themeId.toLowerCase() === "random"
+                  ? "✅ Da doi theme ngau nhien thanh cong."
+                  : "✅ Da doi theme cho nhom thanh cong."
+            });
           }
+          continue;
         } catch (err) {
-          await reply(
-            "❌ Lỗi khi tạo theme AI cho nền chat, vui lòng thử lại sau."
-          );
+          console.log("set theme action error:", err);
+          await reply("Loi khi doi theme cho nhom, vui long thu lai sau.");
         }
       } else if (action.type === "set_nicknames") {
         client.changeNickname(action.name, threadID, action.targetID);
@@ -5064,7 +5604,70 @@ async function executeActions(
           });
         }
       } else if (action.type === "set_threadname") {
-        client.setTitle(action.name, threadID);
+        try {
+          const nextName =
+            typeof action.name === "string" ? action.name.trim() : "";
+          if (!nextName) return;
+
+          const renameClient = client as {
+            setThreadName?: (name: string, threadID: string | number) => unknown;
+            setTitle?: (name: string, threadID: string | number) => unknown;
+          };
+
+          const fn =
+            typeof renameClient.setThreadName === "function"
+              ? renameClient.setThreadName
+              : typeof renameClient.setTitle === "function"
+                ? renameClient.setTitle
+                : undefined;
+
+          if (!fn) return;
+          await fn(nextName, threadID);
+        } catch (e) {
+          console.log("set_threadname error:", e);
+        }
+      } else if (action.type === "set_thread_emoji") {
+        try {
+          if (!action.emoji || typeof action.emoji !== "string") {
+            continue;
+          }
+
+          const emoji = action.emoji.trim();
+          if (!emoji) {
+            continue;
+          }
+
+          // Old API (changeThreadEmoji) might not be ready.
+          if (typeof client.changeThreadEmoji === "function") {
+            const res = client.changeThreadEmoji(emoji, threadID);
+            if (res && typeof res?.then === "function") await res;
+            continue;
+          }
+
+          // Fallback: resolve emoji -> themeID -> setTheme(themeID)
+          if (typeof client.setTheme === "function" && typeof client.getTheme === "function") {
+            const themes = await client.getTheme();
+            const list = Array.isArray(themes) ? themes : [];
+
+            const matched = list.find((t: any) => {
+              const name = typeof t?.name === "string" ? t.name.trim() : "";
+              return (
+                typeof t?.id === "string" &&
+                name &&
+                (name === emoji || name.includes(emoji) || emoji.includes(name))
+              );
+            });
+
+            if (matched?.id) {
+              await client.setTheme(matched.id, threadID);
+              continue;
+            }
+          }
+
+          // No reply: "thành công hay không kệ".
+        } catch (e) {
+          console.log("set_thread_emoji error:", e);
+        }
       } else if (action.type === "lamnet") {
 
         await reply({
@@ -5074,7 +5677,14 @@ async function executeActions(
 
       } else if (action.type === "change_thread_photo") {
         try {
-          const r = await axios.get(action.url, {
+          const imageUrl = resolveImageUrlFromAction(action, true, true);
+          if (!imageUrl) {
+            await reply({
+              body: "❎ Khong tim thay link anh de doi anh nhom. Hay reply 1 anh hoac gui URL anh."
+            });
+            continue;
+          }
+          const r = await axios.get(imageUrl, {
             responseType: "arraybuffer",
             timeout: 20000
           });
@@ -5126,7 +5736,7 @@ async function executeActions(
 
           if (client && typeof client.sendMessage === "function") {
             const readStream = fs.createReadStream(temp);
- 
+
             await new Promise<void>((resolve, reject) => {
               client.sendMessage(
                 { body: "", attachment: readStream },
@@ -5778,16 +6388,18 @@ const command = {
         });
       }
     }
-    const fileUrls =
-      event.type === "message_reply" &&
-        event.messageReply?.attachments
-        ? event.messageReply.attachments
-          .filter(
-            (a: any) =>
-              a.type === "photo" || a.type === "video"
-          )
-          .map((a: any) => ({ url: a.url, type: a.type }))
-        : [];
+    const fileUrls = [
+      ...(event.messageReply?.attachments || []),
+      ...(event.attachments || [])
+    ]
+      .filter(
+        (a: any) =>
+          a &&
+          (a.type === "photo" || a.type === "video") &&
+          typeof a.url === "string" &&
+          a.url
+      )
+      .map((a: any) => ({ url: a.url, type: a.type }));
     try {
       const userInfo = await getUserInfo(userData, senderID);
       const actions = await handleChat(
@@ -5815,7 +6427,8 @@ const command = {
         commandName,
         utils,
         threadData,
-        config
+        config,
+        event
       );
     } catch (err: any) {
       console.log(err);
@@ -5995,14 +6608,18 @@ const command = {
         }
       }
     }
-    const fileUrls = event.attachments
-      ? event.attachments
-        .filter(
-          (a: any) =>
-            a.type === "photo" || a.type === "video"
-        )
-        .map((a: any) => ({ url: a.url, type: a.type }))
-      : [];
+    const fileUrls = [
+      ...(event.messageReply?.attachments || []),
+      ...(event.attachments || [])
+    ]
+      .filter(
+        (a: any) =>
+          a &&
+          (a.type === "photo" || a.type === "video") &&
+          typeof a.url === "string" &&
+          a.url
+      )
+      .map((a: any) => ({ url: a.url, type: a.type }));
     try {
       const userInfo = await getUserInfo(userData, senderID);
       const actions = await handleChat(
@@ -6030,7 +6647,8 @@ const command = {
         commandName,
         utils,
         threadData,
-        config
+        config,
+        event
       );
     } catch (err: any) {
       console.log(err);

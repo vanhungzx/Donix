@@ -2,16 +2,8 @@
 
 import type { Command, CommandOnCallContext } from '@types';
 import crypto from "crypto";
-import fs from "fs-extra";
-import path from "path";
-import { STORAGE_GAME } from "../../../core/storagePath";
+import { taixiuAddToJackpot, taixiuGetHistory, taixiuGetJackpot, taixiuGetWinStreak, taixiuResetJackpot, taixiuSaveHistory, taixiuUpdateWinStreak } from "../../../services/taixiu-db";
 
-
-interface StreakData {
-  current: number;
-  highest: number;
-  loses: number;
-}
 
 interface HistoryEntry {
   bet: string;
@@ -36,13 +28,6 @@ interface GameResult {
   };
 }
 
-
-const dataDir = path.join(STORAGE_GAME(), "taixiu");
-const historyFilePath = path.join(dataDir, "taixiu_history.json");
-const jackpotFilePath = path.join(dataDir, "group_jackpots.json");
-const streakFilePath = path.join(dataDir, "win_streaks.json");
-
-
 const MIN_BET = 1000n;
 const JACKPOT_CONTRIBUTION_PERMIL = 100n;
 const BASE_JACKPOT_CHANCE = 0.0001;
@@ -59,127 +44,6 @@ const SEQ_DEN = 2n;
 const STREAK_START_AT = 5n;
 const STREAK_STEP = 3n;
 const STREAK_CAP = 12n;
-
-
-fs.ensureDirSync(dataDir);
-
-let jackpots: Record<string, string> = {};
-let winStreaks: Record<string, StreakData> = {};
-
-function initializeDataFiles(): void {
-  if (fs.existsSync(jackpotFilePath)) {
-    try {
-      jackpots = JSON.parse(fs.readFileSync(jackpotFilePath, "utf8"));
-    } catch {
-      jackpots = {};
-      fs.writeFileSync(jackpotFilePath, JSON.stringify({}));
-    }
-  } else {
-    fs.writeFileSync(jackpotFilePath, JSON.stringify({}));
-  }
-
-  if (fs.existsSync(streakFilePath)) {
-    try {
-      winStreaks = JSON.parse(fs.readFileSync(streakFilePath, "utf8"));
-    } catch {
-      winStreaks = {};
-      fs.writeFileSync(streakFilePath, JSON.stringify({}));
-    }
-  } else {
-    fs.writeFileSync(streakFilePath, JSON.stringify({}));
-  }
-}
-
-initializeDataFiles();
-
-
-function getJackpot(threadID: string): bigint {
-  return BigInt(jackpots[threadID] || 0);
-}
-
-function addToJackpot(threadID: string, amount: bigint): bigint {
-  if (!jackpots[threadID]) jackpots[threadID] = "0";
-  const current = BigInt(jackpots[threadID]);
-  const contribution = (amount * JACKPOT_CONTRIBUTION_PERMIL) / 1000n;
-  jackpots[threadID] = (current + contribution).toString();
-  fs.writeFileSync(jackpotFilePath, JSON.stringify(jackpots, null, 2));
-  return contribution;
-}
-
-function resetJackpot(threadID: string): bigint {
-  const cur = getJackpot(threadID);
-  jackpots[threadID] = "0";
-  fs.writeFileSync(jackpotFilePath, JSON.stringify(jackpots, null, 2));
-  return cur;
-}
-
-
-function updateWinStreak(userId: string, win: boolean): StreakData {
-  if (!winStreaks[userId]) {
-    winStreaks[userId] = { current: 0, highest: 0, loses: 0 };
-  }
-
-  if (win) {
-    winStreaks[userId].current++;
-    winStreaks[userId].loses = 0;
-    if (winStreaks[userId].current > winStreaks[userId].highest) {
-      winStreaks[userId].highest = winStreaks[userId].current;
-    }
-  } else {
-    winStreaks[userId].current = 0;
-    winStreaks[userId].loses++;
-  }
-
-  fs.writeFileSync(streakFilePath, JSON.stringify(winStreaks, null, 2));
-  return winStreaks[userId];
-}
-
-
-function saveHistory(
-  userId: string,
-  bet: string,
-  diceResult: string,
-  gameResult: string,
-  winAmount: bigint | number,
-  jackpotWin: boolean = false
-): void {
-  let history: Record<string, HistoryEntry[]> = {};
-  if (fs.existsSync(historyFilePath)) {
-    try {
-      history = JSON.parse(fs.readFileSync(historyFilePath, "utf8"));
-    } catch {
-      history = {};
-    }
-  }
-
-  if (!history[userId]) history[userId] = [];
-  if (history[userId].length >= 10) history[userId].shift();
-
-  history[userId].push({
-    bet,
-    diceResult,
-    gameResult,
-    win: gameResult === "win",
-    winAmount: typeof winAmount === "bigint" ? winAmount.toString() : String(winAmount),
-    jackpotWin,
-    timestamp: Date.now(),
-  });
-
-  fs.writeFileSync(historyFilePath, JSON.stringify(history, null, 2));
-}
-
-function getHistory(userId: string): HistoryEntry[] {
-  if (fs.existsSync(historyFilePath)) {
-    try {
-      const h = JSON.parse(fs.readFileSync(historyFilePath, "utf8"));
-      return h[userId] || [];
-    } catch {
-      return [];
-    }
-  }
-  return [];
-}
-
 
 function rollDie(): number {
   if (typeof crypto.randomInt === "function") return crypto.randomInt(1, 7);
@@ -199,14 +63,13 @@ function randFloat(): number {
 }
 
 
-function checkJackpotWin(userId: string): boolean {
-  const s = winStreaks[userId] || { loses: 0 };
-  let chance = BASE_JACKPOT_CHANCE + s.loses * LOSE_STREAK_BONUS_CHANCE;
+function checkJackpotWin(loses: number): boolean {
+  let chance = BASE_JACKPOT_CHANCE + loses * LOSE_STREAK_BONUS_CHANCE;
   if (chance > MAX_JACKPOT_CHANCE) chance = MAX_JACKPOT_CHANCE;
   return randFloat() < chance;
 }
 
-function playGame(userId: string): GameResult {
+function playGame(userId: string, loses: number): GameResult {
   const d1 = rollDie();
   const d2 = rollDie();
   const d3 = rollDie();
@@ -218,7 +81,7 @@ function playGame(userId: string): GameResult {
   const sorted1 = sorted[1];
   const sorted2 = sorted[2];
   const sequence = sorted0 !== undefined && sorted1 !== undefined && sorted2 !== undefined && sorted1 === sorted0 + 1 && sorted2 === sorted1 + 1;
-  const jackpot = triple && checkJackpotWin(userId);
+  const jackpot = triple && checkJackpotWin(loses);
 
   return {
     dice1: d1,
@@ -361,9 +224,10 @@ const taixiuCommand: Command = {
         return;
       }
 
-      const gameResult = playGame(senderID);
+      const streakBefore = await taixiuGetWinStreak(senderID);
+      const gameResult = playGame(senderID, streakBefore.loses || 0);
       const isWin = gameResult.result === betChoice;
-      const currentStreak = winStreaks[senderID]?.current || 0;
+      const currentStreak = streakBefore.current || 0;
 
       let profit = 0n;
       let jackpotWin = 0n;
@@ -372,7 +236,7 @@ const taixiuCommand: Command = {
       if (isWin) {
         profit = calculateWinAmount(betAmount, gameResult, currentStreak);
         if (gameResult.jackpot) {
-          jackpotWin = resetJackpot(threadID);
+          jackpotWin = await taixiuResetJackpot(threadID);
         }
         if (addMoney) {
           await addMoney(senderID, profit + jackpotWin);
@@ -388,20 +252,21 @@ const taixiuCommand: Command = {
         if (delMoney) {
           await delMoney(senderID, betAmount);
         }
-        jackpotContribution = addToJackpot(threadID, betAmount);
+        jackpotContribution = (betAmount * JACKPOT_CONTRIBUTION_PERMIL) / 1000n;
+        await taixiuAddToJackpot(threadID, jackpotContribution);
       }
 
-      const streak = updateWinStreak(senderID, isWin);
-      saveHistory(
-        senderID,
-        betChoice,
-        gameResult.result,
-        isWin ? "win" : "lose",
-        isWin ? profit : betAmount,
-        jackpotWin > 0n
-      );
+      const streak = await taixiuUpdateWinStreak(senderID, isWin);
+      await taixiuSaveHistory({
+        userID: senderID,
+        bet: betChoice,
+        diceResult: gameResult.result,
+        gameResult: isWin ? "win" : "lose",
+        winAmount: isWin ? profit : betAmount,
+        jackpotWin: jackpotWin > 0n,
+      });
 
-      const history = getHistory(senderID);
+      const history = (await taixiuGetHistory(senderID, 10)) as unknown as HistoryEntry[];
       const recentHistory = history
         .slice(-8)
         .map((h) => (h.diceResult === "xỉu" ? "⚪" : "⚫"))
@@ -433,7 +298,7 @@ const taixiuCommand: Command = {
         `${specialBonusText}` +
         `${isWin ? "✅" : "❌"} Kết quả: ${isWin ? "THẮNG" : "THUA"} ${isWin ? "+" : "-"}${formatCurrency(isWin ? profit : betAmount)}\n` +
         `${!isWin ? `💰 Hũ +${formatCurrency(jackpotContribution)}\n` : ""}` +
-        `💎 Hũ hiện tại: ${formatCurrency(getJackpot(threadID))}\n` +
+        `💎 Hũ hiện tại: ${formatCurrency(await taixiuGetJackpot(threadID))}\n` +
         `🏆 Chuỗi thắng: ${streak.current} | Kỷ lục: ${streak.highest}\n` +
         `📊 Lịch sử: ${recentHistory || "Chưa có"}`;
 

@@ -16,6 +16,7 @@ import fs from "fs-extra";
 import Jimp from "jimp";
 import path from "path";
 import { STORAGE_GAME, STORAGE_FONT } from "../../../core/storagePath";
+import { txiuAddHistory, txiuGetHistory, txiuGetJackpot, txiuSetJackpot } from "../../../services/taixiu-db";
 
 const TIME_CREATE_COOLDOWN_MS = 5 * 60 * 1000;
 const TIME_ROOM_AUTO_END_MS = 5 * 60 * 1000;
@@ -26,8 +27,6 @@ const JACKPOT_CONTRIBUTION_PERCENT = 5;
 const SELECT_VALUES: Record<string, string> = { t: "Tài", x: "Xỉu" };
 
 const dataDir = path.join(STORAGE_GAME(), "taixiu");
-const historyPhienDir = path.join(dataDir, "txiu_phien");
-const jackpotPath = path.join(dataDir, "txiu_jackpot.json");
 const diceImgDir = path.join(dataDir, "img");
 
 interface TxiuPlayer {
@@ -241,13 +240,9 @@ const txiuCommand: Command = {
     }
 
     if (/^stats$/.test(args[0] || "")) {
-      const historyPath = path.join(historyPhienDir, `${tid}.json`);
-      if (!fs.existsSync(historyPath)) return send("❎ Chưa có lịch sử phiên nào trong nhóm này");
-
       try {
-        const historyData: { result: string; sum: number; dices: number[] }[] = JSON.parse(
-          fs.readFileSync(historyPath, "utf-8")
-        );
+        const historyData = await txiuGetHistory(tid, 1000);
+        if (!historyData || historyData.length === 0) return send("❎ Chưa có lịch sử phiên nào trong nhóm này");
         const totalGames = historyData.length;
         const taiCount = historyData.filter((g) => g.result === "t").length;
         const xiuCount = historyData.filter((g) => g.result === "x").length;
@@ -479,27 +474,9 @@ const txiuCommand: Command = {
       if (p.length === 0) return send("❎ Chưa có ai tham gia đặt cược nên không thể bắt đầu xổ");
 
       room.playing = true;
-      await fs.ensureDir(historyPhienDir);
-      const historyPath = path.join(historyPhienDir, `${tid}.json`);
-      let historyData: { time: number; result: string; dices: number[]; sum: number }[] = [];
-      if (fs.existsSync(historyPath)) {
-        try {
-          historyData = JSON.parse(fs.readFileSync(historyPath, "utf-8"));
-        } catch {
-          historyData = [];
-        }
-      }
-
-      let jackpotData: Record<string, JackpotThread> = {};
-      if (fs.existsSync(jackpotPath)) {
-        try {
-          const raw = fs.readFileSync(jackpotPath, "utf-8");
-          jackpotData = JSON.parse(raw, (_k, v) => (typeof v === "string" && /^\d+$/.test(v) ? BigInt(v) : v));
-        } catch {
-          jackpotData = {};
-        }
-      }
-      if (!jackpotData[tid]) jackpotData[tid] = { amount: BigInt(0), chance: 1 };
+      const jackpotRow = await txiuGetJackpot(tid);
+      const jackpotData: JackpotThread = { amount: jackpotRow.amount, chance: jackpotRow.chance };
+      if (!Number.isFinite(jackpotData.chance)) jackpotData.chance = 1;
 
       const diing = await send("🎲 Bot đang lắc, Chờ xíu...");
       const dices = dicesSumMinMax(4, 17);
@@ -510,12 +487,11 @@ const txiuCommand: Command = {
 
       losePlayers.forEach((player) => {
         const contribution = (player.bet_money * BigInt(JACKPOT_CONTRIBUTION_PERCENT)) / BigInt(100);
-        if (!jackpotData[tid].amount) jackpotData[tid].amount = BigInt(0);
-        jackpotData[tid].amount += contribution;
+        jackpotData.amount += contribution;
       });
 
-      jackpotData[tid].chance = Math.min(jackpotData[tid].chance + 0.2, 1);
-      const jackpotAmount = jackpotData[tid].amount;
+      jackpotData.chance = Math.min(jackpotData.chance + 0.2, 1);
+      const jackpotAmount = jackpotData.amount;
       let jackpotWinner: TxiuPlayer | undefined;
 
       if (isTrungDayNoHu(dices) && jackpotAmount > 0n && Math.random() < 0.25) {
@@ -523,31 +499,20 @@ const txiuCommand: Command = {
           jackpotWinner = winnerPlayers[Math.floor(Math.random() * winnerPlayers.length)];
           const addMoney = userData.addMoney as ((id: string, amount: bigint) => Promise<void>) | undefined;
           if (addMoney) await addMoney(jackpotWinner.id, jackpotAmount);
-          jackpotData[tid] = { amount: BigInt(0), chance: 0.3 };
+          jackpotData.amount = 0n;
+          jackpotData.chance = 0.3;
         }
-      } else if (Math.random() * 100 < jackpotData[tid].chance && jackpotAmount > 0n && winnerPlayers.length > 0) {
+      } else if (Math.random() * 100 < jackpotData.chance && jackpotAmount > 0n && winnerPlayers.length > 0) {
         jackpotWinner = winnerPlayers[Math.floor(Math.random() * winnerPlayers.length)];
         const addMoney = userData.addMoney as ((id: string, amount: bigint) => Promise<void>) | undefined;
         if (addMoney) await addMoney(jackpotWinner.id, jackpotAmount);
-        jackpotData[tid] = { amount: BigInt(0), chance: 0.3 };
+        jackpotData.amount = 0n;
+        jackpotData.chance = 0.3;
       }
 
-      historyData.unshift({ time: Date.now(), result: winner, dices, sum });
-      if (historyData.length > 8) historyData = historyData.slice(0, 8);
-      fs.writeFileSync(
-        historyPath,
-        JSON.stringify(historyData, null, 2),
-        "utf-8"
-      );
-      fs.writeFileSync(
-        jackpotPath,
-        JSON.stringify(
-          jackpotData,
-          (_, value) => (typeof value === "bigint" ? value.toString() : value),
-          2
-        ),
-        "utf-8"
-      );
+      await txiuAddHistory(tid, { time: Date.now(), result: winner, dices, sum });
+      await txiuSetJackpot(tid, { amount: jackpotData.amount, chance: jackpotData.chance });
+      const historyData = await txiuGetHistory(tid, 8);
 
       const historyDisplay = historyData.map((g) => (g.result === "t" ? "⚫" : "⚪")).reverse().join("");
       if (diing?.messageID) client.unsendMessage(diing.messageID, tid);
@@ -590,13 +555,14 @@ const txiuCommand: Command = {
         ? `\n💥 ${getName ? await getName(jackpotWinner.id) : jackpotWinner.id} nổ hũ: ${formatCurrency(jackpotAmount)}`
         : "";
 
-      const body =
-        `Kết quả: ${dices.join(" | ")} - Tổng: ${sum} điểm (${SELECT_VALUES[winner]})\n\n[ Người Thắng ]\n${winLines.join("\n") || "Không có ai thắng"}\n\n[ Người Thua ]\n${loseLines.join("\n") || "Không có ai thua"}\n\nHũ hiện tại: ${formatCurrency(jackpotData[tid].amount)} (tăng thêm: ${formatCurrency(totalJackpotContribution)})${jackpotLine}\nPhiên gần đây:\n${historyDisplay}`;
+      const jackpotNow = (await txiuGetJackpot(tid)).amount;
+      const bodyFinal =
+        `Kết quả: ${dices.join(" | ")} - Tổng: ${sum} điểm (${SELECT_VALUES[winner]})\n\n[ Người Thắng ]\n${winLines.join("\n") || "Không có ai thắng"}\n\n[ Người Thua ]\n${loseLines.join("\n") || "Không có ai thua"}\n\nHũ hiện tại: ${formatCurrency(jackpotNow)} (tăng thêm: ${formatCurrency(totalJackpotContribution)})${jackpotLine}\nPhiên gần đây:\n${historyDisplay}`;
 
       if (imagePath && fs.existsSync(imagePath)) {
-        await send({ body, attachment: createReadStream(imagePath) });
+        await send({ body: bodyFinal, attachment: createReadStream(imagePath) });
       } else {
-        await send(body);
+        await send(bodyFinal);
       }
 
       if (room.set_timeout) clearTimeout(room.set_timeout);

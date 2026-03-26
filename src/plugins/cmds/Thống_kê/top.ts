@@ -44,10 +44,13 @@ function formatMoney(money: number | bigint | string | undefined | null): string
     return money.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   }
   if (typeof money === "string") {
-    const num = Number(money);
-    return isNaN(num) ? "0" : num.toLocaleString();
+    const s = money.trim().replace(/,/g, "");
+    if (!/^\d+$/.test(s)) return "0";
+    return BigInt(s).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   }
-  return Number(money).toLocaleString();
+  if (!Number.isFinite(money)) return "0";
+  const intVal = Math.trunc(money);
+  return intVal.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 function calculateLevel(exp: number): number {

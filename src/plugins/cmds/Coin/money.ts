@@ -3,9 +3,13 @@
 import type { Command, CommandOnCallContext } from '@types';
 const formatNumber = (value: number | bigint | undefined | null): string => {
   if (value === undefined || value === null) return "0";
-  const num = typeof value === "bigint" ? Number(value) : value;
+  if (typeof value === "bigint") {
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+  const num = value;
   if (!Number.isFinite(num)) return "0";
-  return num.toLocaleString("vi-VN");
+  const intVal = Math.trunc(num);
+  return intVal.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
 const moneyCommand: Command = {
   name: "money",

@@ -11,24 +11,42 @@ async function getPrefix(threadId: string, threadData: any, config: any) {
 const parseAmount = (v: any): bigint | null => {
   if (v == null) return null;
   if (typeof v === "bigint") return v;
-  if (typeof v === "number" && Number.isFinite(v)) return BigInt(Math.floor(v));
-  const s = String(v).trim();
-  if (/^-?\d+$/.test(s)) return BigInt(s);
-  const m = s.match(/^(-?\d*\.?\d*)\s*([a-zA-ZÀ-ỹ]*)$/i);
+
+  const s0 = String(v).trim();
+  if (!s0) return null;
+
+  // Remove common formatting and trailing currency.
+  let s = s0.replace(/,/g, "");
+  s = s.replace(/\s*(vnđ|vnd)\s*$/i, "");
+
+  const m = s.match(/^(-?\d+(?:\.\d+)?)(?:\s*([a-zA-ZÀ-ỹ]+))?$/i);
   if (!m) return null;
-  let [, num, unit] = m;
-  if (!num) return null;
-  const f = Number(num);
-  if (!Number.isFinite(f)) return null;
-  const scaled = BigInt(Math.floor(Math.abs(f) * 100));
-  unit = (unit || "").toLowerCase();
+
+  const numPart = m[1];
+  const unitRaw = (m[2] || "").toLowerCase();
+
+  const negative = numPart.startsWith("-");
+  const unsignedNum = negative ? numPart.slice(1) : numPart;
+  const [intStr, fracStr = ""] = unsignedNum.split(".");
+  if (!/^\d+$/.test(intStr) || (fracStr && !/^\d+$/.test(fracStr))) return null;
+
+  const frac2 = fracStr.padEnd(2, "0").slice(0, 2);
+  const cents = BigInt(intStr) * 100n + BigInt(frac2);
+
   const mul =
-    unit === "b" || unit.includes("tỷ") || unit.includes("ti") ? 1_000_000_000n :
-      unit === "m" || unit === "tr" || unit.includes("triệu") ? 1_000_000n :
-        unit === "k" || unit.includes("ngàn") || unit.includes("nghìn") ? 1_000n :
-          1n;
-  const bi = (scaled * mul) / 100n;
-  return f < 0 ? -bi : bi;
+    unitRaw === "b" || unitRaw === "tỷ" || unitRaw === "ty"
+      ? 1_000_000_000n
+      : unitRaw === "m" || unitRaw === "tr" || unitRaw === "triệu"
+        ? 1_000_000n
+        : unitRaw === "k" || unitRaw === "ngàn" || unitRaw === "ngan" || unitRaw === "nghìn" || unitRaw === "nghin"
+          ? 1_000n
+          : unitRaw === ""
+            ? 1n
+            : null;
+
+  if (mul === null) return null;
+  const out = (cents * mul) / 100n;
+  return negative ? -out : out;
 };
 
 const fmtVND = (a: bigint | number | string): string => {
@@ -47,6 +65,26 @@ const toBI = (v: any): bigint => {
 };
 
 const fmtPct = (bps: number): string => (bps / 100).toFixed(2);
+
+// Prevent Infinity/NaN in chart rendering when money is extremely large.
+const MAX_SAFE_BI = 9_007_199_254_740_991n; // Number.MAX_SAFE_INTEGER
+const toFiniteNumber = (bi: bigint): number => {
+  const abs = bi < 0n ? -bi : bi;
+  const sign = bi < 0n ? -1 : 1;
+  if (abs > MAX_SAFE_BI) return sign * Number(MAX_SAFE_BI);
+  return Number(bi);
+};
+
+// Percent with exactly 1 decimal, computed via BigInt.
+const fmtPercent1 = (saved: bigint, target: bigint): string => {
+  if (target <= 0n) return "0.0";
+  // percent = saved/target*100
+  // percentWith1Decimal = percent * 10 => saved*1000/target
+  const scaled10 = (saved * 1000n) / target;
+  const intPart = scaled10 / 10n;
+  const decPart = scaled10 % 10n;
+  return `${intPart.toString()}.${decPart.toString()}`;
+};
 
 const isValidURL = (s: string): boolean => {
   try {
@@ -399,7 +437,9 @@ const command = {
           const left = Math.max(0, Math.ceil((end - Date.now()) / dayMs));
           return `- ${t.id}: ${fmtVND(t.principal)} | ${t.days} ngày | ${fmtPct(t.rateBps)}%/ngày | Còn ${left} ngày`;
         }).join("\n") : "Không có";
-        const goals = bankData.goals.length ? bankData.goals.map(g => `- ${g.name}: ${fmtVND(g.saved)}/${fmtVND(g.target)} (${(Number(g.saved) * 100 / Math.max(1, Number(g.target))).toFixed(1)}%)`).join("\n") : "Không có";
+        const goals = bankData.goals.length
+          ? bankData.goals.map(g => `- ${g.name}: ${fmtVND(g.saved)}/${fmtVND(g.target)} (${fmtPercent1(g.saved, g.target)}%)`).join("\n")
+          : "Không có";
         return reply(
           `[ THÔNG TIN TÀI KHOẢN ]\n\n` +
           `💰 Tiền gửi:\n- Số dư: ${fmtVND(bankData.money)}\n- Lãi suất: ${fmtPct(depBps)}%/ngày\n- Lãi/ngày: +${fmtVND(depDaily)}\n\n` +
@@ -756,7 +796,9 @@ const command = {
           writeBank(senderID, bankData);
           return reply(`✅ Đã rút ${fmtVND(amt)} từ "${g.name}"`);
         } else if (sub === "list") {
-          const s = bankData.goals.length ? bankData.goals.map(g => `- ${g.name}: ${fmtVND(g.saved)}/${fmtVND(g.target)} (${(Number(g.saved) * 100 / Math.max(1, Number(g.target))).toFixed(1)}%)`).join("\n") : "Không có";
+          const s = bankData.goals.length
+            ? bankData.goals.map(g => `- ${g.name}: ${fmtVND(g.saved)}/${fmtVND(g.target)} (${fmtPercent1(g.saved, g.target)}%)`).join("\n")
+            : "Không có";
           return reply(`[ MỤC TIÊU ]\n${s}`);
         } else if (sub === "del") {
           const name = args[2];
@@ -902,7 +944,7 @@ const command = {
           if (ts0 < startTs) continue;
           const idx = Math.floor((ts0 - startTs) / dayMs);
           if (idx < 0 || idx >= days) continue;
-          const val = Number(toBI(t.amount));
+          const val = toFiniteNumber(toBI(t.amount));
           const incVal = inc[idx];
           const outVal = out[idx];
           if (incomeTypes.has(t.type) && incVal !== undefined) inc[idx] = incVal + val;
@@ -1050,8 +1092,8 @@ const command = {
         const ctx = canvas.getContext("2d") as any;
         ctx.fillStyle = "#f7f7f8";
         ctx.fillRect(0, 0, W, H);
-        const spendAngle = total === 0n ? 0 : Number(spending) / Number(total) * Math.PI * 2;
-        const incomeAngle = total === 0n ? 0 : Number(income) / Number(total) * Math.PI * 2;
+        const spendAngle = total === 0n ? 0 : (toFiniteNumber(spending) / Math.max(1, toFiniteNumber(total))) * Math.PI * 2;
+        const incomeAngle = total === 0n ? 0 : (toFiniteNumber(income) / Math.max(1, toFiniteNumber(total))) * Math.PI * 2;
         ctx.beginPath();
         ctx.moveTo(CX, CY);
         ctx.arc(CX, CY, R, 0, spendAngle);

@@ -75,6 +75,8 @@ const parseAndCheckLogin = (ctx: any, http: any, retryCount = 0) => {
       res.jsmods.require[0][3][0] = res.jsmods.require[0][3][0].replace("_js_", "");
       const requireCookie = res.jsmods.require[0][3];
       ctx.jar.setCookie(formatCookie(requireCookie, "facebook"), "https://www.facebook.com");
+      // Also bind cookie to business subdomain for business.* endpoints
+      ctx.jar.setCookie(formatCookie(requireCookie, "facebook"), "https://business.facebook.com");
       ctx.jar.setCookie(formatCookie(requireCookie, "messenger"), "https://www.messenger.com");
     }
 
@@ -106,6 +108,8 @@ const saveCookies = (jar: any) => (res: any) => {
   cookies.forEach((c: string) => {
     if (c.includes(".facebook.com")) {
       jar.setCookie(c, "https://www.facebook.com");
+      // Also bind to business subdomain for business.* endpoints
+      jar.setCookie(c, "https://business.facebook.com");
     }
     const c2 = c.replace(/domain=\.facebook\.com/, "domain=.messenger.com");
     jar.setCookie(c2, "https://www.messenger.com");
@@ -138,7 +142,9 @@ const getAccessFromBusiness = (jar: any, Options: any) => {
 };
 
 const getAppState = (jar: any) =>
-  jar.getCookiesSync("https://www.facebook.com").concat(jar.getCookiesSync("https://www.messenger.com"));
+  jar.getCookiesSync("https://business.facebook.com")
+    .concat(jar.getCookiesSync("https://www.facebook.com"))
+    .concat(jar.getCookiesSync("https://www.messenger.com"));
 
 const clientUtils = {
   parseAndCheckLogin,

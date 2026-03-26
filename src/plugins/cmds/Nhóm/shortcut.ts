@@ -609,12 +609,51 @@ const shortcutModule: Command = {
   alias: ['short'],
   version: '3.4.0',
   role: 0,
-  desc: 'Shortcut all chuc nang với nén file tối ưu 560p-720p (2-2.5MB, chất lượng cao)',
-  guide: `• {pn} all [trang]
-• {pn} delete <từ khóa>
-• {pn} tag | join | leave
-• {pn} autosend
-📹 Video: 720p → 640p → 560p | Kích thước: 2-2.5MB | Chất lượng tối ưu`,
+  desc: 'Tạo shortcut tự động trả lời theo từ khóa, join/leave, tag, autosend (hỗ trợ media + random)',
+  guide: `━━━ HƯỚNG DẪN SHORTCUT ━━━
+
+📌 TẠO SHORTCUT TỪ KHÓA (bot trả lời khi gõ từ khóa)
+  {pn} → Bot hỏi 3 bước:
+    B1: Nhập từ khóa (ví dụ: xin chao)
+    B2: Nhập nội dung trả lời
+    B3: Chọn media:
+      • Reply ảnh/video/mp3/gif → bot tải & nén
+      • Nhập "s" → chỉ gửi text
+      • Nhập "random gái" / "random trai" / "random vdcos" / "random anime"
+
+📌 SHORTCUT JOIN (chào khi có người vào nhóm)
+  {pn} join → Bot hỏi nội dung + media
+  Biến dùng được:
+    {name} tên người vào | {link} link FB
+    {nameThread} tên nhóm | {soThanhVien} số TV
+    {authorName} người thêm | {authorId} link người thêm
+    {time} ngày giờ | {qtv} danh sách admin
+
+📌 SHORTCUT LEAVE (thông báo khi có người rời/bị kick)
+  {pn} leave → Bot hỏi nội dung + media
+  Biến dùng được: giống join, thêm:
+    {trangThai} "đã tự rời" hoặc "đã bị kick"
+
+📌 SHORTCUT TAG (bot trả lời khi ai đó @tag bạn)
+  Cách 1 - Tag chính mình:
+    {pn} tag <nội dung>
+    {pn} tag random gái <nội dung>
+  Cách 2 - Tag nhanh cho người khác:
+    {pn} @Người <nội dung>
+    {pn} random trai @Người <nội dung>
+    {pn} random vdcos @Người <nội dung>
+
+📌 AUTOSEND (tự động gửi tin nhắn theo giờ)
+  {pn} autosend → Bot hỏi 4 bước:
+    B1: Nội dung | B2: Nhóm này (1) hay tất cả (2)
+    B3: Giờ gửi (HH:mm:ss) | B4: Media hoặc text
+
+📌 QUẢN LÝ
+  {pn} all [trang] → Xem danh sách (reply số để xóa, reply "all" xóa hết)
+  {pn} delete <từ khóa> → Xóa theo từ khóa
+
+📌 MEDIA RANDOM HỖ TRỢ
+  random gái | random trai | random vdcos | random anime`,
   cd: 5,
   prefix: true,
   onLoad: function (ctx: CommandOnLoadContext) {
@@ -647,7 +686,7 @@ const shortcutModule: Command = {
   onEvent: async function (ctx: CommandOnEventContext) {
     const { client, event, threadData, userData } = ctx;
     if (event.senderID === client.getCurrentUserID()) return;
-    const { logMessageType, logMessageData, participantIDs, author } = event;
+    const { logMessageType, logMessageData, author } = event;
     const threadID = String(event.threadID);
     if (logMessageType !== 'log:subscribe' && logMessageType !== 'log:unsubscribe') return;
     const thread_info = (await threadData.get(threadID))?.threadInfo;
@@ -656,9 +695,19 @@ const shortcutModule: Command = {
     const shortcut = shortcuts.find(item => (item as any).short_type?.type === (logMessageType === 'log:subscribe' ? 'join' : 'leave')) as ShortcutEntry | undefined;
     if (!shortcut) return;
     const adminNames = thread_info.adminIDs ? await Promise.all(thread_info.adminIDs.map((e: any) => userData.getName(e.id))) : [];
+
+    const safeMemberCount = (() => {
+      const ids = (thread_info as any)?.participantIDs;
+      if (Array.isArray(ids)) return ids.length;
+      const fromEvent = (event as any)?.participantIDs;
+      if (Array.isArray(fromEvent)) return fromEvent.length;
+      return 0;
+    })();
+
     const replacements: Record<string, string> = {
       '{nameThread}': thread_info.threadName || '',
-      '{soThanhVien}': logMessageType === 'log:subscribe' ? String(participantIDs.length) : String(Math.max(0, participantIDs.length - 1)),
+      // Some log events don't include participantIDs; prefer threadInfo.participantIDs.
+      '{soThanhVien}': String(safeMemberCount),
       '{time}': moment().tz('Asia/Ho_Chi_Minh').format('DD/MM/YYYY - HH:mm:ss'),
       '{authorName}': await userData.getName(author),
       '{authorId}': `https://www.facebook.com/profile.php?id=${author}`,
@@ -689,6 +738,14 @@ const shortcutModule: Command = {
     }
     if ((shortcut as any).url === 'rd_girl') {
       const attachment = (global.Donix?.vdgai?.splice?.(0, 1) as unknown) || [];
+      return client.sendMessage({ body: msgBody, attachment }, threadID, event.messageID);
+    }
+    if ((shortcut as any).url === 'rd_boy') {
+      const attachment = (global.Donix?.vdtrai?.splice?.(0, 1) as unknown) || [];
+      return client.sendMessage({ body: msgBody, attachment }, threadID, event.messageID);
+    }
+    if ((shortcut as any).url === 'rd_cos') {
+      const attachment = (global.Donix?.vdcos?.splice?.(0, 1) as unknown) || [];
       return client.sendMessage({ body: msgBody, attachment }, threadID, event.messageID);
     }
     if ((shortcut as any).url === 'anime') {
@@ -810,12 +867,16 @@ const shortcutModule: Command = {
       let localFilePath: string | null = null;
       let sizeStr: string | null = null;
 
-      // detect random gái/anime trong text
-      // support: "random gái", "random gai", "random girl", "random anime"
-      // plus convenience: "gái ...", "girl ...", "anime ..." (without the word "random") at the beginning
+      // detect random gái/trai/vdcos/anime trong text
+      // support: "random gái/gai/girl", "random trai/boy", "random vdcos/cos/cosplay", "random anime"
+      // plus convenience: "gái ...", "trai ...", "cos ...", "anime ..." (without the word "random") at the beginning
       const randomGirlRe = /random\s*(g(á|a)i|girl)/i;
+      const randomBoyRe = /random\s*(trai|boy)/i;
+      const randomCosRe = /random\s*(cos|cosplay|vdcos)/i;
       const randomAnimeRe = /random\s*anime/i;
       const leadingGirlRe = /^\s*(?:random\s*)?(g(á|a)i|girl)\b/i;
+      const leadingBoyRe = /^\s*(?:random\s*)?(trai|boy)\b/i;
+      const leadingCosRe = /^\s*(?:random\s*)?(cos|cosplay|vdcos)\b/i;
       const leadingAnimeRe = /^\s*(?:random\s*)?anime\b/i;
 
       if (randomGirlRe.test(baseText) || leadingGirlRe.test(baseText)) {
@@ -824,6 +885,17 @@ const shortcutModule: Command = {
         baseText = baseText.replace(/random\s*(g(á|a)i|girl)/gi, '').trim();
         // if user typed "gái ..." / "girl ..." (without random), strip the leading keyword too
         baseText = baseText.replace(/^\s*(g(á|a)i|girl)\b/gi, '').trim();
+      } else if (randomBoyRe.test(baseText) || leadingBoyRe.test(baseText)) {
+        media = 'random boy';
+        urlType = 'rd_boy';
+        baseText = baseText.replace(/random\s*(trai|boy)/gi, '').trim();
+        baseText = baseText.replace(/^\s*(trai|boy)\b/gi, '').trim();
+      } else if (randomCosRe.test(baseText) || leadingCosRe.test(baseText)) {
+        media = 'random cos';
+        urlType = 'rd_cos';
+        baseText = baseText.replace(/random\s*(cos|cosplay|vdcos)/gi, '').trim();
+        // if user typed "cos ..." / "cosplay ..." / "vdcos ..." (without random), strip the leading keyword too
+        baseText = baseText.replace(/^\s*(cos|cosplay|vdcos)\b/gi, '').trim();
       } else if (randomAnimeRe.test(baseText) || leadingAnimeRe.test(baseText)) {
         media = 'random anime';
         urlType = 'anime';
@@ -873,7 +945,7 @@ const shortcutModule: Command = {
       );
     }
 
-    // QUICK TAG MODE: short @mention [output] (+ reply media / random gái / random anime)
+    // QUICK TAG MODE: short @mention [output] (+ reply media / random gái / random trai / random vdcos / random anime)
     const currentMentions = (event as any).mentions || {};
     const replyMentions = (event as any).messageReply?.mentions || {};
     const hasMentions = Object.keys(currentMentions).length > 0 || Object.keys(replyMentions).length > 0;
@@ -937,6 +1009,15 @@ const shortcutModule: Command = {
       if ((beforeStr.includes('random') && (beforeStr.includes('gái') || beforeStr.includes('gai') || beforeStr.includes('girl'))) || (beforeStr.trim() === 'gái' || beforeStr.trim() === 'gai' || beforeStr.trim() === 'girl')) {
         media = 'random girl';
         urlType = 'rd_girl';
+      } else if ((beforeStr.includes('random') && (beforeStr.includes('trai') || beforeStr.includes('boy'))) || (beforeStr.trim() === 'trai' || beforeStr.trim() === 'boy')) {
+        media = 'random boy';
+        urlType = 'rd_boy';
+      } else if (
+        (beforeStr.includes('random') && (beforeStr.includes('cos') || beforeStr.includes('cosplay') || beforeStr.includes('vdcos')))
+        || (beforeStr.trim() === 'cos' || beforeStr.trim() === 'cosplay' || beforeStr.trim() === 'vdcos')
+      ) {
+        media = 'random cos';
+        urlType = 'rd_cos';
       } else if ((beforeStr.includes('random') && beforeStr.includes('anime')) || beforeStr.trim() === 'anime') {
         media = 'random anime';
         urlType = 'anime';
@@ -1121,7 +1202,7 @@ const shortcutModule: Command = {
           if ((event.body || '').trim().length == 0) return client.sendMessage('❎ Câu trả lời không được để trống', event.threadID, event.messageID);
           if (Reply.short_type) data.short_type = { type: Reply.short_type, senderID: Reply.author };
           data.output = (event.body || '').trim();
-          client.sendMessage(`📌 Reply tin nhắn này bằng tệp video/ảnh/mp3/gif hoặc nếu không cần bạn có thể reply tin nhắn này và nhập 's' hoặc muốn random video theo data api có sẵn thì nhập 'random gái' hoặc 'random anime'`, event.threadID, (err: any, info: any) => {
+          client.sendMessage(`📌 Reply tin nhắn này bằng tệp video/ảnh/mp3/gif hoặc nếu không cần bạn có thể reply tin nhắn này và nhập 's' hoặc muốn random video theo data api có sẵn thì nhập 'random gái' / 'random trai' / 'random vdcos' / 'random anime'`, event.threadID, (err: any, info: any) => {
             if (err) return;
             main.onReply.set(info.messageID, { commandName, author: event.senderID, messageID: info.messageID, data: data as any, type: 'shortAdd', step: 3 } as any);
           });
@@ -1147,6 +1228,14 @@ const shortcutModule: Command = {
           } else if (['random girl', 'random gái'].includes((event.body || '').toLowerCase())) {
             media = 'random girl';
             data.url = 'rd_girl';
+          } else if (['random boy', 'random trai'].includes((event.body || '').toLowerCase())) {
+            media = 'random boy';
+            data.url = 'rd_boy';
+          } else if (
+            ['random cos', 'random cosplay', 'random vdcos', 'cos', 'cosplay', 'vdcos'].includes((event.body || '').toLowerCase())
+          ) {
+            media = 'random cos';
+            data.url = 'rd_cos';
           } else if ((event.body || '').toLowerCase() === 'random anime') {
             media = 'random anime';
             data.url = 'anime';
@@ -1321,6 +1410,16 @@ const shortcutModule: Command = {
           }
           if ((targetShortcut as any).url === 'rd_girl') {
             const attachment = (global.Donix?.vdgai?.splice?.(0, 1) as unknown) || [];
+            await client.sendMessage({ body: processedMsg, attachment }, event.threadID, event.messageID);
+            return;
+          }
+          if ((targetShortcut as any).url === 'rd_boy') {
+            const attachment = (global.Donix?.vdtrai?.splice?.(0, 1) as unknown) || [];
+            await client.sendMessage({ body: processedMsg, attachment }, event.threadID, event.messageID);
+            return;
+          }
+          if ((targetShortcut as any).url === 'rd_cos') {
+            const attachment = (global.Donix?.vdcos?.splice?.(0, 1) as unknown) || [];
             await client.sendMessage({ body: processedMsg, attachment }, event.threadID, event.messageID);
             return;
           }

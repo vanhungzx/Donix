@@ -3,36 +3,41 @@
 import type { Command, CommandOnCallContext } from '@types';
 const parseAmount = (value: string): bigint | null => {
   if (!value || typeof value !== "string") return null;
-  if (!isNaN(Number(value))) {
-    return BigInt(Math.floor(Number(value)));
-  }
-  const match = value.match(/^\d+$/);
-  if (match) {
-    return BigInt(value);
-  }
-  const complexMatch = value.match(/^(\d*\.?\d*)([bkmtr]*)?(\d*)$/i);
-  if (!complexMatch) return null;
-  let [, mainNumber, unit, decimalPart] = complexMatch;
-  let numericValue = parseFloat(mainNumber + (decimalPart ? "." + decimalPart : ""));
-  if (isNaN(numericValue)) return null;
 
-  numericValue = Math.floor(numericValue * 100);
-  let baseNumber = BigInt(numericValue);
+  // Remove common formatting and trailing currency.
+  let s = value.trim().replace(/,/g, "");
+  s = s.replace(/\s*(vnđ|vnd)\s*$/i, "");
 
-  switch (unit?.toLowerCase()) {
-    case "b":
-    case "tỷ":
-      return (baseNumber * BigInt(1_000_000_000)) / BigInt(100);
-    case "m":
-    case "tr":
-    case "triệu":
-      return (baseNumber * BigInt(1_000_000)) / BigInt(100);
-    case "k":
-    case "ngàn":
-      return (baseNumber * BigInt(1_000)) / BigInt(100);
-    default:
-      return baseNumber / BigInt(100);
-  }
+  const m = s.match(/^(-?\d+(?:\.\d+)?)(?:\s*([a-zA-ZÀ-ỹ]+))?$/i);
+  if (!m) return null;
+
+  const numPart = m[1];
+  const unitRaw = (m[2] || "").toLowerCase();
+
+  // Parse as "cents" (x * 100) via string => BigInt to avoid precision loss.
+  const negative = numPart.startsWith("-");
+  const unsignedNum = negative ? numPart.slice(1) : numPart;
+  const [intStr, fracStr = ""] = unsignedNum.split(".");
+
+  if (!/^\d+$/.test(intStr) || (fracStr && !/^\d+$/.test(fracStr))) return null;
+
+  const frac2 = fracStr.padEnd(2, "0").slice(0, 2); // truncate after 2 decimals
+  const cents = BigInt(intStr) * 100n + BigInt(frac2);
+
+  const mul =
+    unitRaw === "b" || unitRaw === "tỷ" || unitRaw === "ty"
+      ? 1_000_000_000n
+      : unitRaw === "m" || unitRaw === "tr" || unitRaw === "triệu"
+        ? 1_000_000n
+        : unitRaw === "k" || unitRaw === "ngàn" || unitRaw === "ngan" || unitRaw === "nghìn" || unitRaw === "nghin"
+          ? 1_000n
+          : unitRaw === ""
+            ? 1n
+            : null;
+
+  if (mul === null) return null;
+  const out = (cents * mul) / 100n;
+  return negative ? -out : out;
 };
 
 const formatCurrency = (amount: number | bigint | null | undefined): string => {
@@ -60,10 +65,11 @@ const setmoneyCommand: Command = {
     • {pn} set <số tiền> @tag → Đặt số tiền cho người được tag
     Ví dụ: {pn} set 5000 @Nam
 
-    3️⃣ Xóa tiền:
-    • {pn} clean → Xóa tiền của bản thân
-    • {pn} clean @tag → Xóa tiền của người được tag
-    • {pn} clean all → Xóa tiền của tất cả thành viên trong nhóm
+    3️⃣ Reset tiền (xóa tiền):
+    • {pn} clean|rs → Reset tiền của bản thân
+    • {pn} clean|rs @tag → Reset tiền của người được tag
+    • {pn} clean|rs box|group → Reset tiền của tất cả thành viên trong nhóm
+    • {pn} clean|rs all → Reset tiền của toàn server (tất cả user trong hệ thống)
 
     4️⃣ Xóa toàn bộ:
     • {pn} reset → Xóa dữ liệu tiền của tất cả người dùng trong hệ thống`,
@@ -76,20 +82,24 @@ const setmoneyCommand: Command = {
     const mentionID = mentions ? Object.keys(mentions) : [];
     let money: bigint | null = null;
 
-    const moneyArg = args[1] || args[0];
+    const action = String(args[0] || "").toLowerCase();
+    const shouldParseMoney = action !== "clean" && action !== "rs" && action !== "reset";
 
-    if (moneyArg && moneyArg !== "all") {
-      try {
-        money = parseAmount(moneyArg);
-        if (money === null || money <= 0n) {
+    if (shouldParseMoney) {
+      const moneyArg = args[1] || args[0];
+      if (moneyArg && moneyArg !== "all") {
+        try {
+          money = parseAmount(moneyArg);
+          if (money === null || money <= 0n) {
+            if (react) react("❌");
+            await reply({ body: "❎ Số tiền phải là một số hợp lệ và lớn hơn 0" });
+            return;
+          }
+        } catch (e) {
           if (react) react("❌");
-          await reply({ body: "❎ Số tiền phải là một số hợp lệ và lớn hơn 0" });
+          await reply({ body: "❎ Số tiền không hợp lệ" });
           return;
         }
-      } catch (e) {
-        if (react) react("❌");
-        await reply({ body: "❎ Số tiền không hợp lệ" });
-        return;
       }
     }
 
@@ -204,8 +214,42 @@ const setmoneyCommand: Command = {
           }
         }
 
-        case "clean": {
-          if (args[1] === "all") {
+        case "clean":
+        case "rs": {
+          const sub = (args[1] || "").toLowerCase();
+
+          if (sub === "all") {
+            const idAll = userData.idAll as (() => Promise<string[]>) | undefined;
+            if (!idAll) {
+              if (react) react("❌");
+              await reply({ body: "❎ Lỗi hệ thống: không thể lấy danh sách người dùng" });
+              return;
+            }
+            const allUserIDs = await idAll();
+
+            const setMoney = userData.setMoney as ((id: string, amount: bigint) => Promise<void>) | undefined;
+            if (!setMoney) {
+              if (react) react("❌");
+              await reply({ body: "❎ Lỗi hệ thống: không thể đặt tiền" });
+              return;
+            }
+
+            for (const userID of allUserIDs) {
+              try {
+                await setMoney(userID, 0n);
+                message.push(userID);
+              } catch (e) {
+                error.push(e);
+              }
+            }
+            if (react) react("✅");
+            await reply({
+              body: `✅ Đã reset tiền của toàn server (${message.length} người)`,
+            });
+            return;
+          }
+
+          if (sub === "box" || sub === "group") {
             if (!participantIDs || participantIDs.length === 0) {
               if (react) react("❌");
               await reply({ body: "❎ Không tìm thấy danh sách thành viên trong nhóm" });
@@ -228,10 +272,12 @@ const setmoneyCommand: Command = {
             }
             if (react) react("✅");
             await reply({
-              body: `✅ Đã xóa toàn bộ tiền của nhóm (${message.length} người)`,
+              body: `✅ Đã reset tiền của nhóm (${message.length} người)`,
             });
             return;
-          } else if (mentionID.length > 0) {
+          }
+
+          if (mentionID.length > 0) {
             const setMoney = userData.setMoney as ((id: string, amount: bigint) => Promise<void>) | undefined;
             if (!setMoney) {
               if (react) react("❌");

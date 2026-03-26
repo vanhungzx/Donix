@@ -1,11 +1,18 @@
 {
-  "lastDailyReset": "Wed Mar 25 2026",
+  "lastDailyReset": "Fri Mar 27 2026",
   "keys": [
+    {
+      "key": "AIzaSyBgH3rTd_5jL2W0Os8vInI1b9YFyKv4ihE",
+      "remaining": {
+        "flash": 20,
+        "lite": 20
+      }
+    },
     {
       "key": "AIzaSyAa6YF7flKBD7cLhwexqiUESFzUKtwO6fc",
       "remaining": {
-        "flash": 0,
-        "lite": 0
+        "flash": 20,
+        "lite": 20
       }
     }
   ]

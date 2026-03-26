@@ -169,7 +169,9 @@ export interface FacebookClient {
     callback?: (err: Error | null, result?: ChangeNicknameResponse) => void
   ) => Promise<ChangeNicknameResponse>;
   changeGroupImage: (imageID: string, threadID: string, callback?: (err?: Error) => void) => Promise<void>;
+  changeThreadEmoji: (emoji: string, threadID: string | number, callback?: (err?: Error) => void) => Promise<void>;
   setTheme: (themeID: string, threadID: string, callback?: (err?: Error) => void) => Promise<void>;
+  setThemeFromImage: (imagePath: string | Buffer, threadID: string, callback?: (err?: Error) => void) => Promise<void>;
   addUserToGroup: (userID: string, threadID: string, callback?: (err?: Error) => void) => Promise<void>;
   removeUserFromGroup: (userID: string, threadID: string, callback?: (err?: Error) => void) => Promise<void>;
 

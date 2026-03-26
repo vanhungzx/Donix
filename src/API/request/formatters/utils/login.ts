@@ -29,6 +29,8 @@ const saveCookies =
         cookies.forEach((c: string) => {
           if (c.includes(".facebook.com")) {
             jar.setCookie(c, "https://www.facebook.com");
+            // Also bind cookies to business subdomain for business.* endpoints
+            jar.setCookie(c, "https://business.facebook.com");
             jar.setCookie(
               c.replace(/domain=\.facebook\.com/, "domain=.messenger.com"),
               "https://www.messenger.com"
@@ -41,14 +43,15 @@ const saveCookies =
 
 const getAppState = (jar: ToughCookieJar & CookieJar): any[] => {
   const cookies1 = jar.getCookiesSync
-    ? jar.getCookiesSync("https://www.facebook.com")
-    : jar.getCookies("https://www.facebook.com");
+    ? jar.getCookiesSync("https://business.facebook.com")
+    : jar.getCookies("https://business.facebook.com");
+  const cookies1b = jar.getCookiesSync ? jar.getCookiesSync("https://www.facebook.com") : jar.getCookies("https://www.facebook.com");
   const cookies2 = jar.getCookiesSync
     ? jar.getCookiesSync("https://www.messenger.com")
     : jar.getCookies("https://www.messenger.com");
-  return (Array.isArray(cookies1) ? cookies1 : []).concat(
-    Array.isArray(cookies2) ? cookies2 : []
-  );
+  return (Array.isArray(cookies1) ? cookies1 : [])
+    .concat(Array.isArray(cookies1b) ? cookies1b : [])
+    .concat(Array.isArray(cookies2) ? cookies2 : []);
 };
 
 class CustomError extends Error {
@@ -284,6 +287,10 @@ function parseAndCheckLogin(
           "https://www.facebook.com"
         );
         (ctx as Context).jar.setCookie(
+          formatCookie(res.jsmods.require[0][3], "facebook"),
+          "https://business.facebook.com"
+        );
+        (ctx as Context).jar.setCookie(
           formatCookie(res.jsmods.require[0][3], "messenger"),
           "https://www.messenger.com"
         );
@@ -328,7 +335,7 @@ function markDelivery(ctx: Context, client: Client, threadID: string, messageID:
 const getJar = (): ToughCookieJar & CookieJar => {
   const jar = new ToughCookieJar();
   const boundGetCookieStringSync = jar.getCookieStringSync.bind(jar);
-  (jar as any).cookieString = () => boundGetCookieStringSync("https://www.facebook.com");
+  (jar as any).cookieString = () => boundGetCookieStringSync("https://business.facebook.com");
   return jar as ToughCookieJar & CookieJar;
 };
 

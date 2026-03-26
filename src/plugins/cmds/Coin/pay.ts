@@ -25,35 +25,40 @@ const parseAmount = (value: string | undefined, balance: bigint): bigint | null 
     return (b * BigInt(p)) / 100n;
   }
 
-  if (!isNaN(Number(value))) return BigInt(Math.floor(Number(value)));
+  // Parse money value: support digits + optional decimal + optional suffix (k/m/b).
+  // Avoid Number/parseFloat on the integer part to keep precision for huge values.
+  let s = String(value).trim().replace(/,/g, "");
+  s = s.replace(/\s*(vnđ|vnd)\s*$/i, "");
 
-  const match = String(value).match(/^\d+$/);
-  if (match) return BigInt(value);
+  const m = s.match(/^(-?\d+(?:\.\d+)?)(?:\s*([a-zA-ZÀ-ỹ]+))?$/i);
+  if (!m) return null;
 
-  const complexMatch = String(value).match(/^(\d*\.?\d*)([bkmtrịệũngàntriệu|tr|ngàn|tỷ]*)?(\d*)$/i);
-  if (!complexMatch) return null;
+  const numPart = m[1];
+  const unitRaw = (m[2] || "").toLowerCase();
 
-  let [, mainNumber, unit, decimalPart] = complexMatch;
-  let numericValue = parseFloat(mainNumber + (decimalPart ? "." + decimalPart : ""));
-  if (isNaN(numericValue)) return null;
+  const negative = numPart.startsWith("-");
+  const unsignedNum = negative ? numPart.slice(1) : numPart;
+  const [intStr, fracStr = ""] = unsignedNum.split(".");
 
-  numericValue = Math.floor(numericValue * 100);
-  let baseNumber = BigInt(numericValue);
+  if (!/^\d+$/.test(intStr) || (fracStr && !/^\d+$/.test(fracStr))) return null;
 
-  switch ((unit || "").toLowerCase()) {
-    case "b":
-    case "tỷ":
-      return (baseNumber * 1000000000n) / 100n;
-    case "m":
-    case "tr":
-    case "triệu":
-      return (baseNumber * 1000000n) / 100n;
-    case "k":
-    case "ngàn":
-      return (baseNumber * 1000n) / 100n;
-    default:
-      return baseNumber / 100n;
-  }
+  const frac2 = fracStr.padEnd(2, "0").slice(0, 2);
+  const cents = BigInt(intStr) * 100n + BigInt(frac2);
+
+  const mul =
+    unitRaw === "b" || unitRaw === "tỷ" || unitRaw === "ty"
+      ? 1_000_000_000n
+      : unitRaw === "m" || unitRaw === "tr" || unitRaw === "triệu"
+        ? 1_000_000n
+        : unitRaw === "k" || unitRaw === "ngàn" || unitRaw === "ngan" || unitRaw === "nghìn" || unitRaw === "nghin"
+          ? 1_000n
+          : unitRaw === ""
+            ? 1n
+            : null;
+
+  if (mul === null) return null;
+  const out = (cents * mul) / 100n;
+  return negative ? -out : out;
 };
 
 const formatCurrency = (amount: bigint | number | string): string => {

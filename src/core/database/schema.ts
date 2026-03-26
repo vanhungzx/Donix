@@ -230,6 +230,60 @@ async function createTables(): Promise<void> {
     )
   `);
 
+  // --- Tài/Xỉu (taixiu / txiu) ---
+  // Use TEXT for very large money (BigInt) to avoid SQLite INTEGER overflow.
+  await dbProm.exec(`
+    CREATE TABLE IF NOT EXISTS TaixiuJackpot (
+      threadID TEXT PRIMARY KEY,
+      amount TEXT NOT NULL DEFAULT '0',
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS TaixiuWinStreak (
+      userID TEXT PRIMARY KEY,
+      current INTEGER NOT NULL DEFAULT 0,
+      highest INTEGER NOT NULL DEFAULT 0,
+      loses INTEGER NOT NULL DEFAULT 0,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS TaixiuHistory (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userID TEXT NOT NULL,
+      bet TEXT NOT NULL,
+      diceResult TEXT NOT NULL,
+      gameResult TEXT NOT NULL,
+      win INTEGER NOT NULL DEFAULT 0,
+      winAmount TEXT NOT NULL DEFAULT '0',
+      jackpotWin INTEGER NOT NULL DEFAULT 0,
+      timestamp INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_taixiu_history_user_time
+      ON TaixiuHistory(userID, timestamp DESC);
+
+    CREATE TABLE IF NOT EXISTS TxiuJackpot (
+      threadID TEXT PRIMARY KEY,
+      amount TEXT NOT NULL DEFAULT '0',
+      chance REAL NOT NULL DEFAULT 0.3,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS TxiuHistory (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      threadID TEXT NOT NULL,
+      time INTEGER NOT NULL,
+      result TEXT NOT NULL,
+      dice1 INTEGER NOT NULL,
+      dice2 INTEGER NOT NULL,
+      dice3 INTEGER NOT NULL,
+      sum INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_txiu_history_thread_time
+      ON TxiuHistory(threadID, time DESC);
+  `);
+
   // Ensure legacy databases also have imageSrc column
   try {
     await dbProm.run(`ALTER TABLE Thread ADD COLUMN imageSrc TEXT`);

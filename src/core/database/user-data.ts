@@ -13,7 +13,7 @@ export interface UserData {
   banned?: Record<string, { reason?: string; time?: number;[key: string]: unknown }> | null;
   joinedThreads?: Record<string, unknown> | null;
   exp?: number;
-  money?: number | bigint;
+  money?: bigint;
   messageCount?: Record<string, unknown> | number | null;
   createdAt?: number;
   updatedAt?: number;
@@ -35,6 +35,28 @@ const validateData = (data: any): void => {
 const isValidAmount = (amount: any): boolean =>
   (typeof amount === "number" && Number.isInteger(amount) && amount >= 0) ||
   (typeof amount === "bigint" && amount >= 0n);
+
+const toBigIntMoney = (raw: any): bigint => {
+  try {
+    if (raw === undefined || raw === null) return 0n;
+    if (typeof raw === "bigint") return raw;
+    if (typeof raw === "number") {
+      if (!Number.isFinite(raw)) return 0n;
+      return BigInt(Math.trunc(raw));
+    }
+    const s = String(raw).trim();
+    if (!s) return 0n;
+    if (/^-?\d+$/.test(s)) return BigInt(s);
+    if (/^-?\d+\.\d+$/.test(s)) {
+      const intPart = s.split(".")[0];
+      return BigInt(intPart);
+    }
+    // Fallback best-effort.
+    return BigInt(s);
+  } catch {
+    return 0n;
+  }
+};
 
 const parseJSONField = (field: any, defaultValue: any = {}): any => {
   if (typeof field === "string" && field.trim()) {
@@ -78,7 +100,7 @@ const rowToUserData = (row: any): UserData => {
     banned: normalizeBanField(row.banned),
     joinedThreads: parseJSONField(row.joinedThreads),
     exp: row.exp || 0,
-    money: row.money || 0,
+    money: toBigIntMoney(row.money),
     messageCount: parseJSONField(row.messageCount),
     createdAt: row.createdAt ? Math.floor(new Date(row.createdAt).getTime() / 1000) : undefined,
     updatedAt: row.updatedAt ? Math.floor(new Date(row.updatedAt).getTime() / 1000) : undefined,
@@ -133,7 +155,7 @@ class UserDataModel {
             if (key === "banned") updateValues.push(stringifyBanField(value));
             else updateValues.push(JSON.stringify(value || {}));
           } else {
-            updateValues.push(value);
+            updateValues.push(key === "money" && typeof value === "bigint" ? value.toString() : value);
           }
         }
 
@@ -165,7 +187,7 @@ class UserDataModel {
           } else if (key === "createdAt" || key === "updatedAt") {
             values.push(value);
           } else {
-            values.push(value);
+            values.push(key === "money" && typeof value === "bigint" ? value.toString() : value);
           }
         }
 
@@ -232,7 +254,7 @@ class UserDataModel {
             if (key === "banned") updateValues.push(stringifyBanField(value));
             else updateValues.push(JSON.stringify(value || {}));
           } else {
-            updateValues.push(value);
+            updateValues.push(key === "money" && typeof value === "bigint" ? value.toString() : value);
           }
         }
 
@@ -272,7 +294,7 @@ class UserDataModel {
         } else if (key === "createdAt" || key === "updatedAt") {
           values.push(value);
         } else {
-          values.push(value);
+            values.push(key === "money" && typeof value === "bigint" ? value.toString() : value);
         }
       }
 
@@ -349,6 +371,7 @@ class UserDataModel {
         if (result.data !== undefined) result.data = parseJSONField(result.data);
         if (result.banned !== undefined) result.banned = normalizeBanField(result.banned);
         if (result.joinedThreads !== undefined) result.joinedThreads = parseJSONField(result.joinedThreads);
+        if (result.money !== undefined) result.money = toBigIntMoney(result.money);
         if (result.messageCount !== undefined) result.messageCount = parseJSONField(result.messageCount);
 
         return result;
@@ -376,7 +399,7 @@ class UserDataModel {
     }
   }
 
-  async checkMoney(userID: string | number): Promise<number | bigint> {
+  async checkMoney(userID: string | number): Promise<bigint> {
     try {
       const uid = validateUserID(userID);
       const db = getDbPromisified();
@@ -395,13 +418,13 @@ class UserDataModel {
           throw new Error(`Failed to create user with ID ${uid}.`);
         }
       }
-      return row.money || 0;
+      return toBigIntMoney(row.money);
     } catch (error: any) {
       throw new Error(`Failed to check money: ${error.message}`);
     }
   }
 
-  async addMoney(userID: string | number, amount: number | bigint): Promise<number | bigint> {
+  async addMoney(userID: string | number, amount: number | bigint): Promise<bigint> {
     try {
       if (!isValidAmount(amount)) {
         throw new Error("Amount must be a non-negative integer or BigInt.");
@@ -422,21 +445,14 @@ class UserDataModel {
         });
       }
 
-      // Tối ưu: Sử dụng một query duy nhất với CAST để tính toán trực tiếp
-      // Sử dụng REAL để đảm bảo phép cộng số học chính xác (không phải string concatenation)
+      // BigInt addition in JS to avoid SQLite REAL precision loss on very large numbers.
+      const currentRow = await db.get("SELECT money FROM User WHERE userID = ?", [uid]) as any;
+      const currentMoney = toBigIntMoney(currentRow?.money);
       const addAmount = BigInt(String(amount));
-      const result = await db.run(
-        "UPDATE User SET money = CAST(COALESCE(money, 0) AS REAL) + CAST(? AS REAL) WHERE userID = ?",
-        [addAmount.toString(), uid]
-      ) as any;
+      const finalMoney = currentMoney + addAmount;
 
-      if (!result || result.changes === 0) {
-        throw new Error(`Failed to add money: database update failed.`);
-      }
-
-      // Lấy giá trị mới sau khi update
-      const finalRow = await db.get("SELECT money FROM User WHERE userID = ?", [uid]) as any;
-      return BigInt(String(finalRow?.money || 0));
+      await db.run("UPDATE User SET money = ? WHERE userID = ?", [finalMoney.toString(), uid]);
+      return finalMoney;
     } catch (error: any) {
       // Tránh bọc lại lỗi nếu đã có prefix "Failed to add money"
       if (error.message && error.message.startsWith("Failed to add money:")) {
@@ -446,7 +462,7 @@ class UserDataModel {
     }
   }
 
-  async delMoney(userID: string | number, amount: number | bigint): Promise<number | bigint> {
+  async delMoney(userID: string | number, amount: number | bigint): Promise<bigint> {
     try {
       if (!isValidAmount(amount)) {
         throw new Error("Amount must be a non-negative integer or BigInt.");
@@ -471,7 +487,7 @@ class UserDataModel {
         }
       }
 
-      const currentMoney = BigInt(String(row.money || 0));
+      const currentMoney = toBigIntMoney(row.money);
       const subtractAmount = BigInt(String(amount));
 
       // Kiểm tra số dư
@@ -479,25 +495,10 @@ class UserDataModel {
         throw new Error(`Insufficient funds. Current balance: ${currentMoney}, required: ${subtractAmount}.`);
       }
 
-      // Update với điều kiện kiểm tra số dư để tránh race condition
-      // Sử dụng CAST để đảm bảo so sánh số học chính xác (xử lý cả INTEGER và TEXT storage)
       const newMoney = currentMoney - subtractAmount;
-      // So sánh bằng cách chuyển đổi sang REAL để xử lý số lớn, sau đó so sánh
-      const result = await db.run(
-        "UPDATE User SET money = ? WHERE userID = ? AND CAST(COALESCE(money, 0) AS REAL) >= CAST(? AS REAL)",
-        [newMoney.toString(), uid, subtractAmount.toString()]
-      ) as any;
 
-      if (!result || result.changes === 0) {
-        // Kiểm tra lại số dư để đưa ra thông báo chính xác
-        const checkRow = await db.get("SELECT money FROM User WHERE userID = ?", [uid]) as any;
-        const checkMoney = checkRow ? BigInt(String(checkRow.money || 0)) : 0n;
-        if (checkMoney < subtractAmount) {
-          throw new Error(`Insufficient funds. Current balance: ${checkMoney}, required: ${subtractAmount}.`);
-        }
-        throw new Error(`Failed to deduct money: database update failed.`);
-      }
-
+      // BigInt subtraction in JS to avoid SQLite REAL precision loss.
+      await db.run("UPDATE User SET money = ? WHERE userID = ?", [newMoney.toString(), uid]);
       return newMoney;
     } catch (error: any) {
       // Tránh bọc lại lỗi nếu đã có prefix "Failed to deduct money" hoặc "Insufficient funds"
@@ -511,7 +512,7 @@ class UserDataModel {
     }
   }
 
-  async setMoney(userID: string | number, amount: number | bigint): Promise<number | bigint> {
+  async setMoney(userID: string | number, amount: number | bigint): Promise<bigint> {
     try {
       if (!isValidAmount(amount)) {
         throw new Error("Amount must be a non-negative integer or BigInt.");
@@ -575,7 +576,7 @@ class UserDataModel {
     }
   }
 
-  async getTopMoneyThread(participantIDs: string[], limit: number = 10): Promise<Array<{ userID: string; money: number | bigint }>> {
+  async getTopMoneyThread(participantIDs: string[], limit: number = 10): Promise<Array<{ userID: string; money: bigint }>> {
     try {
       if (!Array.isArray(participantIDs) || !participantIDs.length) {
         throw new Error("Participant IDs must be a non-empty array.");
@@ -583,25 +584,54 @@ class UserDataModel {
       const db = getDbPromisified();
       const placeholders = participantIDs.map(() => '?').join(',');
       const results = await db.all(
-        `SELECT userID, money FROM User WHERE userID IN (${placeholders}) ORDER BY money DESC LIMIT ?`,
+        `SELECT userID, money FROM User WHERE userID IN (${placeholders})
+         ORDER BY LENGTH(CAST(money AS TEXT)) DESC, CAST(money AS TEXT) DESC
+         LIMIT ?`,
         [...participantIDs, limit]
       ) as any[];
-      return results.map((row: any) => ({ userID: row.userID, money: row.money || 0 }));
+      return results.map((row: any) => ({ userID: row.userID, money: toBigIntMoney(row.money) }));
     } catch (error: any) {
       throw new Error(`Failed to get top money: ${error.message}`);
     }
   }
 
-  async getTopMoneyServer(limit: number = 10): Promise<Array<{ userID: string; money: number | bigint }>> {
+  async getTopMoneyServer(limit: number = 10): Promise<Array<{ userID: string; money: bigint }>> {
     try {
       const db = getDbPromisified();
       const results = await db.all(
-        `SELECT userID, money FROM User ORDER BY money DESC LIMIT ?`,
+        `SELECT userID, money FROM User
+         ORDER BY LENGTH(CAST(money AS TEXT)) DESC, CAST(money AS TEXT) DESC
+         LIMIT ?`,
         [limit]
       ) as any[];
-      return results.map((row: any) => ({ userID: row.userID, money: row.money || 0 }));
+      return results.map((row: any) => ({ userID: row.userID, money: toBigIntMoney(row.money) }));
     } catch (error: any) {
       throw new Error(`Failed to get top money in server: ${error.message}`);
+    }
+  }
+
+  async getTopExp(limit: number = 10): Promise<Array<{ userID: string; exp: number }>> {
+    try {
+      const db = getDbPromisified();
+      // Cast to REAL so ordering works even if `exp` is stored as TEXT.
+      const results = await db.all(
+        `SELECT userID, exp
+         FROM User
+         WHERE exp IS NOT NULL AND CAST(COALESCE(exp, 0) AS REAL) > 0
+         ORDER BY CAST(COALESCE(exp, 0) AS REAL) DESC
+         LIMIT ?`,
+        [limit]
+      ) as any[];
+
+      return results.map((row: any) => {
+        const expNum = Number(row.exp);
+        return {
+          userID: String(row.userID),
+          exp: Number.isFinite(expNum) && expNum >= 0 ? expNum : 0
+        };
+      });
+    } catch (error: any) {
+      throw new Error(`Failed to get top exp in server: ${error.message}`);
     }
   }
 

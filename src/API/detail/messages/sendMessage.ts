@@ -3,6 +3,7 @@ import { generateOfflineThreadingID } from "../../request/formatters/index";
 import { type Context, type DefaultFuncs } from "../../request/formatters/helpers";
 import { getCleanupManager } from "../../../core/managers/cleanupManager";
 import uploadFbFactory from "./uploadFb";
+import uploadFb2Factory from "./uploadFb2";
 
 interface ExtendedError extends Error {
   code?: string;
@@ -1124,9 +1125,42 @@ const uploadAttachment = async (
 ): Promise<(string | number)[]> => {
   const arr = Array.isArray(inputs) ? inputs : [inputs];
   if (!arr.length) return [];
+  let uploadFb2Error: unknown = null;
   let uploadFbError: unknown = null;
 
-  // Try uploadFb first
+  // Try uploadFb2 (Business upload) first
+  try {
+    const uploadFb2 = uploadFb2Factory(defaultFuncs, undefined, ctx);
+    const result = await uploadFb2(arr, { mode: "parallel", concurrency: 3 });
+
+    if (result && result.ids && Array.isArray(result.ids) && result.ids.length > 0) {
+      const ids = result.ids
+        .map((r) => {
+          if (!r) return null;
+          return (
+            r.fbid ||
+            r.image_id ||
+            r.video_id ||
+            r.audio_id ||
+            r.file_id ||
+            r.gif_id ||
+            r.id ||
+            r.upload_id
+          );
+        })
+        .filter(Boolean) as (string | number)[];
+
+      if (ids.length > 0) {
+        return ids;
+      }
+    }
+  } catch (err) {
+    uploadFb2Error = err;
+    log.warn(`uploadAttachment (uploadFb2 failed): ${(err as Error)?.message || err}`);
+    // uploadFb2 failed, will try uploadFb next
+  }
+
+  // Try uploadFb second (www upload)
   try {
     const uploadFb = uploadFbFactory(defaultFuncs, undefined, ctx);
     const result = await uploadFb(arr, { mode: "parallel", concurrency: 3 });
@@ -1165,7 +1199,9 @@ const uploadAttachment = async (
       const reason =
         uploadFbError
           ? ` (reason: ${String((uploadFbError as any)?.code || "")} ${(uploadFbError as any)?.message || uploadFbError})`
-          : " (reason: uploadFb returned no IDs)";
+          : uploadFb2Error
+            ? ` (reason: ${String((uploadFb2Error as any)?.code || "")} ${(uploadFb2Error as any)?.message || uploadFb2Error})`
+            : " (reason: uploadFb returned no IDs)";
       log.warn(`[sendMessage/uploadAttachment] fallback -> ruploadAttachment${reason}`);
 
       // Wrap files into task format that ruploadAttachment expects
@@ -1192,11 +1228,13 @@ const uploadAttachment = async (
       if (error.stack) {
         log.error(`[sendMessage/uploadAttachment] Error stack: ${error.stack}`);
       }
-      throw new Error(`Upload failed: uploadFb and ruploadAttachment both failed. Last error: ${error?.message || e2}`);
+      throw new Error(
+        `Upload failed: uploadFb2/uploadFb and ruploadAttachment both failed. Last error: ${error?.message || e2}`
+      );
     }
   }
 
-  throw new Error("Upload failed: uploadFb returned no IDs and ruploadAttachment is not available");
+  throw new Error("Upload failed: uploadFb2/uploadFb returned no IDs and ruploadAttachment is not available");
 };
 
 const ensureQ = (id: any): QueueItem[] => {

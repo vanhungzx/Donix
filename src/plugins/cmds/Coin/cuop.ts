@@ -1,91 +1,130 @@
 import type { Command, CommandOnCallContext } from "@types";
 
+const toBI = (value: unknown): bigint => {
+  if (typeof value === "bigint") return value;
+  if (typeof value === "number") return BigInt(Math.trunc(value));
+  if (typeof value === "string") {
+    const raw = value.trim();
+    if (!raw) return 0n;
+    try {
+      return BigInt(raw);
+    } catch {
+      return 0n;
+    }
+  }
+  if (value == null) return 0n;
+  try {
+    return BigInt(value as bigint | number | string);
+  } catch {
+    return 0n;
+  }
+};
+
+const formatCurrency = (amount: bigint | number | string | null | undefined): string => {
+  if (amount === null || amount === undefined) return "0 VND";
+  return `${toBI(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} VND`;
+};
+
+const calcPercent = (amount: bigint, percent: number): bigint => {
+  if (!Number.isFinite(percent) || percent <= 0) return 0n;
+  return (amount * BigInt(percent)) / 100n;
+};
+
 const command: Command = {
   name: "cuop",
-  version: "1.2.0",
+  version: "1.3.0",
   alias: ["robbery"],
   role: 0,
-  desc: "Cướp tiền từ người dùng khác",
-  guide: "{pn} @tag/[reply]: Cướp tiền từ người dùng\n- Cần 1,000 VNĐ để thực hiện",
+  desc: "Cuop tien tu nguoi dung khac",
+  guide: "{pn} @tag/[reply]: Cuop tien tu nguoi dung\n- Can 1,000 VND de thuc hien",
   cd: 10,
   prefix: true,
   onCall: async ({ config, event, userData, reply, threadData }: CommandOnCallContext) => {
     const { senderID, mentions, messageReply } = event;
-
-    const formatCurrency = (amount: bigint | number | string | null | undefined): string => {
-      if (!amount && amount !== 0) return "";
-      const bigIntAmount = typeof amount === "bigint" ? amount : BigInt(amount);
-      return bigIntAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " VNĐ";
-    };
+    const nowMs = Date.now();
 
     const user = await userData.get(senderID);
-    const userDataObj = user?.data && typeof user.data === 'object' ? user.data as { cuop?: { jail?: { time?: number } } } : undefined;
+    const userDataObj =
+      user?.data && typeof user.data === "object"
+        ? (user.data as { cuop?: { jail?: { time?: number } } })
+        : undefined;
     const jailStatus = userDataObj?.cuop?.jail;
-    if (jailStatus && typeof jailStatus.time === 'number' && jailStatus.time > Date.now()) {
-      const timeLeft = Math.ceil((jailStatus.time - Date.now()) / 60000);
-      await reply(`🔒 Bạn đang ở tù! Còn ${timeLeft} phút nữa mới được ra!\nHãy ngoan ngoãn ngồi suy nghĩ về hành động của mình 😏`);
+    if (jailStatus && typeof jailStatus.time === "number" && jailStatus.time > nowMs) {
+      const timeLeft = Math.ceil((jailStatus.time - nowMs) / 60000);
+      await reply(`Ban dang o tu, con ${timeLeft} phut nua moi duoc ra.`);
       return;
     }
 
     let targetID: string;
-    let targetName: string;
-    if (messageReply) {
-      targetID = messageReply.senderID || "";
+    let targetName = "Nguoi dung";
+    if (messageReply?.senderID) {
+      targetID = String(messageReply.senderID);
       const getName = userData.getName as ((sid: string) => Promise<string | undefined>) | undefined;
-      targetName = getName ? await getName(targetID) || "" : "";
+      targetName = (getName ? await getName(targetID) : "") || targetName;
     } else if (Object.keys(mentions || {}).length === 1) {
-      const mentionKeys = Object.keys(mentions || {});
-      const firstKey = mentionKeys[0];
+      const firstKey = Object.keys(mentions || {})[0];
       if (!firstKey) {
-        await reply("❌ Không tìm thấy người dùng được đề cập!");
+        await reply("Khong tim thay nguoi dung duoc de cap.");
         return;
       }
       targetID = firstKey;
-      const mentionValue = mentions && typeof mentions === 'object' && targetID in mentions
-        ? mentions[targetID]
-        : undefined;
-      targetName = typeof mentionValue === 'string' ? mentionValue.replace(/@/g, "") : "";
+      const mentionValue =
+        mentions && typeof mentions === "object" && targetID in mentions
+          ? mentions[targetID]
+          : undefined;
+      if (typeof mentionValue === "string" && mentionValue.trim()) {
+        targetName = mentionValue.replace(/@/g, "");
+      }
     } else {
       const thread = await threadData.get(event.threadID);
       const threadInfo = thread?.threadInfo;
-      const participants = threadInfo && typeof threadInfo === 'object' && 'participantIDs' in threadInfo && Array.isArray(threadInfo.participantIDs)
-        ? threadInfo.participantIDs.filter((id): id is string => typeof id === 'string' && id !== senderID)
-        : [];
+      const participants =
+        threadInfo &&
+        typeof threadInfo === "object" &&
+        "participantIDs" in threadInfo &&
+        Array.isArray(threadInfo.participantIDs)
+          ? threadInfo.participantIDs.filter(
+              (id): id is string => typeof id === "string" && id !== senderID
+            )
+          : [];
       if (participants.length === 0) {
-        await reply("❌ Không có ai khác trong nhóm để cướp!");
+        await reply("Khong co ai khac trong nhom de cuop.");
         return;
       }
       const randomTarget = participants[Math.floor(Math.random() * participants.length)];
       if (!randomTarget) {
-        await reply("❌ Không thể chọn mục tiêu ngẫu nhiên!");
+        await reply("Khong the chon muc tieu ngau nhien.");
         return;
       }
       targetID = randomTarget;
       const getName = userData.getName as ((sid: string) => Promise<string | null | undefined>) | undefined;
-      targetName = getName ? await getName(targetID) || "" : "";
-      await reply(`🎯 Mục tiêu ngẫu nhiên: ${targetName}\n"Hehe, người này trông có vẻ dễ ăn đây!"`);
+      targetName = (getName ? await getName(targetID) : "") || targetName;
     }
 
-    const ownerList = Array.isArray(config.OWNER) ? config.OWNER : (typeof config.OWNER === 'string' ? [config.OWNER] : []);
+    const ownerList = Array.isArray(config.OWNER)
+      ? config.OWNER
+      : typeof config.OWNER === "string"
+        ? [config.OWNER]
+        : [];
     if (ownerList.includes(targetID)) {
-      await reply("❌ Không thể cướp Owner!\nMuốn ăn đòn hả? 😠");
+      await reply("Khong the cuop Owner.");
       return;
     }
 
     if (targetID === senderID) {
-      await reply("❌ Không thể cướp chính mình!\nBạn định tự cướp túi mình à? 🤪");
+      await reply("Khong the cuop chinh minh.");
       return;
     }
 
-    const robberMoney: number = await userData.checkMoney(senderID);
-    const targetMoney: number = await userData.checkMoney(targetID);
+    const robberMoney = toBI(await userData.checkMoney(senderID));
+    const targetMoney = toBI(await userData.checkMoney(targetID));
 
-    if (robberMoney < 1000) {
-      await reply("💸 Bạn cần ít nhất 1,000 VNĐ để thực hiện!\nĐi làm thêm đi rồi tính chuyện cướp bóc 😪");
+    if (robberMoney < 1000n) {
+      await reply("Ban can it nhat 1,000 VND de thuc hien.");
       return;
     }
-    if (targetMoney < 1000) {
-      await reply(`💸 ${targetName} quá nghèo để cướp!\nHãy tìm mục tiêu khác giàu hơn 🎯`);
+    if (targetMoney < 1000n) {
+      await reply(`${targetName} qua ngheo de cuop, hay tim muc tieu khac.`);
       return;
     }
 
@@ -93,7 +132,7 @@ const command: Command = {
     const hour = new Date().getHours();
     if (hour >= 0 && hour < 4) {
       successRate += 0.1;
-      await reply("🌙 Trời tối quá, cơ hội thành công cao hơn!");
+      await reply("Troi toi, co hoi thanh cong cao hon.");
     }
 
     interface EventEffect {
@@ -104,9 +143,9 @@ const command: Command = {
     }
 
     const events: EventEffect[] = [
-      { chance: 0.1, bonus: 0.1, message: "🌧️ Trời mưa to, ít người qua lại!" },
-      { chance: 0.1, penalty: 0.1, message: "👮 Cảnh sát đang tuần tra nhiều!" },
-      { chance: 0.05, bonus: 0.15, message: "🎭 Bạn tìm được mặt nạ, khó bị nhận dạng hơn!" }
+      { chance: 0.1, bonus: 0.1, message: "Troi mua to, it nguoi qua lai." },
+      { chance: 0.1, penalty: 0.1, message: "Canh sat dang tuan tra nhieu." },
+      { chance: 0.05, bonus: 0.15, message: "Ban tim duoc mat na, kho bi nhan dang hon." },
     ];
 
     for (const e of events) {
@@ -118,102 +157,57 @@ const command: Command = {
     }
 
     if (Math.random() < 0.2) {
-      const currentBalance = await userData.checkMoney(senderID);
-      const fine = BigInt(Math.floor(currentBalance * 0.3));
+      const currentBalance = toBI(await userData.checkMoney(senderID));
+      const fine = calcPercent(currentBalance, 30);
       const jailTime = 10 * 60 * 1000;
 
       try {
-        await userData.delMoney(senderID, fine);
+        if (fine > 0n) {
+          await userData.delMoney(senderID, fine);
+        }
         await userData.update(senderID, { data: { cuop: { jail: { time: Date.now() + jailTime } } } });
-
-        const jailMessages = [
-          "👮 CÔNG AN! ĐỨNG IM!\n",
-          "🚔 Chạy đâu cho thoát!\n",
-          "⚖️ Tội cướp bóc, bắt tạm giam!\n"
-        ];
-
-        await reply(
-          jailMessages[Math.floor(Math.random() * jailMessages.length)] +
-          `Phạt ${formatCurrency(fine)} và ngồi tù 10 phút!`
-        );
-      } catch (error: any) {
-        // Nếu không đủ tiền để phạt, vẫn bắt vào tù nhưng không phạt tiền
+        await reply(`Cong an bat! Phat ${formatCurrency(fine)} va ngoi tu 10 phut.`);
+      } catch {
         await userData.update(senderID, { data: { cuop: { jail: { time: Date.now() + jailTime } } } });
-        await reply(
-          "👮 CÔNG AN! ĐỨNG IM!\n" +
-          "Bạn không có đủ tiền để nộp phạt, nhưng vẫn phải ngồi tù 10 phút!"
-        );
+        await reply("Cong an bat! Ban van phai ngoi tu 10 phut.");
       }
       return;
     }
 
     const success = Math.random() < successRate;
-
-    // Lấy exp hiện tại của người cướp, mặc định 0 nếu chưa có
     const currentExp =
-      user && typeof (user as any).exp !== "undefined"
-        ? Number((user as any).exp || 0)
+      user && typeof (user as { exp?: unknown }).exp !== "undefined"
+        ? Number((user as { exp?: unknown }).exp || 0)
         : 0;
 
     if (success) {
-      const stolenAmount = BigInt(Math.floor(targetMoney * 0.3));
+      const stolenAmount = calcPercent(targetMoney, 30);
       try {
-        await userData.addMoney(senderID, stolenAmount);
-        await userData.delMoney(targetID, stolenAmount);
-        // Cộng thêm 30 exp, không ghi đè exp hiện tại
+        if (stolenAmount > 0n) {
+          await userData.delMoney(targetID, stolenAmount);
+          await userData.addMoney(senderID, stolenAmount);
+        }
         await userData.update(senderID, { exp: currentExp + 30 });
-
-        const successMessages = [
-          "🎭 Phi vụ hoàn hảo!",
-          "💰 Dễ như ăn kẹo!",
-          "🦹 Không ai nhìn thấy gì cả!"
-        ];
-
-        await reply(
-          `${successMessages[Math.floor(Math.random() * successMessages.length)]}\n` +
-          `Chiếm được ${formatCurrency(stolenAmount)} từ ${targetName}!\n` +
-          "Kinh nghiệm: +30XP"
-        );
-      } catch (error: any) {
-        // Nếu không thể lấy tiền từ mục tiêu (ví dụ: mục tiêu đã hết tiền), vẫn cộng exp
+        await reply(`Thanh cong! Da cuop ${formatCurrency(stolenAmount)} tu ${targetName}. +30XP`);
+      } catch {
         await userData.update(senderID, { exp: currentExp + 30 });
-        await reply(
-          "🎭 Phi vụ thành công nhưng mục tiêu không còn tiền!\n" +
-          "Kinh nghiệm: +30XP"
-        );
+        await reply("Phi vu thanh cong nhung muc tieu khong con tien. +30XP");
       }
       return;
-    } else {
-      // Kiểm tra số dư hiện tại trước khi phạt
-      const currentBalance = await userData.checkMoney(senderID);
-      const penalty = BigInt(Math.floor(currentBalance * 0.2));
+    }
 
-      try {
+    const currentBalance = toBI(await userData.checkMoney(senderID));
+    const penalty = calcPercent(currentBalance, 20);
+
+    try {
+      if (penalty > 0n) {
         await userData.delMoney(senderID, penalty);
-        // Cộng thêm 10 exp, không ghi đè exp hiện tại
-        await userData.update(senderID, { exp: currentExp + 10 });
-
-        const failMessages = [
-          "💀 Xui quá, bị phát hiện!",
-          "😱 Chạy mau, có người gọi công an!",
-          "😅 Trượt chân té, bị bắt tại trận!"
-        ];
-
-        await reply(
-          `${failMessages[Math.floor(Math.random() * failMessages.length)]}\n` +
-          `Mất ${formatCurrency(penalty)} tiền phạt!\n` +
-          "Kinh nghiệm: +10XP"
-        );
-      } catch (error: any) {
-        // Nếu không đủ tiền để phạt, vẫn cộng exp nhưng không phạt tiền
-        await userData.update(senderID, { exp: currentExp + 10 });
-        await reply(
-          "💀 Xui quá, bị phát hiện!\n" +
-          "Bạn không có đủ tiền để nộp phạt, nhưng vẫn nhận được kinh nghiệm!\n" +
-          "Kinh nghiệm: +10XP"
-        );
       }
-      return;
+      await userData.update(senderID, { exp: currentExp + 10 });
+      await reply(`That bai! Mat ${formatCurrency(penalty)} tien phat. +10XP`);
+    } catch {
+      await userData.update(senderID, { exp: currentExp + 10 });
+      await reply("That bai! Ban khong du tien nop phat, van +10XP.");
     }
   }
 };

@@ -5,18 +5,24 @@ import path from "node:path";
 import { getConfig } from "../../../core/configManager";
 import { generateOfflineThreadingID } from "../../request/formatters";
 import { parseAndCheckLogin } from "../../request/formatters/helpers";
-type Callback = (err: any, data?: any) => void;
+type Callback = (err: Error | null, data?: unknown) => void;
 
 interface Ctx {
   userID: string;
   jar: any;
-  lsd: string;
+  lsd?: string;
+  access_token?: string;
   wsReqNumber: number;
   wsTaskNumber: number;
   options?: any;
   fb_dtsg?: string;
-  mqttClient: {
-    publish: (topic: string, message: string, options: { qos: number; retain: boolean }) => void;
+  mqttClient?: {
+    publish: (
+      topic: string,
+      message: string,
+      options: { qos: number; retain: boolean },
+      callback?: (err?: Error) => void
+    ) => void;
     on: (event: string, listener: (topic: string, message: Buffer) => void) => void;
     removeListener: (event: string, listener: (topic: string, message: Buffer) => void) => void;
   };
@@ -28,43 +34,102 @@ interface Theme {
 }
 
 export default function setThreadTheme(defaultFuncs: any, _api: any, ctx: Ctx) {
+  const toError = (error: unknown): Error =>
+    error instanceof Error ? error : new Error(String(error));
+
+  const toThreadKey = (threadID: string): string | number => {
+    const value = Number(threadID);
+    return Number.isFinite(value) ? value : threadID;
+  };
+
+  const MAX_IMAGE_SIZE = 50 * 1024 * 1024;
+
+  const isFacebookImageHost = (rawUrl: string): boolean => {
+    try {
+      const host = new URL(rawUrl).hostname.toLowerCase();
+      return (
+        host.includes("fbcdn.net") ||
+        host.includes("scontent") ||
+        host.endsWith("facebook.com") ||
+        host.endsWith("messenger.com")
+      );
+    } catch {
+      return false;
+    }
+  };
+
+  const getCookieStringForUrl = (targetUrl: string): string => {
+    if (!ctx?.jar || typeof ctx.jar.getCookieStringSync !== "function") return "";
+    return (
+      ctx.jar.getCookieStringSync(targetUrl) ||
+      ctx.jar.getCookieStringSync("https://www.facebook.com/") ||
+      ""
+    );
+  };
+
+  const fetchImageBuffer = async (
+    url: string,
+    headers: Record<string, string> = {}
+  ): Promise<Buffer> => {
+    const response = await axios.get<ArrayBuffer>(url, {
+      responseType: "arraybuffer",
+      timeout: 60000,
+      maxRedirects: 5,
+      validateStatus: (status) => status >= 200 && status < 400,
+      headers: {
+        Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+        ...headers,
+      },
+    });
+
+    const contentLength = Number(response.headers?.["content-length"] || 0);
+    if (Number.isFinite(contentLength) && contentLength > MAX_IMAGE_SIZE) {
+      throw new Error(`Image too large: ${contentLength} bytes (max: ${MAX_IMAGE_SIZE} bytes)`);
+    }
+
+    const buffer = Buffer.from(response.data);
+    if (!buffer.length) {
+      throw new Error("Downloaded image is empty");
+    }
+    if (buffer.length > MAX_IMAGE_SIZE) {
+      throw new Error(`Image too large: ${buffer.length} bytes (max: ${MAX_IMAGE_SIZE} bytes)`);
+    }
+    return buffer;
+  };
 
   const downloadImageFromUrl = async (url: string): Promise<Buffer> => {
     try {
-      const response: AxiosResponse = await axios({
-        method: "GET",
-        url,
-        responseType: "stream",
-        timeout: 60000,
-        maxRedirects: 5,
-      });
+      return await fetchImageBuffer(url);
+    } catch (error: unknown) {
+      const normalized = toError(error);
+      const status = (error as AxiosResponse | any)?.response?.status;
+      const canRetryWithCookie =
+        isFacebookImageHost(url) &&
+        (status === 401 || status === 403 || status === 404 || status === 0 || status == null);
 
-      const chunks: Buffer[] = [];
-      const MAX_SIZE = 50 * 1024 * 1024;
-      let totalSize = 0;
+      if (!canRetryWithCookie) {
+        throw new Error(`Failed to download image from URL: ${normalized.message}`);
+      }
 
-      return new Promise((resolve, reject) => {
-        response.data.on("data", (chunk: Buffer) => {
-          totalSize += chunk.length;
-          if (totalSize > MAX_SIZE) {
-            response.data.destroy();
-            reject(new Error(`Image too large: ${totalSize} bytes (max: ${MAX_SIZE} bytes)`));
-            return;
-          }
-          chunks.push(chunk);
-        });
+      const cookieString = getCookieStringForUrl(url);
+      const fallbackHeaders: Record<string, string> = {
+        Referer: "https://www.facebook.com/",
+        Origin: "https://www.facebook.com",
+      };
+      if (cookieString) {
+        fallbackHeaders.Cookie = cookieString;
+      }
 
-        response.data.on("end", () => {
-          const buffer = Buffer.concat(chunks);
-          resolve(buffer);
-        });
-
-        response.data.on("error", (error: Error) => {
-          reject(new Error(`Failed to download image: ${error.message}`));
-        });
-      });
-    } catch (error: any) {
-      throw new Error(`Failed to download image from URL: ${error.message || error}`);
+      try {
+        return await fetchImageBuffer(url, fallbackHeaders);
+      } catch (fallbackError: unknown) {
+        const fallbackNormalized = toError(fallbackError);
+        throw new Error(
+          `Failed to download image from URL: ${normalized.message}; fallback with auth failed: ${fallbackNormalized.message}`
+        );
+      }
     }
   };
 
@@ -120,7 +185,8 @@ export default function setThreadTheme(defaultFuncs: any, _api: any, ctx: Ctx) {
     const entityName = `${hash}-0-${fileSize}-${timestamp}-${timestamp}`;
     const uploadUrl = `https://rupload.facebook.com/graphql_mutations/${entityName}`;
 
-    const token = getConfig().token?.EAAD;
+    const tokenCandidate = getConfig().token?.EAAD || ctx.access_token;
+    const token = tokenCandidate && tokenCandidate !== "NONE" ? tokenCandidate : undefined;
 
     const deviceId = randomUUID();
     const appScopeId = randomUUID();
@@ -180,7 +246,7 @@ export default function setThreadTheme(defaultFuncs: any, _api: any, ctx: Ctx) {
       let fileHandle: string;
       try {
         const jsonResponse = JSON.parse(response.data as string);
-        fileHandle = jsonResponse.h;
+        fileHandle = jsonResponse.h || (response.data as string).trim();
       } catch {
 
         fileHandle = (response.data as string).trim();
@@ -191,14 +257,16 @@ export default function setThreadTheme(defaultFuncs: any, _api: any, ctx: Ctx) {
       }
 
       return fileHandle;
-    } catch (error: any) {
-      throw new Error(`Failed to upload image: ${error.message || error}`);
+    } catch (error: unknown) {
+      const normalized = toError(error);
+      throw new Error(`Failed to upload image: ${normalized.message}`);
     }
   };
 
   const createCustomTheme = async (fileHandle: string, _threadID: string): Promise<string> => {
 
-    const token = getConfig().token?.EAAD;
+    const tokenCandidate = getConfig().token?.EAAD || ctx.access_token;
+    const token = tokenCandidate && tokenCandidate !== "NONE" ? tokenCandidate : undefined;
 
     const deviceId = randomUUID();
     const appScopeId = randomUUID();
@@ -290,8 +358,9 @@ export default function setThreadTheme(defaultFuncs: any, _api: any, ctx: Ctx) {
       }
 
       return themeId;
-    } catch (err: any) {
-      throw new Error(`Failed to create custom theme: ${err.message || err}`);
+    } catch (err: unknown) {
+      const normalized = toError(err);
+      throw new Error(`Failed to create custom theme: ${normalized.message}`);
     }
   };
 
@@ -307,7 +376,7 @@ export default function setThreadTheme(defaultFuncs: any, _api: any, ctx: Ctx) {
       const resData = await defaultFuncs
         .post("https://www.facebook.com/api/graphql/", ctx.jar, form, null, {
           "x-fb-friendly-name": "MWPThreadThemeQuery_AllThemesQuery",
-          "x-fb-lsd": ctx.lsd,
+          "x-fb-lsd": ctx.lsd || "",
           referer: `https://www.facebook.com/messages/t/${threadID}`,
         })
         .then(parseAndCheckLogin(ctx, defaultFuncs));
@@ -321,137 +390,165 @@ export default function setThreadTheme(defaultFuncs: any, _api: any, ctx: Ctx) {
           id: theme.id as string,
           name: theme.accessibility_label as string,
         }));
-    } catch (err: any) {
-      throw new Error(`Failed to fetch theme list: ${err.message || err}`);
+    } catch (err: unknown) {
+      const normalized = toError(err);
+      throw new Error(`Failed to fetch theme list: ${normalized.message}`);
     }
   };
 
   const getRandomTheme = async (threadID: string): Promise<Theme> => {
     const themes = await fetchThemes(threadID);
+    if (themes.length === 0) {
+      throw new Error("No themes available");
+    }
     return themes[Math.floor(Math.random() * themes.length)];
   };
 
-  const setThemeFunc = async function setTheme(
+  const setThemeFunc = function setTheme(
     color: string,
     threadID: string,
     callback?: Callback
-  ): Promise<any> {
-    let reqID = ++ctx.wsReqNumber;
-    let resolveFunc: (value: any) => void = () => { };
-    let rejectFunc: (reason?: any) => void = () => { };
-    const returnPromise = new Promise<any>((resolve, reject) => {
-      resolveFunc = resolve;
-      rejectFunc = reject;
-    });
-
-    if (!callback) {
-      callback = (err, data) => {
-        if (err) return rejectFunc(err);
-        resolveFunc(data);
+  ): Promise<unknown> {
+    return new Promise<unknown>(async (resolve, reject) => {
+      const settle = (err: Error | null, data?: unknown): void => {
+        if (err) {
+          callback?.(err);
+          reject(err);
+          return;
+        }
+        callback?.(null, data);
+        resolve(data ?? { success: true });
       };
-    }
 
-    if (color === "random") {
-      try {
-        const randomTheme = await getRandomTheme(threadID);
-        color = randomTheme.id;
-      } catch (err) {
-        return callback(err);
-      }
-    }
-
-    const content = {
-      app_id: "2220391788200892",
-      payload: JSON.stringify({
-        data_trace_id: null,
-        epoch_id: parseInt(generateOfflineThreadingID()),
-        tasks: [
-          {
-            failure_count: null,
-            label: "43",
-            payload: JSON.stringify({
-              thread_key: threadID,
-              theme_fbid: color,
-              source: null,
-              sync_group: 1,
-              payload: null,
-            }),
-            queue_name: "thread_theme",
-            task_id: ++ctx.wsTaskNumber,
-          },
-        ],
-        version_id: "8798795233522156",
-      }),
-      request_id: reqID,
-      type: 3,
-    };
-
-    ctx.mqttClient.publish("/ls_req", JSON.stringify(content), {
-      qos: 1,
-      retain: false,
-    });
-
-    const handleRes = (topic: string, message: Buffer) => {
-      if (topic !== "/ls_resp") return;
-      let jsonMsg: any;
-      try {
-        jsonMsg = JSON.parse(message.toString());
-        jsonMsg.payload = JSON.parse(jsonMsg.payload);
-      } catch {
+      if (!ctx.mqttClient) {
+        settle(new Error("Not connected to MQTT"));
         return;
       }
-      if (jsonMsg.request_id !== reqID) return;
-      ctx.mqttClient.removeListener("message", handleRes);
-      try {
-        const msgID = jsonMsg.payload.step[1][2][2][1][2];
-        const msgReplace = jsonMsg.payload.step[1][2][2][1][4];
-        const bodies = {
-          body: msgReplace,
-          messageID: msgID,
-        };
-        return callback && callback(null, bodies);
-      } catch {
-        return callback && callback(null, { success: true });
-      }
-    };
 
-    ctx.mqttClient.on("message", handleRes);
-    return returnPromise;
+      let themeColor = color;
+      if (themeColor === "random") {
+        try {
+          const randomTheme = await getRandomTheme(threadID);
+          themeColor = randomTheme.id;
+        } catch (err: unknown) {
+          settle(toError(err));
+          return;
+        }
+      }
+
+      const reqID = ++ctx.wsReqNumber;
+      const content = {
+        app_id: "2220391788200892",
+        payload: JSON.stringify({
+          data_trace_id: null,
+          epoch_id: parseInt(generateOfflineThreadingID(), 10),
+          tasks: [
+            {
+              failure_count: null,
+              label: "43",
+              payload: JSON.stringify({
+                thread_key: toThreadKey(threadID),
+                theme_fbid: themeColor,
+                source: null,
+                sync_group: 1,
+                payload: null,
+              }),
+              queue_name: "thread_theme",
+              task_id: ++ctx.wsTaskNumber,
+            },
+          ],
+          version_id: "8798795233522156",
+        }),
+        request_id: reqID,
+        type: 3,
+      };
+
+      let settled = false;
+      const safeSettle = (err: Error | null, data?: unknown): void => {
+        if (settled) return;
+        settled = true;
+        settle(err, data);
+      };
+
+      const cleanup = (): void => {
+        clearTimeout(timeout);
+        ctx.mqttClient?.removeListener("message", handleRes);
+      };
+
+      const handleRes = (topic: string, message: Buffer): void => {
+        if (topic !== "/ls_resp") return;
+        let jsonMsg: any;
+        try {
+          jsonMsg = JSON.parse(message.toString());
+          jsonMsg.payload = JSON.parse(jsonMsg.payload);
+        } catch {
+          return;
+        }
+
+        if (jsonMsg.request_id !== reqID) return;
+        cleanup();
+
+        try {
+          const msgID = jsonMsg.payload.step[1][2][2][1][2];
+          const msgReplace = jsonMsg.payload.step[1][2][2][1][4];
+          safeSettle(null, {
+            body: msgReplace,
+            messageID: msgID,
+          });
+        } catch {
+          safeSettle(null, { success: true });
+        }
+      };
+
+      const timeout = setTimeout(() => {
+        cleanup();
+        safeSettle(new Error("setTheme timed out waiting for /ls_resp"));
+      }, 30_000);
+
+      ctx.mqttClient.on("message", handleRes);
+      ctx.mqttClient.publish(
+        "/ls_req",
+        JSON.stringify(content),
+        { qos: 1, retain: false },
+        (err?: Error) => {
+          if (!err) return;
+          cleanup();
+          safeSettle(err);
+        }
+      );
+    });
   };
 
   const setThemeFromImageFunc = async function setThemeFromImage(
     imagePath: string | Buffer,
     threadID: string,
     callback?: Callback
-  ): Promise<any> {
-    let resolveFunc: (value: any) => void = () => { };
-    let rejectFunc: (reason?: any) => void = () => { };
-    const returnPromise = new Promise<any>((resolve, reject) => {
-      resolveFunc = resolve;
-      rejectFunc = reject;
-    });
-
-    if (!callback) {
-      callback = (err, data) => {
-        if (err) return rejectFunc(err);
-        resolveFunc(data);
+  ): Promise<unknown> {
+    return new Promise<unknown>(async (resolve, reject) => {
+      const settle = (err: Error | null, data?: unknown): void => {
+        if (err) {
+          callback?.(err);
+          reject(err);
+          return;
+        }
+        callback?.(null, data);
+        resolve(data ?? { success: true });
       };
-    }
 
-    try {
-
-      const fileHandle = await uploadImageToFacebook(imagePath);
-
-      const themeId = await createCustomTheme(fileHandle, threadID);
-
-      const result = await setThemeFunc(themeId, threadID, callback);
-      return result || returnPromise;
-    } catch (err: any) {
-      return callback(err);
-    }
+      try {
+        const fileHandle = await uploadImageToFacebook(imagePath);
+        const themeId = await createCustomTheme(fileHandle, threadID);
+        const result = await setThemeFunc(themeId, threadID);
+        settle(null, result);
+      } catch (err: unknown) {
+        settle(toError(err));
+      }
+    });
   };
 
-  const result = setThemeFunc as any;
+  const result = setThemeFunc as typeof setThemeFunc & {
+    setThemeFromImage: typeof setThemeFromImageFunc;
+  };
   result.setThemeFromImage = setThemeFromImageFunc;
   return result;
 }

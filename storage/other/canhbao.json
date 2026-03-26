@@ -55,6 +55,14 @@
       "notifyGroup": true,
       "autoKick": true,
       "banTime": 30
+    },
+    "1412823280572890": {
+      "maxWarn": 3,
+      "autoReset": false,
+      "resetAfterDays": 7,
+      "notifyGroup": true,
+      "autoKick": true,
+      "banTime": 30
     }
   },
   "bannedUsers": {
@@ -208,5 +216,54 @@
     ],
     "threadID": "9632024723543788",
     "time": "18:17:37 20/11/2025"
+  },
+  "61561479311976": {
+    "warns": 1,
+    "reason": [
+      "Thắng"
+    ],
+    "threadID": "1412823280572890",
+    "time": "07:18:29 26/3/2026"
+  },
+  "100076746405191": {
+    "warns": 1,
+    "reason": [
+      "Gia"
+    ],
+    "threadID": "1412823280572890",
+    "time": "15:11:17 26/3/2026"
+  },
+  "100089076865173": {
+    "warns": 2,
+    "reason": [
+      "Không có",
+      "Ngọc Thái tự do ngôn luận"
+    ],
+    "threadID": "1412823280572890",
+    "time": "21:38:04 26/3/2026"
+  },
+  "61567045103651": {
+    "warns": 1,
+    "reason": [
+      "Minh Huy"
+    ],
+    "threadID": "1412823280572890",
+    "time": "17:43:57 26/3/2026"
+  },
+  "61586845605819": {
+    "warns": 1,
+    "reason": [
+      "Long"
+    ],
+    "threadID": "1412823280572890",
+    "time": "21:15:54 26/3/2026"
+  },
+  "100023991765803": {
+    "warns": 1,
+    "reason": [
+      "Jonny bạo lực"
+    ],
+    "threadID": "1412823280572890",
+    "time": "21:17:34 26/3/2026"
   }
 }

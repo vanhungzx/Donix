@@ -1,4 +1,9 @@
 import axios, { AxiosInstance } from "axios";
+import { wrapper } from "axios-cookiejar-support";
+import { CookieJar } from "tough-cookie";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 interface SoundCloudUser {
   avatar_url: string;
@@ -50,6 +55,56 @@ interface StreamCollectionItem {
 
 interface StreamResponse {
   collection: StreamCollectionItem[];
+}
+
+// ─── Client ID cache (same strategy as your demo script) ───────────────
+type ClientIdCache = {
+  clientId: string;
+  savedAt: number;
+  scriptUrls?: string[];
+};
+
+const CACHE_FILE = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  ".sc_cache.json"
+);
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const ID_REGEX = /client_id\s*:\s*["']([0-9a-zA-Z]{32})["']/;
+const PRIORITY_KW = ["app", "init", "main", "config", "boot"];
+const APP_VERSION = "1773236899";
+
+const API_HEADERS: Record<string, string> = {
+  Accept: "application/json, text/javascript, */*; q=0.01",
+  "Accept-Language": "vi,en;q=0.9",
+  Connection: "keep-alive",
+  Origin: "https://soundcloud.com",
+  Referer: "https://soundcloud.com/",
+  "Sec-Fetch-Dest": "empty",
+  "Sec-Fetch-Mode": "cors",
+  "Sec-Fetch-Site": "same-site",
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+  "sec-ch-ua":
+    '"Not:A-Brand";v="99","Google Chrome";v="145","Chromium";v="145"',
+  "sec-ch-ua-mobile": "?0",
+  "sec-ch-ua-platform": '"Windows"',
+};
+
+function loadCache(): ClientIdCache | null {
+  try {
+    const raw = fs.readFileSync(CACHE_FILE, "utf8");
+    return JSON.parse(raw) as ClientIdCache;
+  } catch {
+    return null;
+  }
+}
+
+function saveCache(data: Omit<ClientIdCache, "savedAt">): void {
+  fs.writeFileSync(CACHE_FILE, JSON.stringify({ ...data, savedAt: Date.now() }, null, 2));
+}
+
+function isCacheFresh(cache: ClientIdCache | null): cache is ClientIdCache {
+  return Boolean(cache?.savedAt && Date.now() - cache.savedAt < CACHE_TTL_MS);
 }
 
 export interface DownloadResult {
@@ -107,56 +162,118 @@ class SoundCloudAPI {
   private request: AxiosInstance;
 
   constructor() {
-    this.request = axios.create({
-      headers: {
-        "user-agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
-        referer: "https://soundcloud.com/",
-        "sec-ch-ua":
-          '"Chromium";v="115", "Not;A=Brand";v="24", "Google Chrome";v="115"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"Windows"',
-        "sec-fetch-site": "same-origin",
-        "sec-fetch-mode": "navigate",
-        "sec-fetch-dest": "document",
-        "accept-language": "en-US,en;q=0.9",
-        "upgrade-insecure-requests": "1",
-      },
-      validateStatus: (status) => status < 500,
-      timeout: 30000,
-      maxRedirects: 5,
-    });
+    const jar = new CookieJar();
+    this.request = wrapper(
+      axios.create({
+        jar,
+        withCredentials: true,
+        headers: {
+          ...API_HEADERS,
+          // Keep some browser-y defaults for HTML fetches
+          "upgrade-insecure-requests": "1",
+        },
+        validateStatus: (status) => status < 500,
+        timeout: 30000,
+        maxRedirects: 5,
+      })
+    );
   }
 
   private async getClientID(): Promise<string> {
-    try {
-      const mainPageHtml = await this.request
-        .get<string>("https://soundcloud.com/")
-        .then((res) => res.data);
+    const cache = loadCache();
 
-      const scriptTags = mainPageHtml.split('<script crossorigin src="');
-      const scriptUrls = scriptTags
-        .filter((tag) => tag.startsWith("https"))
-        .map((tag) => tag.split('"')[0]);
-
-      if (!scriptUrls.length) {
-        throw new Error("No script URLs found");
+    // Fast path: cache còn tươi + validate bằng HEAD
+    if (isCacheFresh(cache)) {
+      try {
+        await this.request.head(
+          `https://api-v2.soundcloud.com/tracks?client_id=${cache.clientId}&limit=1`,
+          { headers: API_HEADERS, timeout: 3000 }
+        );
+        return cache.clientId;
+      } catch {
+        // hết hạn, scrape lại
       }
-
-      const scriptContent = await this.request
-        .get<string>(scriptUrls[scriptUrls.length - 1])
-        .then((res) => res.data);
-
-      const clientIdMatch = scriptContent.match(/client_id:"([^"]+)"/);
-      if (!clientIdMatch) {
-        throw new Error("Client ID not found in script");
-      }
-
-      return clientIdMatch[1];
-    } catch (error: any) {
-      console.error("Failed to get client ID:", error.message || error);
-      throw error;
     }
+
+    // Slow path: scrape script urls để tìm client_id
+    let scriptUrls = cache?.scriptUrls ?? null;
+    if (!scriptUrls) {
+      const mainRes = await this.request.get<string>("https://soundcloud.com/", {
+        headers: { ...API_HEADERS, Range: "bytes=0-65535" },
+      });
+      const html = mainRes.data;
+      scriptUrls = [...html.matchAll(/<script[^>]+src="([^"]+\.js)"/g)].map((m) => m[1]);
+
+      scriptUrls.sort((a, b) => {
+        const pa = PRIORITY_KW.some((k) => a.includes(k)) ? 0 : 1;
+        const pb = PRIORITY_KW.some((k) => b.includes(k)) ? 0 : 1;
+        return pa - pb;
+      });
+    }
+
+    if (!scriptUrls?.length) {
+      throw new Error("No SoundCloud script URLs found to scrape client_id");
+    }
+
+    const controllers = scriptUrls.map(() => new AbortController());
+    const cancelAll = () => controllers.forEach((c) => c.abort());
+
+    const clientId = await Promise.any(
+      scriptUrls.map((url, i) => {
+        return new Promise<string>((resolve, reject) => {
+          let done = false;
+
+          const controller = controllers[i];
+          const token = controller.signal;
+
+          (async () => {
+            let buf = "";
+            try {
+              const res = await this.request.get(url, {
+                headers: { ...API_HEADERS, "Accept-Encoding": "gzip, deflate, br" },
+                responseType: "stream",
+                signal: token,
+                timeout: 8000,
+              } as any);
+
+              const stream = res.data as any;
+
+              stream.on("data", (chunk: Buffer) => {
+                if (done) return;
+                buf += chunk.toString();
+                const m = buf.match(ID_REGEX);
+                if (m) {
+                  done = true;
+                  cancelAll();
+                  try {
+                    stream.destroy?.();
+                  } catch { }
+                  resolve(m[1]);
+                }
+
+                if (buf.length > 8192) buf = buf.slice(-512);
+              });
+
+              stream.on("end", () => {
+                if (done) return;
+                reject(new Error("not_found"));
+              });
+
+              stream.on("error", (err: unknown) => {
+                if (done) return;
+                reject(err instanceof Error ? err : new Error(String(err)));
+              });
+            } catch (err) {
+              if (done) return;
+              reject(err instanceof Error ? err : new Error(String(err)));
+            }
+          })();
+        });
+      })
+    );
+
+    saveCache({ clientId, scriptUrls });
+    return clientId;
   }
 
   private formatNumber(number: number): string | null {
@@ -185,21 +302,29 @@ class SoundCloudAPI {
     try {
       const clientId = await this.getClientID();
 
-      const initialResponse = await this.request.get(link);
+      const initialResponse = await this.request.get(link, { headers: API_HEADERS });
       const responseUrl: string =  (initialResponse.request as any)?.res?.responseUrl || link;
       const responseData = decodeURIComponent(responseUrl);
       const urlParts = responseData.replace("m.soundcloud.com", "soundcloud.com");
       const { data } = await this.request.get<SoundCloudTrack>(
-        `https://api-v2.soundcloud.com/resolve?url=${urlParts}&client_id=${clientId}`
+        "https://api-v2.soundcloud.com/resolve",
+        {
+          headers: API_HEADERS,
+          params: { url: urlParts, client_id: clientId },
+        }
       );
       const progressiveUrl = data?.media?.transcodings?.find(
         (t) => t.format.protocol === "progressive"
       )?.url;
       if (!progressiveUrl) throw new Error("No suitable data found");
 
-      const streamData = await this.request.get<{ url: string }>(
-        `${progressiveUrl}?client_id=${clientId}&track_authorization=${data.track_authorization}`
-      );
+      if (!data.track_authorization) {
+        throw new Error("Missing track_authorization for progressive stream");
+      }
+
+      const trackAuthorization = encodeURIComponent(data.track_authorization);
+      const streamUrl = `${progressiveUrl}?client_id=${clientId}&track_authorization=${trackAuthorization}`;
+      const streamData = await this.request.get<{ url: string }>(streamUrl, { headers: API_HEADERS });
 
       const { url } = streamData.data;
 
@@ -231,9 +356,19 @@ class SoundCloudAPI {
       const clientId = await this.getClientID();
 
       const { data } = await this.request.get<SearchResponse>(
-        `https://api-v2.soundcloud.com/search/tracks?q=${encodeURIComponent(
-          keywords
-        )}&client_id=${clientId}&limit=${limit}`
+        "https://api-v2.soundcloud.com/search/tracks",
+        {
+          headers: API_HEADERS,
+          params: {
+            q: keywords,
+            client_id: clientId,
+            limit,
+            offset: 0,
+            linked_partitioning: 1,
+            app_version: APP_VERSION,
+            app_locale: "en",
+          } as any,
+        }
       );
 
       return data.collection.map((track) => ({

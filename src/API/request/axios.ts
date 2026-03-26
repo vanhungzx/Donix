@@ -691,7 +691,7 @@ const createJar = (): JarLike => {
   const jar = new CookieJar() as JarLike;
   const boundGetCookieStringSync = (jar as CookieJar).getCookieStringSync?.bind(jar);
   jar.cookieString = boundGetCookieStringSync
-    ? () => boundGetCookieStringSync("https://www.facebook.com")
+    ? () => boundGetCookieStringSync("https://business.facebook.com")
     : () => "";
   return jar;
 };

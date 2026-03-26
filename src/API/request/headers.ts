@@ -17,7 +17,9 @@ const getHeaders = (
   const referer = `https://${host}/`;
   const isGraphQLAPI = urlStr.includes("/api/graphql/");
   if (isGraphQLAPI && method.toUpperCase() === "POST" && ctx) {
-    const cookieString = ctx.jar?.getCookieStringSync ? ctx.jar.getCookieStringSync("https://www.facebook.com/") : ctx.jar?.cookieString?.() || "";
+    const cookieString = ctx.jar?.getCookieStringSync
+      ? ctx.jar.getCookieStringSync(`https://${host}/`)
+      : ctx.jar?.cookieString?.() || "";
     const { userAgent, secChUa, secChUaFullVersionList, secChUaPlatform, secChUaPlatformVersion } = randomUserAgent();
     const graphQLHeaders: HeaderRecord = {
       'accept': '*/*',
@@ -25,9 +27,9 @@ const getHeaders = (
       'accept-language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7',
       'content-type': 'application/x-www-form-urlencoded',
       'cookie': cookieString,
-      'origin': 'https://www.facebook.com',
+      'origin': `https://${host}`,
       'priority': 'u=1, i',
-      'referer': 'https://www.facebook.com/',
+      'referer': `https://${host}/`,
       'sec-ch-ua': secChUa,
       'sec-ch-ua-full-version-list': secChUaFullVersionList,
       'sec-ch-ua-mobile': '?0',

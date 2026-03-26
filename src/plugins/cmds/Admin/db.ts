@@ -18,6 +18,29 @@ const formatNumber = (num: number): string => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
 
+function formatMoneyAny(money: number | bigint | string | undefined | null): string {
+  if (money === undefined || money === null) return "0";
+  if (typeof money === "bigint") {
+    return money.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+  if (typeof money === "string") {
+    const s = money.trim().replace(/,/g, "");
+    if (!s) return "0";
+    // Handle rare decimal strings (e.g. AVG/MIN/MAX when SQLite returns float as TEXT).
+    if (/^-?\d+\.\d+$/.test(s)) {
+      const intPart = s.split(".")[0];
+      return BigInt(intPart).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+    if (/^-?\d+$/.test(s)) {
+      return BigInt(s).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+    return "0";
+  }
+  if (!Number.isFinite(money)) return "0";
+  const intVal = Math.trunc(money);
+  return intVal.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
 const getDbFilePath = (): string => {
   return DB_PATH();
 };
@@ -242,9 +265,9 @@ async function showStats(db: any, reply: any) {
 • Tổng số: ${formatNumber(totalUsers?.count || 0)}
 • Có tiền: ${formatNumber(usersWithMoney?.count || 0)}
 • Bị ban: ${formatNumber(bannedUsersCount || 0)}
-• Tổng tiền: ${formatNumber(Number(totalMoney?.total || 0))}
-• Tiền TB: ${formatNumber(Math.round(Number(avgMoney?.avg || 0)))}
-• Tiền cao nhất: ${formatNumber(Number(maxMoney?.max || 0))}
+• Tổng tiền: ${formatMoneyAny(totalMoney?.total || 0)}
+• Tiền TB: ${formatMoneyAny(avgMoney?.avg || 0)}
+• Tiền cao nhất: ${formatMoneyAny(maxMoney?.max || 0)}
 • Tổng EXP: ${formatNumber(Number(totalExp?.total || 0))}
 • EXP TB: ${formatNumber(Math.round(Number(avgExp?.avg || 0)))}
 
@@ -370,9 +393,9 @@ async function showUsersStats(db: any, userData: any, reply: any) {
 • Users bị ban: ${formatNumber(bannedUsersCount || 0)}
 
 💰 Top 5 users giàu nhất:
-${topMoney.map((u: any, i: number) => `${i + 1}. ${u.userID}: ${formatNumber(Number(u.money))}`).join("\n")}
+${topMoney.map((u: any, i: number) => `${i + 1}. ${u.userID}: ${formatMoneyAny(u.money)}`).join("\n")}
 
-💵 Tổng tiền hệ thống: ${formatNumber(Number(totalMoney?.total || 0))}`;
+💵 Tổng tiền hệ thống: ${formatMoneyAny(totalMoney?.total || 0)}`;
 
     return reply({ body: usersText });
   } catch (error: any) {
@@ -425,7 +448,7 @@ async function showTopUsers(db: any, type: string, reply: any) {
       const rank = i + 1;
       const medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : `${rank}.`;
       const value = type === "money" || type === "m"
-        ? formatNumber(Number(u.money || 0))
+        ? formatMoneyAny(u.money || 0)
         : formatNumber(Number(u.exp || 0));
       const unit = type === "money" || type === "m" ? "💰" : "⭐";
       return `${medal} ${u.userID}: ${value} ${unit}`;
@@ -497,8 +520,8 @@ async function showFullInfo(db: any, reply: any) {
 • Tổng số: ${formatNumber(totalUsers?.count || 0)}
 • Có tiền: ${formatNumber(usersWithMoney?.count || 0)}
 • Bị ban: ${formatNumber(bannedUsersCount || 0)}
-• Tổng tiền: ${formatNumber(Number(totalMoney?.total || 0))}
-• Tiền cao nhất: ${formatNumber(Number(maxMoney?.max || 0))}
+• Tổng tiền: ${formatMoneyAny(totalMoney?.total || 0)}
+• Tiền cao nhất: ${formatMoneyAny(maxMoney?.max || 0)}
 • Tổng EXP: ${formatNumber(Number(totalExp?.total || 0))}
 • Dung lượng JSON: ${formatBytes(Number(userTableSize?.size || 0))}
 
@@ -760,7 +783,7 @@ async function showTableRows(
         const ban = isRealBannedValue(r?.banned) ? "Có" : "Không";
         lines.push(
           `${offset + idx + 1}. ${r?.name || "N/A"} (${r?.userID || "N/A"})\n` +
-          `   • Money: ${formatNumber(Number(r?.money || 0))}\n` +
+          `   • Money: ${formatMoneyAny(r?.money || 0)}\n` +
           `   • EXP: ${formatNumber(Number(r?.exp || 0))}\n` +
           `   • Banned: ${ban}`
         );
