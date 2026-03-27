@@ -23,6 +23,8 @@ export interface ApiLoaderResult {
 }
 
 const isScriptFile = (fileName: string): boolean => /\.(ts|js)$/i.test(fileName);
+const isPromiseLike = (value: unknown): value is Promise<unknown> =>
+  typeof (value as { then?: unknown })?.then === "function";
 
 const SKIP_FILES = new Set([
   'mqttReconnect',
@@ -52,7 +54,10 @@ export async function loadApiMethods(options: ApiLoaderOptions): Promise<ApiLoad
         return false;
       }
 
-      const boundMethod = fn(defaultFuncs, clientObject, ctx);
+      const boundCandidate = fn(defaultFuncs, clientObject, ctx);
+      const boundMethod = isPromiseLike(boundCandidate)
+        ? await boundCandidate
+        : boundCandidate;
       if (typeof boundMethod === "function") {
         methods.set(methodName, boundMethod);
         loadedCount++;

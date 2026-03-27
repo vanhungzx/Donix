@@ -42,6 +42,18 @@ interface PostSongStoryResult {
   optimisticStatusId: number;
 }
 
+type BoundPostSongStoryMethod = ((
+  audioClusterId: string,
+  text?: string,
+  options?: PostSongStoryOptions
+) => Promise<PostSongStoryResult>) & {
+  getSongList: (options?: GetSongListOptions) => Promise<SongListResult>;
+  searchSong: (
+    searchText: string,
+    options?: SearchSongOptions
+  ) => Promise<SearchSongResult>;
+};
+
 /**
  * Get list of popular songs
  */
@@ -217,8 +229,23 @@ export {
   postSongStory
 };
 
-export default {
-  getSongList,
-  searchSong,
-  postSongStory
-};
+export default function postSongStoryFactory(
+  _defaultFuncs: DefaultFuncs,
+  _api: unknown,
+  ctx: MQTTContext
+): BoundPostSongStoryMethod {
+  const boundPostSongStory = ((
+    audioClusterId: string,
+    text: string = "....",
+    options: PostSongStoryOptions = {}
+  ) => postSongStory(ctx, audioClusterId, text, options)) as BoundPostSongStoryMethod;
+
+  boundPostSongStory.getSongList = (options: GetSongListOptions = {}) =>
+    getSongList(ctx, options);
+  boundPostSongStory.searchSong = (
+    searchText: string,
+    options: SearchSongOptions = {}
+  ) => searchSong(ctx, searchText, options);
+
+  return boundPostSongStory;
+}

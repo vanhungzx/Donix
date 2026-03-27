@@ -2,6 +2,7 @@
 
 import axios from "axios";
 import crypto from "crypto";
+import type { Context, DefaultFuncs } from "../../request/formatters/helpers";
 
 export const DEFAULT_ORCA_UA =
   "Dalvik/2.1.0 (Linux; U; Android 9; 23113RKC6C Build/PQ3A.190605.06171036) [FBAN/Orca-Android;FBAV/536.0.0.46.216;FBPN/com.facebook.orca;FBLC/vi_VN;FBBV/840054738;FBCR/MobiFone;FBMF/Redmi;FBBD/Redmi;FBDV/23113RKC6C;FBSV/9;FBCA/x86_64:arm64-v8a;FBDM/{density=3.0,width=1080,height=1920};FB_FW/1;]";
@@ -153,4 +154,18 @@ export async function fetchMessengerMusicPickerOptimalQuery(
   const page_info = container?.page_info;
 
   return { songs, page_info, raw: response.data };
+}
+
+export default function fetchMessengerMusicPickerOptimalQueryFactory(
+  _defaultFuncs: DefaultFuncs,
+  _api: unknown,
+  _ctx: Context
+): (
+  options: FetchMessengerMusicPickerOptimalQueryOptions
+) => Promise<FetchMessengerMusicPickerOptimalQueryResult> {
+  return function fetchMessengerMusicPickerOptimalQueryBound(
+    options: FetchMessengerMusicPickerOptimalQueryOptions
+  ): Promise<FetchMessengerMusicPickerOptimalQueryResult> {
+    return fetchMessengerMusicPickerOptimalQuery(options);
+  };
 }
