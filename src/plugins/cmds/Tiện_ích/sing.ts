@@ -542,7 +542,7 @@ const singCommand: Command = {
           if (note?.messageID) {
             try {
               await client.unsendMessage(note.messageID, event.threadID);
-            } catch { }
+            } catch {}
           }
         } catch (e: unknown) {
           const error = e as { message?: string };
@@ -550,7 +550,7 @@ const singCommand: Command = {
           if (note?.messageID) {
             try {
               await client.unsendMessage(note.messageID, event.threadID);
-            } catch { }
+            } catch {}
           }
         }
         return;
@@ -649,7 +649,7 @@ const singCommand: Command = {
           setTimeout(() => {
             try {
               fs.unlinkSync(r.path);
-            } catch { }
+            } catch {}
           }, 30000);
         });
       } catch (e: unknown) {
@@ -660,13 +660,13 @@ const singCommand: Command = {
       if (notice?.messageID) {
         try {
           await client.unsendMessage(notice.messageID, event.threadID);
-        } catch { }
+        } catch {}
       }
 
       if (Reply.messageID && main?.onReply?.delete) {
         try {
           main.onReply.delete(Reply.messageID);
-        } catch { }
+        } catch {}
       }
     } catch (e: unknown) {
       console.error("[sing] onReply error:", e);

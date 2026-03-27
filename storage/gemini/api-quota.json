@@ -4,15 +4,22 @@
     {
       "key": "AIzaSyBgH3rTd_5jL2W0Os8vInI1b9YFyKv4ihE",
       "remaining": {
-        "flash": 20,
-        "lite": 20
+        "flash": 0,
+        "lite": 0
       }
     },
     {
-      "key": "AIzaSyAa6YF7flKBD7cLhwexqiUESFzUKtwO6fc",
+      "key": "AIzaSyDgv4AsC-n7WigiVwYyxMKCADTC2PmVkE4",
       "remaining": {
-        "flash": 20,
-        "lite": 20
+        "flash": 0,
+        "lite": 0
+      }
+    },
+    {
+      "key": "AIzaSyDcgNa6ceY0GDiH60XJCZrkXzVjTcZEIB8",
+      "remaining": {
+        "flash": 0,
+        "lite": 0
       }
     }
   ]

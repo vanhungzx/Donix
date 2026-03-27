@@ -1,114 +1,211 @@
 import type { Command, CommandOnCallContext, CommandOnReplyContext, ReplyData } from "@types";
 import axios from "axios";
-import fs from "fs";
-import path from "path";
 import type { Readable } from "node:stream";
+import { PassThrough } from "node:stream";
 
-type YoutubeItem = {
-  id?: string | { videoId?: string };
-  title?: string;
-  channelTitle?: string;
-  length?: { simpleText?: string };
-};
+const MAX_DURATION = 15 * 60;
+const MAX_AUDIO_SIZE = 25 * 1024 * 1024; // ~25MB
 
-type YtdownMediaItem = {
-  type?: string;
-  mediaExtension?: string;
-  mediaQuality?: string;
-  mediaFileSize?: string;
+interface YtdownMediaItem {
+  type: string;
+  mediaExtension: string;
+  mediaQuality: string;
+  mediaFileSize: string;
   mediaPreviewUrl?: string;
   mediaUrl?: string;
   mediaDuration?: string;
-};
+}
 
-type YtdownResponse = {
-  api?: {
-    status?: string;
-    message?: string;
-    title?: string;
-    mediaItems?: YtdownMediaItem[];
-    userInfo?: {
-      name?: string;
-      followersCount?: number;
-    };
-    mediaStats?: {
-      viewsCount?: number;
-    };
-  };
-};
+interface YtdownUserInfo {
+  name?: string;
+  followersCount?: number;
+}
 
-type SearchVideo = {
-  videoId: string;
+interface YtdownMediaStats {
+  viewsCount?: number;
+}
+
+interface YtdownApiData {
+  status: string;
+  message?: string;
+  title?: string;
+  mediaItems: YtdownMediaItem[];
+  userInfo?: YtdownUserInfo;
+  mediaStats?: YtdownMediaStats;
+}
+
+interface YtdownResponse {
+  api?: YtdownApiData;
+}
+
+interface DownloadResult {
   title: string;
-  channelTitle: string;
-  length: string;
-  originalId: string;
-};
-
-const REPLY_TYPE = "sing1-select";
-
-function tempRoot(): string {
-  const p = path.join(process.cwd(), "temp");
-  if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
-  return p;
+  duration: string;
+  author: string;
+  sub: number;
+  viewCount: number;
+  audioUrl: string;
+  audioExtension: string;
 }
 
-function isYoutubeUrl(input: string): boolean {
-  return /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//i.test(String(input || "").trim());
+interface VideoResult {
+  type?: "video" | "live";
+  videoId?: string;
+  id?: string;
+  url?: string;
+  title: string;
+  author?: string;
+  channel?: { name?: string };
+  timestamp?: string;
+  time?: string;
+  seconds?: number;
+  views?: number;
 }
 
-function getVideoIdFromUrl(url: string): string | null {
+interface SearchResult {
+  videos: VideoResult[];
+  channels: Array<Record<string, unknown>>;
+  playlists: Array<Record<string, unknown>>;
+  live: VideoResult[];
+  all: Array<VideoResult | Record<string, unknown>>;
+}
+
+function safeExt(ext: string): "mp3" | "m4a" {
+  const e = String(ext || "").toLowerCase().trim();
+  return e === "m4a" ? "m4a" : "mp3";
+}
+
+async function getStreamAndSize(url: string, path = ""): Promise<{ stream: Readable; size: number }> {
+  const response = await axios({
+    method: "GET",
+    url,
+    responseType: "stream",
+    headers: {
+      Range: "bytes=0-",
+    },
+  });
+
+  // Keep compatibility with older code: attach path onto the stream object.
+  if (path) (response.data as any).path = path;
+
+  const totalLength = Number(response.headers["content-length"] || 0);
+  return {
+    stream: response.data as unknown as Readable,
+    size: totalLength || 0,
+  };
+}
+
+async function streamWithProgress(
+  url: string,
+  maxBytes: number,
+  onProgress?: (info: {
+    downloaded: number;
+    total: number;
+    speedBps: number;
+    percent: number;
+    timeLeftSec: number;
+  }) => void
+): Promise<{ stream: Readable; size: number }> {
+  const { stream: sourceStream, size: declaredSize } = await getStreamAndSize(url);
+  if (declaredSize && declaredSize > maxBytes) {
+    try {
+      sourceStream.destroy();
+    } catch { /* ignore */ }
+    throw new Error(`File quá lớn (${(declaredSize / 1024 / 1024).toFixed(2)}MB > 25MB)`);
+  }
+
+  const pass = new PassThrough();
+  const startedAt = Date.now();
+  let downloaded = 0;
+  let chunkCount = 0;
+
+  const total = declaredSize || 0;
+
+  sourceStream.on("data", (chunk: Buffer) => {
+    downloaded += chunk.length;
+    chunkCount += 1;
+
+    if (maxBytes > 0 && downloaded > maxBytes) {
+      const err = new Error(`File quá lớn (${(maxBytes / 1024 / 1024).toFixed(2)}MB > 25MB)`);
+      try {
+        pass.destroy(err);
+      } catch { /* ignore */ }
+      try {
+        sourceStream.destroy();
+      } catch { /* ignore */ }
+      return;
+    }
+
+    if (chunkCount % 5 !== 0) return;
+    if (typeof onProgress !== "function") return;
+
+    const elapsedSec = Math.max(0.001, (Date.now() - startedAt) / 1000);
+    const speedBps = downloaded / elapsedSec;
+    const percent = total ? (downloaded / total) * 100 : 0;
+
+    let timeLeftSec = 0;
+    if (total > 0 && downloaded > 0 && speedBps > 0) {
+      timeLeftSec = Math.max(0, (total - downloaded) / speedBps);
+    } else if (total > 0 && downloaded > 0) {
+      timeLeftSec = Math.max(0, (total / downloaded - 1) * elapsedSec);
+    }
+
+    onProgress({
+      downloaded,
+      total,
+      speedBps,
+      percent,
+      timeLeftSec,
+    });
+  });
+
+  sourceStream.on("error", (err: unknown) => {
+    try {
+      pass.destroy(err instanceof Error ? err : new Error(String(err)));
+    } catch { /* ignore */ }
+  });
+  pass.on("error", () => {
+    try {
+      sourceStream.destroy();
+    } catch { /* ignore */ }
+  });
+
+  sourceStream.pipe(pass);
+
+  return { stream: pass, size: total };
+}
+
+function extractVideoId(url: string): string | null {
   const patterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/,
     /youtube\.com\/.*[?&]v=([a-zA-Z0-9_-]{11})/,
   ];
-
-  for (const pattern of patterns) {
-    const match = String(url || "").match(pattern);
-    if (match?.[1]) return match[1];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m?.[1]) return m[1];
   }
-
   return null;
 }
 
-async function streamURL(url: string, type: string): Promise<Readable> {
-  const tempDir = tempRoot();
-  const res = await axios.get<Readable>(url, {
-    responseType: "stream",
-    timeout: 15000,
-  });
-
-  const ext = String(type || "mp3").toLowerCase().replace(/[^a-z0-9]/g, "") || "mp3";
-  const tempFile = path.resolve(tempDir, `${Date.now()}.${ext}`);
-  const writeStream = fs.createWriteStream(tempFile);
-  (res.data as unknown as Readable).pipe(writeStream);
-
-  return new Promise((resolve, reject) => {
-    writeStream.on("finish", () => {
-      const readStream = fs.createReadStream(tempFile);
-      readStream.on("close", () => {
-        try {
-          fs.unlinkSync(tempFile);
-        } catch {
-          // ignore
-        }
-      });
-      resolve(readStream);
-    });
-    writeStream.on("error", reject);
-  });
+function isYoutubeUrl(s: string): boolean {
+  return /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//i.test(s);
 }
 
-async function downloadMusicFromYoutube(link: string) {
-  const timestart = Date.now();
-  if (!link) throw new Error("Thiếu link");
+function parseTimeToSeconds(t: unknown): number {
+  const parts = String(t ?? "")
+    .trim()
+    .split(":")
+    .map((n) => parseInt(n, 10))
+    .filter((n) => !isNaN(n));
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  return parts[0] || 0;
+}
 
-  const form = new URLSearchParams();
-  form.set("url", link);
-
-  const apiResponse = await axios.post<YtdownResponse>(
+async function fetchFromYtdown(link: string): Promise<DownloadResult> {
+  const res = await axios.post<YtdownResponse>(
     "https://app.ytdown.to/proxy.php",
-    form.toString(),
+    `url=${encodeURIComponent(link)}`,
     {
       headers: {
         Accept: "*/*",
@@ -119,72 +216,56 @@ async function downloadMusicFromYoutube(link: string) {
           "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
         "X-Requested-With": "XMLHttpRequest",
       },
-      timeout: 30000,
     }
   );
 
-  const apiData = apiResponse.data?.api;
+  const apiData = res.data?.api;
   if (!apiData || apiData.status !== "ok") {
     throw new Error(apiData?.message || "Không tìm thấy thông tin video");
   }
 
-  const mediaItems = Array.isArray(apiData.mediaItems) ? apiData.mediaItems : [];
-  const audioItems = mediaItems.filter((item) => item?.type === "Audio");
-  if (!audioItems.length) {
-    throw new Error("Không tìm thấy audio để tải");
-  }
+  const audioItems = (apiData.mediaItems || []).filter((i) => i.type === "Audio");
+  if (!audioItems.length) throw new Error("Không tìm thấy audio để tải");
 
-  let selectedAudio =
-    audioItems.find((item) => item.mediaExtension === "MP3" && item.mediaQuality === "128K") ||
-    audioItems.find((item) => item.mediaExtension === "M4A" && item.mediaQuality === "128K");
+  const selected =
+    audioItems.find((i) => i.mediaExtension === "MP3" && i.mediaQuality === "128K") ||
+    audioItems.find((i) => i.mediaExtension === "M4A" && i.mediaQuality === "128K") ||
+    audioItems.find((i) => i.mediaQuality === "128K") ||
+    audioItems.find((i) => i.mediaQuality === "48K") ||
+    audioItems[0];
 
-  if (!selectedAudio) {
-    const qualityOrder = ["128K", "48K"];
-    for (const quality of qualityOrder) {
-      selectedAudio = audioItems.find((item) => item.mediaQuality === quality);
-      if (selectedAudio) break;
-    }
-  }
-  if (!selectedAudio) selectedAudio = audioItems[0];
-
-  const audioUrl = selectedAudio.mediaPreviewUrl || selectedAudio.mediaUrl;
-  const audioExtension = String(selectedAudio.mediaExtension || "mp3").toLowerCase();
-
+  const audioUrl = selected.mediaPreviewUrl || selected.mediaUrl;
   if (!audioUrl) throw new Error("Không có URL tải audio");
-
-  console.log(
-    `Đang tải audio: ${selectedAudio.mediaExtension || "?"} - ${selectedAudio.mediaQuality || "?"} (${selectedAudio.mediaFileSize || "?"})`
-  );
-
-  const audioStream = await streamURL(audioUrl, audioExtension);
 
   return {
     title: apiData.title || "Không rõ",
-    duration: mediaItems[0]?.mediaDuration || "0:00",
-    sub: Number(apiData.userInfo?.followersCount || 0),
-    viewCount: Number(apiData.mediaStats?.viewsCount || 0),
+    duration: apiData.mediaItems[0]?.mediaDuration || "0:00",
     author: apiData.userInfo?.name || "Không rõ",
-    timestart,
-    audioStream,
-    audioExtension,
+    sub: apiData.userInfo?.followersCount || 0,
+    viewCount: apiData.mediaStats?.viewsCount || 0,
+    audioUrl,
+    audioExtension: selected.mediaExtension.toLowerCase(),
   };
 }
 
-const sing1Command: Command = {
+const REPLY_TYPE = "sing3-select";
+
+const sing3Command: Command = {
   name: "sing1",
-  alias: ["music1", "musicapi1", "musicyoutube1"],
+  alias: ["yt3", "ytmusic"],
   version: "1.0.0",
   role: 0,
-  desc: "Phát nhạc từ link YouTube hoặc từ khoá tìm kiếm (dùng ytdown.to proxy)",
-  guide: "{pn} [tên nhạc | link]",
+  desc: "Nghe nhạc YouTube qua ytdown API",
+  guide: "{pn} [từ khóa | link YouTube]",
   cd: 5,
   prefix: true,
 
   async onCall(ctx: CommandOnCallContext): Promise<void> {
-    const { args, client, reply, event, main, commandName } = ctx;
+    const { args, reply, event, api, main, commandName } = ctx;
+    const startedAt = Date.now();
 
     try {
-      if (!args || !args.length) {
+      if (!args?.length) {
         await reply({ body: "❎ Vui lòng nhập từ khóa hoặc link YouTube!" });
         return;
       }
@@ -192,182 +273,193 @@ const sing1Command: Command = {
       const key = args.join(" ").replace("?feature=share", "").trim();
 
       if (isYoutubeUrl(key)) {
-        const note = await reply({ body: "⬇️ Đang tải audio qua ytdown.to..." });
+        const videoId = extractVideoId(key);
+        if (!videoId) {
+          await reply({ body: "❎ Không thể lấy Video ID từ link!" });
+          return;
+        }
+
+        const note = await reply({ body: "⬇️ Đang tải audio..." });
+
         try {
-          const result = await downloadMusicFromYoutube(key);
+          const r = await fetchFromYtdown(key);
+          const ext = safeExt(r.audioExtension);
+
+          let lastProgressAt = 0;
+          const { stream: audioStream } = await streamWithProgress(
+            r.audioUrl,
+            MAX_AUDIO_SIZE,
+            ({ downloaded, total, speedBps, percent, timeLeftSec }) => {
+              if (timeLeftSec <= 30) return;
+              const now = Date.now();
+              if (now - lastProgressAt < 10_000) return;
+              lastProgressAt = now;
+
+              const speedMBps = speedBps / 1024 / 1024;
+              const downloadedMB = downloaded / 1024 / 1024;
+              const totalMB = total ? total / 1024 / 1024 : 0;
+              const percentText = total ? Math.round(percent) : 0;
+              const timeLeftText = Math.max(0, Math.floor(timeLeftSec));
+
+              void reply({
+                body:
+                  `⬇️ Đang tải audio \"${r.title}\"\\n` +
+                  `🔃 Tốc độ: ${speedMBps.toFixed(2)}MB/s\\n` +
+                  `⏸️ Đã tải: ${downloadedMB.toFixed(2)}/${totalMB ? totalMB.toFixed(2) : "?"}MB (${percentText}%)\\n` +
+                  `⏳ Ước tính còn lại: ${timeLeftText} giây`,
+              });
+            }
+          );
+
           const body =
-            `🎵 ${result.title}\n` +
-            `👤 ${result.author}\n` +
-            `⏱️ ${result.duration}\n` +
-            `👀 ${Number(result.viewCount || 0).toLocaleString()}\n` +
-            `👥 Followers: ${Number(result.sub || 0).toLocaleString()}`;
+            `🎵 ${r.title}\n` +
+            `👤 ${r.author}\n` +
+            `⏱️ ${r.duration}\n` +
+            `👀 ${r.viewCount ? Number(r.viewCount).toLocaleString() : "0"}\n` +
+            `⌛ ${((Date.now() - startedAt) / 1000).toFixed(1)}s`;
 
-          const attachment = {
-            stream: result.audioStream,
-            filename: `audio.${result.audioExtension === "m4a" ? "m4a" : "mp3"}`,
-            contentType: result.audioExtension === "m4a" ? "audio/mp4" : "audio/mpeg",
-          };
-
-          await new Promise<void>((resolve, reject) => {
-            client.sendMessage(
-              { body, attachment },
-              event.threadID,
-              (err?: Error) => {
-                if (err) reject(err);
-                else resolve();
-              },
-              event.messageID
-            );
+          await reply({
+            body,
+            attachment: {
+              stream: audioStream,
+              filename: `audio.${ext}`,
+              contentType: ext === "m4a" ? "audio/mp4" : "audio/mpeg",
+            },
           });
 
           if (note?.messageID) {
             try {
+              const { client } = ctx;
               await client.unsendMessage(note.messageID, event.threadID);
-            } catch {
-              // ignore
-            }
+            } catch { /* ignore */ }
           }
         } catch (e: unknown) {
-          const error = e instanceof Error ? e : new Error(String(e));
-          await reply({ body: `❎ Lỗi: ${error.message}` });
+          const err = e instanceof Error ? e : new Error(String(e));
+          await reply({ body: `❎ Lỗi: ${err.message}` });
           if (note?.messageID) {
             try {
+              const { client } = ctx;
               await client.unsendMessage(note.messageID, event.threadID);
-            } catch {
-              // ignore
-            }
+            } catch { /* ignore */ }
           }
         }
         return;
       }
 
-      const YoutubeMod = (await import("youtube-search-api")) as {
-        GetListByKeyword: (keyword: string, withPlaylist?: boolean, limit?: number) => Promise<{ items: YoutubeItem[] }>;
-      };
-
-      const search = await YoutubeMod.GetListByKeyword(key, false, 10);
-      const data = Array.isArray(search?.items) ? search.items : [];
-
-      if (!data.length) {
-        await reply({ body: "❌ Không tìm thấy kết quả nào cho từ khóa này!" });
+      if (!api?.youtube?.search) {
+        await reply({ body: "❌ Service YouTube chưa được load. Vui lòng kiểm tra lại!" });
         return;
       }
 
-      const videos: SearchVideo[] = [];
-      let msg = "";
-      let num = 0;
+      const res: SearchResult = await api.youtube.search(key, { hl: "vi", gl: "VN" });
+      let list: VideoResult[] = [...res.live, ...res.videos].slice(0, 10);
+      list = list
+        .filter((v) => {
+          const s = v.seconds ?? parseTimeToSeconds(v.time);
+          return s > 0 && s <= MAX_DURATION;
+        })
+        .slice(0, 8);
 
-      for (const value of data) {
-        if (!value?.id) continue;
-
-        let videoId = "";
-        if (typeof value.id === "object" && value.id?.videoId) {
-          videoId = String(value.id.videoId);
-        } else if (typeof value.id === "string") {
-          if (value.id.includes("youtube.com") || value.id.includes("youtu.be")) {
-            videoId = getVideoIdFromUrl(value.id) || value.id;
-          } else {
-            videoId = value.id;
-          }
-        }
-
-        if (!videoId) continue;
-
-        num += 1;
-        const title = value.title || "Không rõ";
-        const channelTitle = value.channelTitle || "Không rõ";
-        const length = value.length?.simpleText || "N/A";
-        videos.push({
-          videoId,
-          title,
-          channelTitle,
-          length,
-          originalId: typeof value.id === "string" ? value.id : value.id?.videoId || videoId,
-        });
-
-        msg +=
-          `${num} - ${title}\n` +
-          `⩺ 📺 Tên kênh: ${channelTitle}\n` +
-          `⩺ ⏱️ Thời lượng: ${length}\n` +
-          `──────────────────\n`;
-      }
-
-      if (!videos.length) {
-        await reply({ body: "❌ Không tìm thấy video hợp lệ!" });
+      if (!list.length) {
+        await reply({ body: `❎ Không có bài hát ≤ 15 phút cho "${key}"` });
         return;
       }
 
-      const body =
-        `[ Kết Quả Tìm Kiếm ]\n──────────────────\n${msg}` +
-        `📌 Trả lời tin nhắn này kèm số thứ tự tương ứng với bài hát mà bạn chọn`;
+      const msg = list
+        .map(
+          (v, i) =>
+            `${i + 1}. ${v.title}\n⏳ ${v.timestamp || v.time || "N/A"} - 📺 ${v.author || v.channel?.name || "Không rõ"}`
+        )
+        .join("\n\n");
 
-      await reply(body, (error: Error | null, info?: { messageID?: string }) => {
-        if (error || !info?.messageID) return;
-        if (!main?.onReply?.set) return;
-
-        main.onReply.set(
-          info.messageID,
-          {
-            commandName: commandName || "sing1",
+      await reply(
+        `🔍 Kết quả (≤15p):\n\n${msg}\n\n⩺ Reply số để tải audio`,
+        (err: Error | null, info?: { messageID?: string }) => {
+          if (err || !info?.messageID || !main?.onReply?.set) return;
+          main.onReply.set(info.messageID, {
+            commandName: commandName || "sing3",
             messageID: info.messageID,
             author: String(event.senderID),
             type: REPLY_TYPE,
-            result: videos,
-          } as unknown as ReplyData
-        );
-      });
+            result: list,
+          } as unknown as ReplyData);
+        }
+      );
     } catch (e: unknown) {
-      console.error("[sing1] onCall error:", e);
-      const error = e instanceof Error ? e : new Error(String(e));
-      await reply({ body: `❎ Lỗi: ${error.message}` });
+      console.error("[sing3] onCall error:", e);
+      const err = e instanceof Error ? e : new Error(String(e));
+      await reply({ body: `❎ Lỗi: ${err.message}` });
     }
   },
 
   async onReply(ctx: CommandOnReplyContext): Promise<void> {
     const { client, event, reply, main, Reply, unsend } = ctx;
+    const startedAt = Date.now();
 
     try {
       if (!Reply || String(event.senderID) !== String(Reply.author)) return;
       if (Reply.type !== REPLY_TYPE) return;
-
       unsend(Reply.messageID);
 
       const idx = parseInt(String(event.body || "").trim(), 10) - 1;
-      const videos = Reply.result as SearchVideo[] | undefined;
+      const list = Reply.result as unknown as VideoResult[] | undefined;
 
-      if (isNaN(idx) || idx < 0 || !videos || !Array.isArray(videos) || idx >= videos.length) {
+      if (isNaN(idx) || idx < 0 || !Array.isArray(list) || idx >= list.length) {
         await reply("❎ Vui lòng chọn số hợp lệ!");
         return;
       }
 
-      const selectedVideo = videos[idx];
-      const url = `https://www.youtube.com/watch?v=${selectedVideo.videoId}`;
-      const notice = await reply(`⬇️ Đang tải audio: "${selectedVideo.title}"...`);
+      const v = list[idx];
+      const videoId = v.videoId || v.id;
+      if (!videoId) {
+        await reply("❎ Không tìm thấy Video ID!");
+        return;
+      }
 
+      const notice = await reply(`⬇️ Đang tải: "${v.title}"...`);
       try {
-        const r = await downloadMusicFromYoutube(url);
+        const url = `https://www.youtube.com/watch?v=${videoId}`;
+        const r = await fetchFromYtdown(url);
+        const ext = safeExt(r.audioExtension);
+        let lastProgressAt = 0;
+        const { stream: audioStream } = await streamWithProgress(
+          r.audioUrl,
+          MAX_AUDIO_SIZE,
+          ({ downloaded, total, speedBps, percent, timeLeftSec }) => {
+            if (timeLeftSec <= 30) return;
+            const now = Date.now();
+            if (now - lastProgressAt < 10_000) return;
+            lastProgressAt = now;
+
+            const speedMBps = speedBps / 1024 / 1024;
+            const downloadedMB = downloaded / 1024 / 1024;
+            const totalMB = total ? total / 1024 / 1024 : 0;
+            const percentText = total ? Math.round(percent) : 0;
+            const timeLeftText = Math.max(0, Math.floor(timeLeftSec));
+
+            void reply({
+              body:
+                `⬇️ Đang tải audio \"${r.title}\"\\n` +
+                `🔃 Tốc độ: ${speedMBps.toFixed(2)}MB/s\\n` +
+                `⏸️ Đã tải: ${downloadedMB.toFixed(2)}/${totalMB ? totalMB.toFixed(2) : "?"}MB (${percentText}%)\\n` +
+                `⏳ Ước tính còn lại: ${timeLeftText} giây`,
+            });
+          }
+        );
+
         const body =
           `🎵 ${r.title}\n` +
           `👤 ${r.author}\n` +
           `⏱️ ${r.duration}\n` +
-          `👀 ${Number(r.viewCount || 0).toLocaleString()}`;
+          `⌛ ${((Date.now() - startedAt) / 1000).toFixed(1)}s`;
 
-        const attachment = {
-          stream: r.audioStream,
-          filename: `audio.${r.audioExtension === "m4a" ? "m4a" : "mp3"}`,
-          contentType: r.audioExtension === "m4a" ? "audio/mp4" : "audio/mpeg",
-        };
-
-        await new Promise<void>((resolve, reject) => {
-          client.sendMessage(
-            { body, attachment },
-            event.threadID,
-            (err?: Error) => {
-              if (err) reject(err);
-              else resolve();
-            },
-            event.messageID
-          );
+        await reply({
+          body,
+          attachment: {
+            stream: audioStream,
+            filename: `audio.${ext}`,
+            contentType: ext === "m4a" ? "audio/mp4" : "audio/mpeg",
+          },
         });
       } catch (e: unknown) {
         const err = e instanceof Error ? e : new Error(String(e));
@@ -377,25 +469,20 @@ const sing1Command: Command = {
       if (notice?.messageID) {
         try {
           await client.unsendMessage(notice.messageID, event.threadID);
-        } catch {
-          // ignore
-        }
+        } catch { /* ignore */ }
       }
 
       if (Reply.messageID && main?.onReply?.delete) {
         try {
           main.onReply.delete(Reply.messageID);
-        } catch {
-          // ignore
-        }
+        } catch { /* ignore */ }
       }
     } catch (e: unknown) {
-      console.error("[sing1] onReply error:", e);
+      console.error("[sing3] onReply error:", e);
       const err = e instanceof Error ? e : new Error(String(e));
       await reply(`❎ Lỗi: ${err.message}`);
     }
   },
 };
 
-export default sing1Command;
-
+export default sing3Command;

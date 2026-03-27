@@ -178,136 +178,114 @@ const taixiuCommand: Command = {
   cd: 3,
   prefix: true,
 
-  onCall: async function (ctx: CommandOnCallContext): Promise<void> {
-    const { reply, event, client, userData, args } = ctx;
-    try {
-      const addMoney = userData.addMoney as ((uid: string, amount: bigint) => Promise<void>) | undefined;
-      const delMoney = userData.delMoney as ((uid: string, amount: bigint) => Promise<void>) | undefined;
-      const addExp = userData.addExp as ((uid: string, amount: number) => Promise<number>) | undefined;
-      const getUserData = userData.get as ((uid: string) => Promise<any>) | undefined;
-      const checkMoney = userData.checkMoney as ((uid: string) => Promise<bigint | number | string>) | undefined;
-      const { threadID, messageID, senderID } = event;
+ onCall: async function (ctx: CommandOnCallContext): Promise<void> {
+  const { reply, event, client, userData, args } = ctx;
+  try {
+    const { threadID, messageID, senderID } = event;
+    const addMoney = userData.addMoney as ((uid: string, amount: bigint) => Promise<void>) | undefined;
+    const delMoney = userData.delMoney as ((uid: string, amount: bigint) => Promise<void>) | undefined;
+    const addExp = userData.addExp as ((uid: string, amount: number) => Promise<number>) | undefined;
+    const getUserData = userData.get as ((uid: string) => Promise<any>) | undefined;
+    const checkMoney = userData.checkMoney as ((uid: string) => Promise<bigint | number | string>) | undefined;
 
-      if (!getUserData) {
-        await reply("❎ Lỗi: Không thể truy cập dữ liệu người dùng!");
-        return;
-      }
+    if (!getUserData) return await reply("❎ Lỗi: Không thể truy cập dữ liệu người dùng!");
+    if (!checkMoney) return await reply("❎ Lỗi: Không thể kiểm tra số dư!");
 
-      const name = ((await getUserData(senderID)) as any)?.name || "Bạn";
+    const name = ((await getUserData(senderID)) as any)?.name || "Bạn";
 
-      if (!checkMoney) {
-        await reply("❎ Lỗi: Không thể kiểm tra số dư!");
-        return;
-      }
-
-      const userMoney = BigInt(await checkMoney(senderID));
-
-      if (!args[1]) {
-        await reply("Nhập: taixiu tài|xỉu <tiền>. Ví dụ: taixiu tài 10000");
-        return;
-      }
-
-      const betChoice = args[0]?.toLowerCase();
-      if (!betChoice || !["tài", "xỉu"].includes(betChoice)) {
-        await reply("Chọn 'tài' hoặc 'xỉu'. Ví dụ: taixiu xỉu 50000");
-        return;
-      }
-
-      const betAmount = parseAmount(args[1], userMoney);
-      if (!betAmount || betAmount < MIN_BET) {
-        await reply(`Tối thiểu ${formatCurrency(MIN_BET)}`);
-        return;
-      }
-
-      if (betAmount > userMoney) {
-        await reply(`Không đủ tiền. Số dư: ${formatCurrency(userMoney)}`);
-        return;
-      }
-
-      const streakBefore = await taixiuGetWinStreak(senderID);
-      const gameResult = playGame(senderID, streakBefore.loses || 0);
-      const isWin = gameResult.result === betChoice;
-      const currentStreak = streakBefore.current || 0;
-
-      let profit = 0n;
-      let jackpotWin = 0n;
-      let jackpotContribution = 0n;
-
-      if (isWin) {
-        profit = calculateWinAmount(betAmount, gameResult, currentStreak);
-        if (gameResult.jackpot) {
-          jackpotWin = await taixiuResetJackpot(threadID);
-        }
-        if (addMoney) {
-          await addMoney(senderID, profit + jackpotWin);
-        }
-
-
-        if (addExp) {
-          const base = Number(betAmount > 0n ? (betAmount < 100000n ? betAmount : 100000n) : 0n);
-          const gained = Math.max(10, Math.floor(base / 10000));
-          await addExp(senderID, gained);
-        }
-      } else {
-        if (delMoney) {
-          await delMoney(senderID, betAmount);
-        }
-        jackpotContribution = (betAmount * JACKPOT_CONTRIBUTION_PERMIL) / 1000n;
-        await taixiuAddToJackpot(threadID, jackpotContribution);
-      }
-
-      const streak = await taixiuUpdateWinStreak(senderID, isWin);
-      await taixiuSaveHistory({
-        userID: senderID,
-        bet: betChoice,
-        diceResult: gameResult.result,
-        gameResult: isWin ? "win" : "lose",
-        winAmount: isWin ? profit : betAmount,
-        jackpotWin: jackpotWin > 0n,
-      });
-
-      const history = (await taixiuGetHistory(senderID, 10)) as unknown as HistoryEntry[];
-      const recentHistory = history
-        .slice(-8)
-        .map((h) => (h.diceResult === "xỉu" ? "⚪" : "⚫"))
-        .join(" ");
-
-      let specialBonusText = "";
-      if (isWin) {
-        if (gameResult.specialCombos.triple) {
-          specialBonusText += "🎯 Bộ ba! Thưởng x3\n";
-        } else if (gameResult.specialCombos.sequence) {
-          specialBonusText += "📈 Dãy liên tiếp! Thưởng x1.5\n";
-        }
-
-        if (BigInt(streak.current) >= STREAK_START_AT) {
-          const bonusPercent = Math.min(
-            Number((BigInt(streak.current) - STREAK_START_AT + 1n) * STREAK_STEP),
-            Number(STREAK_CAP)
-          );
-          specialBonusText += `🔥 Chuỗi thắng ${streak.current}! Thưởng +${bonusPercent}%\n`;
-        }
-      }
-
-      const diceNumbers = [gameResult.dice1, gameResult.dice2, gameResult.dice3];
-
-      const resultMessage =
-        `${jackpotWin > 0n ? `🎉🎊 ${name} ĐÃ NỔ HŨ! 🎊🎉\n💎 Nhận: ${formatCurrency(jackpotWin)}\n🔄 Hũ đã reset về 0!\n\n` : ""}` +
-        `👤 ${name} đã chọn ${betChoice} với ${formatCurrency(betAmount)}\n` +
-        `🎲 Xúc xắc: ${diceNumbers.join(" | ")} → ${gameResult.total} (${gameResult.result})\n` +
-        `${specialBonusText}` +
-        `${isWin ? "✅" : "❌"} Kết quả: ${isWin ? "THẮNG" : "THUA"} ${isWin ? "+" : "-"}${formatCurrency(isWin ? profit : betAmount)}\n` +
-        `${!isWin ? `💰 Hũ +${formatCurrency(jackpotContribution)}\n` : ""}` +
-        `💎 Hũ hiện tại: ${formatCurrency(await taixiuGetJackpot(threadID))}\n` +
-        `🏆 Chuỗi thắng: ${streak.current} | Kỷ lục: ${streak.highest}\n` +
-        `📊 Lịch sử: ${recentHistory || "Chưa có"}`;
-
-      await client.sendMessage(resultMessage, threadID, messageID);
-    } catch (e) {
-      console.error(e);
-      await reply("❎ Có lỗi xảy ra, vui lòng thử lại sau!");
+    // ====== LỆNH CLEAR DỮ LIỆU NHÓM ======
+    if (args[0]?.toLowerCase() === "clear") {
+      await taixiuResetJackpot(threadID); // reset hũ
+      await taixiuClearGroup(threadID); // xóa toàn bộ lịch sử nhóm
+      return await reply("✅ Dữ liệu Tài Xỉu của nhóm đã được xóa và hũ đã reset!");
     }
-  },
+
+    const userMoney = BigInt(await checkMoney(senderID));
+
+    if (!args[1]) return await reply("Nhập: taixiu tài|xỉu <tiền>. Ví dụ: taixiu tài 10000");
+
+    const betChoice = args[0]?.toLowerCase();
+    if (!["tài", "xỉu"].includes(betChoice)) return await reply("Chọn 'tài' hoặc 'xỉu'. Ví dụ: taixiu xỉu 50000");
+
+    const betAmount = parseAmount(args[1], userMoney);
+    if (!betAmount || betAmount < MIN_BET) return await reply(`Tối thiểu ${formatCurrency(MIN_BET)}`);
+    if (betAmount > userMoney) return await reply(`Không đủ tiền. Số dư: ${formatCurrency(userMoney)}`);
+
+    const streakBefore = await taixiuGetWinStreak(senderID);
+    const gameResult = playGame(senderID, streakBefore.loses || 0);
+    const isWin = gameResult.result === betChoice;
+    const currentStreak = streakBefore.current || 0;
+
+    let profit = 0n;
+    let jackpotWin = 0n;
+    let jackpotContribution = 0n;
+
+    if (isWin) {
+      profit = calculateWinAmount(betAmount, gameResult, currentStreak);
+      if (gameResult.jackpot) jackpotWin = await taixiuResetJackpot(threadID);
+      if (addMoney) await addMoney(senderID, profit + jackpotWin);
+      if (addExp) {
+        const base = Number(betAmount > 0n ? (betAmount < 100000n ? betAmount : 100000n) : 0n);
+        const gained = Math.max(10, Math.floor(base / 10000));
+        await addExp(senderID, gained);
+      }
+    } else {
+      if (delMoney) await delMoney(senderID, betAmount);
+      jackpotContribution = (betAmount * JACKPOT_CONTRIBUTION_PERMIL) / 1000n;
+      await taixiuAddToJackpot(threadID, jackpotContribution);
+    }
+
+    const streak = await taixiuUpdateWinStreak(senderID, isWin);
+    await taixiuSaveHistory({
+      userID: senderID,
+      bet: betChoice,
+      diceResult: gameResult.result,
+      gameResult: isWin ? "win" : "lose",
+      winAmount: isWin ? profit : betAmount,
+      jackpotWin: jackpotWin > 0n,
+      threadID,
+    });
+
+    const history = (await taixiuGetHistory(senderID, 10)) as unknown as HistoryEntry[];
+    const recentHistory = history
+      .slice(-8)
+      .map((h) => (h.diceResult === "xỉu" ? "⚪" : "⚫"))
+      .join(" ");
+
+    let specialBonusText = "";
+    if (isWin) {
+      if (gameResult.specialCombos.triple) specialBonusText += "🎯 Bộ ba! Thưởng x3\n";
+      else if (gameResult.specialCombos.sequence) specialBonusText += "📈 Dãy liên tiếp! Thưởng x1.5\n";
+      if (BigInt(streak.current) >= STREAK_START_AT) {
+        const bonusPercent = Math.min(
+          Number((BigInt(streak.current) - STREAK_START_AT + 1n) * STREAK_STEP),
+          Number(STREAK_CAP)
+        );
+        specialBonusText += `🔥 Chuỗi thắng ${streak.current}! Thưởng +${bonusPercent}%\n`;
+      }
+    }
+
+    const diceNumbers = [gameResult.dice1, gameResult.dice2, gameResult.dice3];
+    const newUserBalance = await checkMoney(senderID); // số dư mới sau khi cược
+
+    const resultMessage =
+      `${jackpotWin > 0n ? `🎉🎊 ${name} ĐÃ NỔ HŨ! 🎊🎉\n💎 Nhận: ${formatCurrency(jackpotWin)}\n🔄 Hũ đã reset về 0!\n\n` : ""}` +
+      `👤 ${name} đã chọn ${betChoice} với ${formatCurrency(betAmount)}\n` +
+      `🎲 Xúc xắc: ${diceNumbers.join(" | ")} → ${gameResult.total} (${gameResult.result})\n` +
+      `${specialBonusText}` +
+      `${isWin ? "✅" : "❌"} Kết quả: ${isWin ? "THẮNG" : "THUA"} ${isWin ? "+" : "-"}${formatCurrency(isWin ? profit : betAmount)}\n` +
+      `${!isWin ? `💰 Hũ +${formatCurrency(jackpotContribution)}\n` : ""}` +
+      `💎 Hũ hiện tại: ${formatCurrency(await taixiuGetJackpot(threadID))}\n` +
+      `💰 Số dư hiện tại: ${formatCurrency(newUserBalance)}\n` +
+      `🏆 Chuỗi thắng: ${streak.current} | Kỷ lục: ${streak.highest}\n` +
+      `📊 Lịch sử: ${recentHistory || "Chưa có"}`;
+
+    await client.sendMessage(resultMessage, threadID, messageID);
+  } catch (e) {
+    console.error(e);
+    await reply("❎ Có lỗi xảy ra, vui lòng thử lại sau!");
+  }
+},
 };
 
 export default taixiuCommand;
