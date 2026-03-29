@@ -1,13 +1,154 @@
 {
-  "money": "0",
+  "money": "110319363185000015428906502848512",
   "loan": "0",
   "isLocked": false,
   "lockReason": "",
   "loanDate": null,
   "lastLoanTs": null,
-  "lastDepositCredit": null,
+  "lastDepositCredit": 1774742400000,
   "creditScore": 100,
-  "transactions": [],
+  "transactions": [
+    {
+      "type": "withdraw",
+      "amount": "0",
+      "timestamp": 1774672904008
+    },
+    {
+      "type": "deposit",
+      "amount": "3819051598046818352837284593664",
+      "timestamp": 1774680915227
+    },
+    {
+      "type": "withdraw",
+      "amount": "1000000000000",
+      "timestamp": 1774680956858
+    },
+    {
+      "type": "deposit",
+      "amount": "700000000000",
+      "timestamp": 1774681121456
+    },
+    {
+      "type": "withdraw",
+      "amount": "10000",
+      "timestamp": 1774681345769
+    },
+    {
+      "type": "deposit",
+      "amount": "999999999999999945575230987042816",
+      "timestamp": 1774682433335
+    },
+    {
+      "type": "withdraw",
+      "amount": "1003819051598046763927768271626480",
+      "timestamp": 1774682589941
+    },
+    {
+      "type": "withdraw",
+      "amount": "0",
+      "timestamp": 1774682885680
+    },
+    {
+      "type": "deposit",
+      "amount": "9999999999999999635896294965248",
+      "timestamp": 1774683816211
+    },
+    {
+      "type": "withdraw",
+      "amount": "9999999999999999635896294965248",
+      "timestamp": 1774686185850
+    },
+    {
+      "type": "deposit",
+      "amount": "9999999999999999635896294965248",
+      "timestamp": 1774686394683
+    },
+    {
+      "type": "deposit",
+      "amount": "100000000000000005366162204393472",
+      "timestamp": 1774686580599
+    },
+    {
+      "type": "withdraw",
+      "amount": "10000",
+      "timestamp": 1774686758449
+    },
+    {
+      "type": "withdraw",
+      "amount": "110000000000000005002058499348720",
+      "timestamp": 1774687868303
+    },
+    {
+      "type": "deposit",
+      "amount": "110000000000000000498458871988224",
+      "timestamp": 1774687879882
+    },
+    {
+      "type": "withdraw",
+      "amount": "110000000000000000498458871988224",
+      "timestamp": 1774687926339
+    },
+    {
+      "type": "deposit",
+      "amount": "110000000000000000498458871988224",
+      "timestamp": 1774687934991
+    },
+    {
+      "type": "withdraw",
+      "amount": "110000000000000000498458871988224",
+      "timestamp": 1774688037324
+    },
+    {
+      "type": "deposit",
+      "amount": "109999895000000005579813356044288",
+      "timestamp": 1774688062093
+    },
+    {
+      "type": "withdraw",
+      "amount": "10000",
+      "timestamp": 1774688166924
+    },
+    {
+      "type": "deposit",
+      "amount": "56340",
+      "timestamp": 1774688348362
+    },
+    {
+      "type": "withdraw",
+      "amount": "109999895000000005579813356090628",
+      "timestamp": 1774688355681
+    },
+    {
+      "type": "deposit",
+      "amount": "109999895000000005579813356044288",
+      "timestamp": 1774688379449
+    },
+    {
+      "type": "withdraw",
+      "amount": "109999895000000005579813356044288",
+      "timestamp": 1774688676411
+    },
+    {
+      "type": "deposit",
+      "amount": "109989395000000009312103496155136",
+      "timestamp": 1774688698875
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "329968185000000027936310488465",
+      "timestamp": 1774742400000
+    },
+    {
+      "type": "withdraw",
+      "amount": "110319363185000009340039806643601",
+      "timestamp": 1774749254070
+    },
+    {
+      "type": "deposit",
+      "amount": "110319363185000015428906502848512",
+      "timestamp": 1774749259197
+    }
+  ],
   "accountCreated": 1774527502728,
   "lastDaily": 0,
   "dailyStreak": 0,

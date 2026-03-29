@@ -1,0 +1,94 @@
+{
+  "money": "713149548430639049385805830292099",
+  "loan": "0",
+  "isLocked": false,
+  "lockReason": "",
+  "loanDate": null,
+  "lastLoanTs": null,
+  "lastDepositCredit": 1774742400000,
+  "creditScore": 100,
+  "transactions": [
+    {
+      "type": "deposit",
+      "amount": "598372498933837782382252904153088",
+      "timestamp": 1774671806310
+    },
+    {
+      "type": "withdraw",
+      "amount": "598372498933837782382252904153088",
+      "timestamp": 1774671823172
+    },
+    {
+      "type": "deposit",
+      "amount": "598372498933837782382252904153088",
+      "timestamp": 1774671835591
+    },
+    {
+      "type": "withdraw",
+      "amount": "598372498933837782382252904153088",
+      "timestamp": 1774674289893
+    },
+    {
+      "type": "deposit",
+      "amount": "598372498933837782382252904153088",
+      "timestamp": 1774674294273
+    },
+    {
+      "type": "withdraw",
+      "amount": "5000",
+      "timestamp": 1774676312025
+    },
+    {
+      "type": "deposit",
+      "amount": "75599999999999995986368094273536",
+      "timestamp": 1774676403995
+    },
+    {
+      "type": "withdraw",
+      "amount": "5000",
+      "timestamp": 1774676815662
+    },
+    {
+      "type": "deposit",
+      "amount": "37043999999999996502096492888064",
+      "timestamp": 1774676826715
+    },
+    {
+      "type": "withdraw",
+      "amount": "5000000000000000000",
+      "timestamp": 1774679670591
+    },
+    {
+      "type": "deposit",
+      "amount": "4761904761900811264",
+      "timestamp": 1774679803773
+    },
+    {
+      "type": "withdraw",
+      "amount": "1000",
+      "timestamp": 1774679865546
+    },
+    {
+      "type": "withdraw",
+      "amount": "5000",
+      "timestamp": 1774679961263
+    },
+    {
+      "type": "deposit",
+      "amount": "5800",
+      "timestamp": 1774679975404
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "2133049496801512610326438176347",
+      "timestamp": 1774742400000
+    }
+  ],
+  "accountCreated": 1774671560674,
+  "lastDaily": 0,
+  "dailyStreak": 0,
+  "terms": [],
+  "goals": [],
+  "requestsIncoming": [],
+  "requestsOutgoing": []
+}
