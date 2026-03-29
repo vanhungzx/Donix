@@ -2,7 +2,16 @@
 
 import type { Command, CommandOnCallContext } from '@types';
 import crypto from "crypto";
-import { taixiuAddToJackpot, taixiuGetHistory, taixiuGetJackpot, taixiuGetWinStreak, taixiuResetJackpot, taixiuSaveHistory, taixiuUpdateWinStreak } from "../../../services/taixiu-db";
+import {
+  taixiuAddToJackpot,
+  taixiuClearGroup,
+  taixiuGetHistory,
+  taixiuGetJackpot,
+  taixiuGetWinStreak,
+  taixiuResetJackpot,
+  taixiuSaveHistory,
+  taixiuUpdateWinStreak,
+} from "../../../services/taixiu-db";
 
 
 interface HistoryEntry {
@@ -69,7 +78,7 @@ function checkJackpotWin(loses: number): boolean {
   return randFloat() < chance;
 }
 
-function playGame(userId: string, loses: number): GameResult {
+function playGame(loses: number): GameResult {
   const d1 = rollDie();
   const d2 = rollDie();
   const d3 = rollDie();
@@ -188,8 +197,14 @@ const taixiuCommand: Command = {
     const getUserData = userData.get as ((uid: string) => Promise<any>) | undefined;
     const checkMoney = userData.checkMoney as ((uid: string) => Promise<bigint | number | string>) | undefined;
 
-    if (!getUserData) return await reply("❎ Lỗi: Không thể truy cập dữ liệu người dùng!");
-    if (!checkMoney) return await reply("❎ Lỗi: Không thể kiểm tra số dư!");
+    if (!getUserData) {
+      await reply("❎ Lỗi: Không thể truy cập dữ liệu người dùng!");
+      return;
+    }
+    if (!checkMoney) {
+      await reply("❎ Lỗi: Không thể kiểm tra số dư!");
+      return;
+    }
 
     const name = ((await getUserData(senderID)) as any)?.name || "Bạn";
 
@@ -197,22 +212,35 @@ const taixiuCommand: Command = {
     if (args[0]?.toLowerCase() === "clear") {
       await taixiuResetJackpot(threadID); // reset hũ
       await taixiuClearGroup(threadID); // xóa toàn bộ lịch sử nhóm
-      return await reply("✅ Dữ liệu Tài Xỉu của nhóm đã được xóa và hũ đã reset!");
+      await reply("✅ Dữ liệu Tài Xỉu của nhóm đã được xóa và hũ đã reset!");
+      return;
     }
 
     const userMoney = BigInt(await checkMoney(senderID));
 
-    if (!args[1]) return await reply("Nhập: taixiu tài|xỉu <tiền>. Ví dụ: taixiu tài 10000");
+    if (!args[1]) {
+      await reply("Nhập: taixiu tài|xỉu <tiền>. Ví dụ: taixiu tài 10000");
+      return;
+    }
 
     const betChoice = args[0]?.toLowerCase();
-    if (!["tài", "xỉu"].includes(betChoice)) return await reply("Chọn 'tài' hoặc 'xỉu'. Ví dụ: taixiu xỉu 50000");
+    if (!["tài", "xỉu"].includes(betChoice)) {
+      await reply("Chọn 'tài' hoặc 'xỉu'. Ví dụ: taixiu xỉu 50000");
+      return;
+    }
 
     const betAmount = parseAmount(args[1], userMoney);
-    if (!betAmount || betAmount < MIN_BET) return await reply(`Tối thiểu ${formatCurrency(MIN_BET)}`);
-    if (betAmount > userMoney) return await reply(`Không đủ tiền. Số dư: ${formatCurrency(userMoney)}`);
+    if (!betAmount || betAmount < MIN_BET) {
+      await reply(`Tối thiểu ${formatCurrency(MIN_BET)}`);
+      return;
+    }
+    if (betAmount > userMoney) {
+      await reply(`Không đủ tiền. Số dư: ${formatCurrency(userMoney)}`);
+      return;
+    }
 
     const streakBefore = await taixiuGetWinStreak(senderID);
-    const gameResult = playGame(senderID, streakBefore.loses || 0);
+    const gameResult = playGame(streakBefore.loses || 0);
     const isWin = gameResult.result === betChoice;
     const currentStreak = streakBefore.current || 0;
 
@@ -246,7 +274,7 @@ const taixiuCommand: Command = {
       threadID,
     });
 
-    const history = (await taixiuGetHistory(senderID, 10)) as unknown as HistoryEntry[];
+    const history = (await taixiuGetHistory(senderID, 10, threadID)) as unknown as HistoryEntry[];
     const recentHistory = history
       .slice(-8)
       .map((h) => (h.diceResult === "xỉu" ? "⚪" : "⚫"))

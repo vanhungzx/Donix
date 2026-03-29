@@ -6,6 +6,7 @@ import fs from "fs-extra";
 import Jimp from "jimp";
 import path from "path";
 import { storagePath, TEMP_DIR } from "../../../core/storagePath";
+import { clearBaucuaRoom } from "./bcua";
 
 const CONFIG = {
   MIN_BET: 1000,
@@ -278,6 +279,18 @@ const baucuaCommand: Command = {
       const sid = event.senderID;
       const [chosenAnimal, ...betArgs] = args;
       const betInput = betArgs.join(" ");
+
+      if (/^(clear|reset)$/i.test(chosenAnimal || "")) {
+        const cleared = await clearBaucuaRoom(event.threadID);
+        await client.sendMessage(
+          cleared
+            ? "✅ Đã xóa dữ liệu Bầu Cua của nhóm này."
+            : "ℹ️ Nhóm này không có dữ liệu Bầu Cua để xóa.",
+          event.threadID,
+          event.messageID
+        );
+        return;
+      }
 
       if (!chosenAnimal || !ANIMALS[chosenAnimal.toLowerCase()]) {
         const availableAnimals = Object.entries(ANIMALS)

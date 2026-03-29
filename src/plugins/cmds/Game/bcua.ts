@@ -46,8 +46,6 @@ interface CooldownData {
 
 const DICE_NAMES = ["gà", "tôm", "bầu", "cua", "cá", "nai"] as const;
 
-let data: GameData = {};
-
 function save(): void {
   fs.ensureDirSync(path.dirname(dataPath));
   // Chỉ lưu dữ liệu thuần (không lưu Timeout, không lưu bigint trực tiếp)
@@ -75,7 +73,14 @@ function save(): void {
 fs.ensureDirSync(path.dirname(dataPath));
 
 declare global {
+  var data_command_bcua_rooms: GameData | undefined;
   var data_command_ban_bau_cua_tom_ca_ga_nai: CooldownData | undefined;
+}
+
+let data = global.data_command_bcua_rooms;
+
+if (!data) {
+  data = global.data_command_bcua_rooms = {};
 }
 
 let d = global.data_command_ban_bau_cua_tom_ca_ga_nai;
@@ -102,6 +107,36 @@ const time_wai_create = 2;
 const time_del_ban = 5;
 const time_diing = 5;
 const bet_money_min = 100;
+
+export async function clearBaucuaRoom(threadID: string): Promise<boolean> {
+  let cleared = false;
+
+  const room = data[threadID];
+  if (room?.set_timeout) {
+    clearTimeout(room.set_timeout);
+  }
+
+  if (threadID in data) {
+    delete data[threadID];
+    save();
+    cleared = true;
+  }
+
+  const storedRaw = await fs.readJson(dataPath).catch(() => ({}));
+  const stored =
+    storedRaw && typeof storedRaw === "object" && !Array.isArray(storedRaw)
+      ? (storedRaw as Record<string, unknown>)
+      : {};
+
+  if (threadID in stored) {
+    delete stored[threadID];
+    fs.ensureDirSync(path.dirname(dataPath));
+    await fs.writeFile(dataPath, JSON.stringify(stored, null, 2), "utf-8");
+    cleared = true;
+  }
+
+  return cleared;
+}
 
 async function stream_url(url: string): Promise<Buffer | undefined> {
   try {
@@ -185,6 +220,15 @@ const bcuaCommand: Command = {
         client.sendMessage(msg, tid, (_err: any, res: any) => resolve(res), mid);
       });
     };
+
+    if (/^(clear|reset)$/i.test(args[0] || "")) {
+      const cleared = await clearBaucuaRoom(tid);
+      return send(
+        cleared
+          ? "✅ Đã xóa dữ liệu Bầu Cua của nhóm này."
+          : "ℹ️ Nhóm này không có dữ liệu Bầu Cua để xóa."
+      );
+    }
 
     const p = data[tid]?.players;
 

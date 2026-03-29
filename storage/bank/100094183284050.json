@@ -1,5 +1,5 @@
 {
-  "money": "13863982343080939854391998930747355",
+  "money": "13947291012980513221977040452322215",
   "loan": "0",
   "isLocked": false,
   "lockReason": "",
@@ -61,6 +61,16 @@
     {
       "type": "interest_deposit_daily",
       "amount": "41467544396054655596386836283391",
+      "timestamp": 1774742400000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "41591947029242819563175996792242",
+      "timestamp": 1774656000000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "41716722870330548021865524782618",
       "timestamp": 1774742400000
     }
   ],

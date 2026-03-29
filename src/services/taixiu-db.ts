@@ -117,8 +117,15 @@ export async function taixiuGetWinStreak(userID: string): Promise<TaixiuStreakDa
   };
 }
 
+export async function taixiuClearGroup(threadID: string): Promise<void> {
+  const db = getDbPromisified();
+  const tid = String(threadID);
+  await db.run(`DELETE FROM TaixiuHistory WHERE threadID = ?`, [tid]);
+}
+
 export async function taixiuSaveHistory(entry: {
   userID: string;
+  threadID?: string;
   bet: string;
   diceResult: string;
   gameResult: string;
@@ -128,6 +135,7 @@ export async function taixiuSaveHistory(entry: {
 }): Promise<void> {
   const db = getDbPromisified();
   const uid = String(entry.userID);
+  const tid = String(entry.threadID ?? "");
   const ts = Number(entry.timestamp ?? Date.now());
   const win = entry.gameResult === "win" ? 1 : 0;
   const jackpotWin = entry.jackpotWin ? 1 : 0;
@@ -135,15 +143,15 @@ export async function taixiuSaveHistory(entry: {
     typeof entry.winAmount === "bigint" ? entry.winAmount.toString() : String(entry.winAmount);
 
   await db.run(
-    `INSERT INTO TaixiuHistory(userID, bet, diceResult, gameResult, win, winAmount, jackpotWin, timestamp)
-     VALUES(?, ?, ?, ?, ?, ?, ?, ?)`,
-    [uid, entry.bet, entry.diceResult, entry.gameResult, win, winAmountStr, jackpotWin, ts]
+    `INSERT INTO TaixiuHistory(threadID, userID, bet, diceResult, gameResult, win, winAmount, jackpotWin, timestamp)
+     VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [tid, uid, entry.bet, entry.diceResult, entry.gameResult, win, winAmountStr, jackpotWin, ts]
   );
 
-  // keep last 10 per user
+  // keep last 10 per user in each thread
   const rows = await db.all(
-    `SELECT id FROM TaixiuHistory WHERE userID = ? ORDER BY timestamp DESC LIMIT -1 OFFSET 10`,
-    [uid]
+    `SELECT id FROM TaixiuHistory WHERE userID = ? AND threadID = ? ORDER BY timestamp DESC LIMIT -1 OFFSET 10`,
+    [uid, tid]
   );
   if (rows.length > 0) {
     const ids = rows.map((r) => r.id).filter((x) => x != null);
@@ -152,17 +160,32 @@ export async function taixiuSaveHistory(entry: {
   }
 }
 
-export async function taixiuGetHistory(userID: string, limit: number = 10): Promise<TaixiuHistoryEntry[]> {
+export async function taixiuGetHistory(
+  userID: string,
+  limit: number = 10,
+  threadID?: string
+): Promise<TaixiuHistoryEntry[]> {
   const db = getDbPromisified();
   const uid = String(userID);
-  const rows = await db.all(
-    `SELECT bet, diceResult, gameResult, win, winAmount, jackpotWin, timestamp
-     FROM TaixiuHistory
-     WHERE userID = ?
-     ORDER BY timestamp ASC
-     LIMIT ?`,
-    [uid, limit]
-  );
+  const tid = typeof threadID === "string" ? String(threadID) : null;
+  const rows =
+    tid === null
+      ? await db.all(
+          `SELECT bet, diceResult, gameResult, win, winAmount, jackpotWin, timestamp
+           FROM TaixiuHistory
+           WHERE userID = ?
+           ORDER BY timestamp ASC
+           LIMIT ?`,
+          [uid, limit]
+        )
+      : await db.all(
+          `SELECT bet, diceResult, gameResult, win, winAmount, jackpotWin, timestamp
+           FROM TaixiuHistory
+           WHERE userID = ? AND threadID = ?
+           ORDER BY timestamp ASC
+           LIMIT ?`,
+          [uid, tid, limit]
+        );
   return (rows || []).map((r: any) => ({
     bet: String(r.bet ?? ""),
     diceResult: String(r.diceResult ?? ""),
@@ -241,4 +264,3 @@ export async function txiuGetHistory(threadID: string, limit: number = 8): Promi
     dices: [Number(r.dice1 ?? 0), Number(r.dice2 ?? 0), Number(r.dice3 ?? 0)],
   }));
 }
-

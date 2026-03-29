@@ -182,6 +182,130 @@ function getPreparedStatement(sql: string): sqlite3.Statement {
   return preparedStatements.get(sql)!;
 }
 
+function quoteIdentifier(identifier: string): string {
+  return `"${identifier.replace(/"/g, "\"\"")}"`;
+}
+
+async function getTableColumns(tableName: string): Promise<Set<string>> {
+  const dbProm = getDbPromisified();
+  const rows = await dbProm.all(
+    `PRAGMA table_info(${quoteIdentifier(tableName)})`
+  ) as Array<{ name?: string }>;
+  return new Set(rows.map((row) => String(row.name || "")));
+}
+
+function findExistingColumn(columns: Set<string>, candidates: string[]): string | null {
+  for (const candidate of candidates) {
+    if (columns.has(candidate)) return candidate;
+  }
+  return null;
+}
+
+async function ensureThreadTableColumns(): Promise<void> {
+  const dbProm = getDbPromisified();
+  const tableName = "Thread";
+  const qTable = quoteIdentifier(tableName);
+  const columns = await getTableColumns(tableName);
+
+  const ensureColumn = async (columnName: string, definition: string): Promise<void> => {
+    if (columns.has(columnName)) return;
+    await dbProm.run(`ALTER TABLE ${qTable} ADD COLUMN ${quoteIdentifier(columnName)} ${definition}`);
+    columns.add(columnName);
+  };
+
+  const threadIdSource = findExistingColumn(columns, [
+    "threadId",
+    "threadid",
+    "thread_id",
+    "groupId",
+    "groupID",
+    "group_id",
+  ]);
+
+  if (!columns.has("threadID")) {
+    logger.warn("Phát hiện bảng Thread cũ thiếu cột threadID, đang tự động migration...");
+    await ensureColumn("threadID", "TEXT");
+
+    if (threadIdSource) {
+      await dbProm.run(
+        `UPDATE ${qTable}
+         SET ${quoteIdentifier("threadID")} = CAST(${quoteIdentifier(threadIdSource)} AS TEXT)
+         WHERE ${quoteIdentifier("threadID")} IS NULL
+            OR TRIM(${quoteIdentifier("threadID")}) = ''`
+      );
+    } else if (columns.has("num")) {
+      await dbProm.run(
+        `UPDATE ${qTable}
+         SET ${quoteIdentifier("threadID")} = CAST(${quoteIdentifier("num")} AS TEXT)
+         WHERE ${quoteIdentifier("threadID")} IS NULL
+            OR TRIM(${quoteIdentifier("threadID")}) = ''`
+      );
+      logger.warn("Không tìm thấy cột thread ID cũ để backfill, tạm thời dùng Thread.num cho dữ liệu legacy.");
+    }
+  }
+
+  await ensureColumn("threadName", "TEXT");
+  await ensureColumn("threadInfo", "TEXT DEFAULT '{}'");
+  await ensureColumn("banned", "TEXT");
+  await ensureColumn("settings", "TEXT DEFAULT '{}'");
+  await ensureColumn("data", "TEXT DEFAULT '{}'");
+  await ensureColumn("messageCount", "TEXT");
+  await ensureColumn("imageSrc", "TEXT");
+  await ensureColumn("lastActive", "INTEGER");
+  await ensureColumn("createdAt", "DATETIME");
+  await ensureColumn("updatedAt", "DATETIME");
+
+  const threadNameSource = findExistingColumn(columns, ["name", "thread_name"]);
+  if (threadNameSource && threadNameSource !== "threadName") {
+    await dbProm.run(
+      `UPDATE ${qTable}
+       SET ${quoteIdentifier("threadName")} = CAST(${quoteIdentifier(threadNameSource)} AS TEXT)
+       WHERE ${quoteIdentifier("threadName")} IS NULL
+          OR TRIM(${quoteIdentifier("threadName")}) = ''`
+    );
+  }
+
+  const settingsSource = findExistingColumn(columns, ["setting"]);
+  if (settingsSource && settingsSource !== "settings") {
+    await dbProm.run(
+      `UPDATE ${qTable}
+       SET ${quoteIdentifier("settings")} = ${quoteIdentifier(settingsSource)}
+       WHERE ${quoteIdentifier("settings")} IS NULL
+          OR TRIM(${quoteIdentifier("settings")}) = ''
+          OR TRIM(${quoteIdentifier("settings")}) = '{}'`
+    );
+  }
+
+  await dbProm.run(
+    `UPDATE ${qTable}
+     SET ${quoteIdentifier("threadInfo")} = '{}'
+     WHERE ${quoteIdentifier("threadInfo")} IS NULL
+        OR TRIM(${quoteIdentifier("threadInfo")}) = ''`
+  );
+  await dbProm.run(
+    `UPDATE ${qTable}
+     SET ${quoteIdentifier("settings")} = '{}'
+     WHERE ${quoteIdentifier("settings")} IS NULL
+        OR TRIM(${quoteIdentifier("settings")}) = ''`
+  );
+  await dbProm.run(
+    `UPDATE ${qTable}
+     SET ${quoteIdentifier("data")} = '{}'
+     WHERE ${quoteIdentifier("data")} IS NULL
+        OR TRIM(${quoteIdentifier("data")}) = ''`
+  );
+  await dbProm.run(
+    `UPDATE ${qTable}
+     SET ${quoteIdentifier("createdAt")} = CURRENT_TIMESTAMP
+     WHERE ${quoteIdentifier("createdAt")} IS NULL`
+  );
+  await dbProm.run(
+    `UPDATE ${qTable}
+     SET ${quoteIdentifier("updatedAt")} = COALESCE(${quoteIdentifier("updatedAt")}, ${quoteIdentifier("createdAt")}, CURRENT_TIMESTAMP)
+     WHERE ${quoteIdentifier("updatedAt")} IS NULL`
+  );
+}
+
 async function createTables(): Promise<void> {
   const dbProm = getDbPromisified();
 
@@ -230,6 +354,8 @@ async function createTables(): Promise<void> {
     )
   `);
 
+  await ensureThreadTableColumns();
+
   // --- Tài/Xỉu (taixiu / txiu) ---
   // Use TEXT for very large money (BigInt) to avoid SQLite INTEGER overflow.
   await dbProm.exec(`
@@ -249,6 +375,7 @@ async function createTables(): Promise<void> {
 
     CREATE TABLE IF NOT EXISTS TaixiuHistory (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      threadID TEXT NOT NULL DEFAULT '',
       userID TEXT NOT NULL,
       bet TEXT NOT NULL,
       diceResult TEXT NOT NULL,
@@ -258,9 +385,6 @@ async function createTables(): Promise<void> {
       jackpotWin INTEGER NOT NULL DEFAULT 0,
       timestamp INTEGER NOT NULL
     );
-
-    CREATE INDEX IF NOT EXISTS idx_taixiu_history_user_time
-      ON TaixiuHistory(userID, timestamp DESC);
 
     CREATE TABLE IF NOT EXISTS TxiuJackpot (
       threadID TEXT PRIMARY KEY,
@@ -279,20 +403,29 @@ async function createTables(): Promise<void> {
       dice3 INTEGER NOT NULL,
       sum INTEGER NOT NULL
     );
-
-    CREATE INDEX IF NOT EXISTS idx_txiu_history_thread_time
-      ON TxiuHistory(threadID, time DESC);
   `);
 
-  // Ensure legacy databases also have imageSrc column
   try {
-    await dbProm.run(`ALTER TABLE Thread ADD COLUMN imageSrc TEXT`);
+    await dbProm.run(`ALTER TABLE TaixiuHistory ADD COLUMN threadID TEXT NOT NULL DEFAULT ''`);
   } catch (err: any) {
-    // Ignore if column already exists
     if (!/(duplicate column|already exists)/i.test(err?.message || "")) {
       throw err;
     }
   }
+
+  await dbProm.exec(`
+    CREATE INDEX IF NOT EXISTS idx_taixiu_history_user_time
+      ON TaixiuHistory(userID, timestamp DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_taixiu_history_thread_time
+      ON TaixiuHistory(threadID, timestamp DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_taixiu_history_user_thread_time
+      ON TaixiuHistory(userID, threadID, timestamp DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_txiu_history_thread_time
+      ON TxiuHistory(threadID, time DESC);
+  `);
 
   await dbProm.exec(`
     CREATE INDEX IF NOT EXISTS idx_thread_threadID ON Thread(threadID);
