@@ -89,12 +89,31 @@ export function createAutoReconnectTimer(options: AutoReconnectOptions): AutoRec
           }
         }
 
+        // Force cleanup MQTT client cũ để tránh kết nối zombie
+        const ctx = (client as any).ctx || (client as any)._ctx;
+        if (ctx) {
+          if (ctx.mqttClient) {
+            try {
+              ctx.mqttClient.removeAllListeners();
+              ctx.mqttClient.end(true);
+            } catch {
+              // ignore
+            }
+            ctx.mqttClient = undefined;
+          }
+          // Reset sync state - BẮT BUỘC lấy seqID mới khi reconnect
+          ctx.syncToken = undefined;
+          ctx.lastSeqId = undefined;
+          ctx.t_mqttCalled = false;
+          delete ctx.tmsWait;
+        }
+
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         const newEmitter = client.listenMqtt(messageHandler);
         updateEmitter(newEmitter);
 
-        log.success("Đã reconnect listenMqtt thành công");
+        log.success("Đã reconnect listenMqtt định kỳ thành công (seqID sẽ được lấy mới)");
       } catch (reconnectError: any) {
         log.error(`Lỗi khi reconnect listenMqtt: ${formatError(reconnectError)}`);
       }

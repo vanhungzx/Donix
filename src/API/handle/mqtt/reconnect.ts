@@ -12,6 +12,8 @@ let reconnectTimeout: NodeJS.Timeout | null = null;
 let isReconnecting = false;
 let reconnectPromise: Promise<boolean> | null = null;
 let networkErrorRetryTimeout: NodeJS.Timeout | null = null;
+let reconnectStartedAt = 0;
+const MAX_RECONNECT_LOCK_MS = 120_000; // 2 phút tối đa cho mỗi lần reconnect
 
 export function resetReconnectCount(): void {
   mqttReconnectCount = 0;
@@ -22,6 +24,13 @@ export function getReconnectCount(): number {
 }
 
 export function isCurrentlyReconnecting(): boolean {
+  // Auto-unlock nếu reconnect bị treo quá lâu
+  if (isReconnecting && reconnectStartedAt > 0 && Date.now() - reconnectStartedAt > MAX_RECONNECT_LOCK_MS) {
+    log.warn(`Reconnect bị treo quá ${MAX_RECONNECT_LOCK_MS / 1000}s, tự động mở khóa`);
+    isReconnecting = false;
+    reconnectPromise = null;
+    reconnectStartedAt = 0;
+  }
   return isReconnecting;
 }
 
@@ -36,6 +45,7 @@ export function cancelReconnect(): void {
   }
   isReconnecting = false;
   reconnectPromise = null;
+  reconnectStartedAt = 0;
 }
 
 /**
@@ -82,9 +92,14 @@ export async function reconnectMqttHandler(
   onReconnect?: () => void,
   forceReconnect: boolean = false
 ): Promise<boolean> {
-  // Nếu đang có reconnect đang chạy, trả về promise đó thay vì tạo mới
+  // Nếu đang có reconnect đang chạy, kiểm tra xem có bị treo không
   if (reconnectPromise) {
-    return reconnectPromise;
+    if (reconnectStartedAt > 0 && Date.now() - reconnectStartedAt > MAX_RECONNECT_LOCK_MS) {
+      log.warn("Reconnect promise bị treo, hủy và tạo mới");
+      cancelReconnect();
+    } else {
+      return reconnectPromise;
+    }
   }
 
   // Nếu force reconnect (từ event close/offline/disconnect), bỏ qua kiểm tra connection state
@@ -121,6 +136,7 @@ export async function reconnectMqttHandler(
 
   // Set isReconnecting ngay từ đầu để tránh nhiều lần kiểm tra login status cùng lúc
   isReconnecting = true;
+  reconnectStartedAt = Date.now();
   ctx.isReconnecting = true;
 
   // Helper function để bypass checkpoint
@@ -465,9 +481,9 @@ export async function reconnectMqttHandler(
           }
         }
 
-        // Sequence ID sẽ được lấy tự động trong getSeqID(), không cần lấy ở đây để tránh spam log
-
+        // Reset sync state hoàn toàn - BẮT BUỘC lấy seqID mới
         ctx.syncToken = undefined;
+        ctx.lastSeqId = undefined;
         ctx.t_mqttCalled = false;
         delete ctx.tmsWait;
 
@@ -475,14 +491,16 @@ export async function reconnectMqttHandler(
           onReconnect();
         }
 
+        log.system("Đang lấy sequence ID mới trước khi reconnect MQTT...");
         await getSeqID();
 
         // Reset counter khi reconnect thành công
         mqttReconnectCount = 0;
         isReconnecting = false;
+        reconnectStartedAt = 0;
         ctx.isReconnecting = false;
         reconnectPromise = null;
-        log.success("Đã sẵn sàng kết nối lại MQTT");
+        log.success("Đã sẵn sàng kết nối lại MQTT với sequence ID mới");
         resolve(true);
       } catch (e: any) {
         const isNetworkErr = isNetworkError(e);
@@ -499,6 +517,7 @@ export async function reconnectMqttHandler(
           );
 
           isReconnecting = false;
+          reconnectStartedAt = 0;
           ctx.isReconnecting = false;
           reconnectPromise = null;
 
@@ -523,6 +542,7 @@ export async function reconnectMqttHandler(
           // cũng luôn retry với backoff, không giới hạn số lần.
           log.error(`Lỗi trong quá trình reconnect: ${errorMsg}. Sẽ thử reconnect lại với backoff...`);
           isReconnecting = false;
+          reconnectStartedAt = 0;
           ctx.isReconnecting = false;
           reconnectPromise = null;
 

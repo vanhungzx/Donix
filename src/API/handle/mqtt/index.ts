@@ -4,10 +4,13 @@ import log from "@log";
 import { EventEmitter as NodeEventEmitter } from "events";
 import { createMqttClient, setupMqttConnection } from "./connection";
 import { handleFriendRequest, handleLsResponse, handlePresenceUpdate, handleTmsMessage, handleTypingNotification, handleWebRTCMessage } from "./messageHandlers";
-import { reconnectMqtt, resetReconnectCount, isCurrentlyReconnecting } from "./reconnect";
+import { reconnectMqtt, resetReconnectCount, isCurrentlyReconnecting, cancelReconnect } from "./reconnect";
 import { createGetSeqID } from "./sequenceId";
 
 let messageCleanupInterval: NodeJS.Timeout | null = null;
+
+const LIVENESS_CHECK_INTERVAL = 90_000; // Kiểm tra mỗi 90 giây
+const LIVENESS_STALE_THRESHOLD = 180_000; // Nếu không nhận t_ms trong 3 phút → coi là stale
 
 type MqttCallback = (err: any, msg?: any) => any;
 
@@ -64,6 +67,12 @@ function createRealtimeCallbackWrapper(baseCallback: MqttCallback, ctx: any): Mq
 }
 
 function listenMqtt(defaultFuncs: any, api: any, ctx: any, globalCallback: any): void {
+  // Cleanup previous liveness timer
+  if (ctx._livenessTimer) {
+    clearInterval(ctx._livenessTimer);
+    ctx._livenessTimer = null;
+  }
+
   // Cleanup previous client instance to avoid socket/listener leaks.
   if (ctx.mqttClient) {
     try {
@@ -212,6 +221,7 @@ function listenMqtt(defaultFuncs: any, api: any, ctx: any, globalCallback: any):
 
       // Fast path: use strict equality for exact topic matches (faster than switch for common cases)
       if (topic === TOPIC_T_MS) {
+          ctx._lastTmsReceived = Date.now();
           handleTmsMessage(jsonMessage, ctx, defaultFuncs, api, globalCallback);
       } else if (topic === TOPIC_THREAD_TYPING || topic === TOPIC_ORCA_TYPING) {
           handleTypingNotification(jsonMessage, globalCallback);
@@ -238,11 +248,46 @@ function listenMqtt(defaultFuncs: any, api: any, ctx: any, globalCallback: any):
 
   mqttClient.on("connect", function () {
     resetReconnectCount();
+    ctx._lastTmsReceived = Date.now();
     if (!process.env.OnStatus) {
       log.success("Đã kết nối đến server chat Facebook");
       (process.env as any).OnStatus = "true";
     }
   });
+
+  // Liveness monitor: phát hiện kết nối "zombie" (connected nhưng không nhận data)
+  if (ctx._livenessTimer) clearInterval(ctx._livenessTimer);
+  ctx._livenessTimer = setInterval(() => {
+    if (isCurrentlyReconnecting()) return;
+
+    const now = Date.now();
+    const lastTms = ctx._lastTmsReceived || 0;
+    const timeSinceLastTms = now - lastTms;
+
+    if (lastTms > 0 && timeSinceLastTms > LIVENESS_STALE_THRESHOLD) {
+      const client = ctx.mqttClient;
+      const isConnected = client && client.connected && !client.disconnecting && !client.disconnected;
+
+      if (isConnected) {
+        log.warn(
+          `MQTT liveness: không nhận t_ms trong ${Math.round(timeSinceLastTms / 1000)}s → kết nối zombie, đang force reconnect...`
+        );
+        // Force end the stale connection
+        try {
+          client.end(true);
+        } catch {
+          // ignore
+        }
+        ctx.mqttClient = undefined;
+        cancelReconnect();
+        reconnectMqtt(ctx, messageCleanupInterval, getSeqID);
+      }
+    }
+  }, LIVENESS_CHECK_INTERVAL);
+
+  if (typeof ctx._livenessTimer.unref === "function") {
+    ctx._livenessTimer.unref();
+  }
 
   // `disconnect` handler already exists above; don't add no-op listeners.
 }
@@ -311,16 +356,18 @@ export default function (defaultFuncs: any, api: any, ctx: any) {
 
     globalCallback = createRealtimeCallbackWrapper(baseCallback, ctx);
 
-    // Nếu đã có seq ID từ login, sử dụng luôn
-    if (ctx.lastSeqId) {
+    const isFirstListen = !ctx.firstListen && ctx.firstListen !== false;
+
+    if (isFirstListen && ctx.lastSeqId) {
+      // Lần đầu tiên: dùng seqID từ login nếu có
       log.system(`Sử dụng sequence ID từ login: ${ctx.lastSeqId}`);
       listenMqtt(defaultFuncs, api, ctx, globalCallback);
-    } else if (!ctx.firstListen) {
-      ctx.lastSeqId = null;
-      ctx.syncToken = undefined;
-      ctx.t_mqttCalled = false;
-      getSeqID();
     } else {
+      // Lần sau (reconnect): LUÔN lấy seqID mới
+      if (!isFirstListen) {
+        log.system("Reconnect detected: đang lấy sequence ID mới...");
+      }
+      ctx.lastSeqId = undefined;
       ctx.syncToken = undefined;
       ctx.t_mqttCalled = false;
       getSeqID();
