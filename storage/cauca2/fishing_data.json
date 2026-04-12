@@ -1,0 +1,29 @@
+{
+  "_default": {
+    "rod": null,
+    "rodDurability": 0,
+    "bait": null,
+    "cooler": null,
+    "location": "location_01",
+    "unlockedLocations": [
+      "location_01"
+    ],
+    "totalCaught": 0,
+    "totalValue": 0,
+    "caughtFish": {},
+    "inventory": {},
+    "items": {},
+    "buffs": {
+      "luckEndTime": 0
+    },
+    "dailyQuests": [],
+    "lastQuestDate": "",
+    "lastStealTime": 0,
+    "protectionEnd": 0,
+    "lastStealerID": null,
+    "lastActive": 0,
+    "lastCatchTime": 0,
+    "lastCatchFishName": null,
+    "catchStreak": 0
+  }
+}
