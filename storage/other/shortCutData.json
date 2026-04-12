@@ -3305,7 +3305,19 @@
       "url": "s"
     }
   ],
-  "2041957386368228": [],
+  "2041957386368228": [
+    {
+      "input": "@Gia Long",
+      "output": "gọi cl",
+      "url": "s",
+      "short_type": {
+        "type": "tag",
+        "senderID": "61586845605819"
+      },
+      "file": "mp4",
+      "localFilePath": "storage/other/shortcutMedia/2041957386368228/ad4e483f9f26b3681b78b5bfeb30db83.mp4"
+    }
+  ],
   "1412823280572890": [
     {
       "input": "PHL",
@@ -3313,7 +3325,53 @@
       "file": "gif",
       "localFilePath": "storage/other/shortcutMedia/1412823280572890/69b8c9397c13afe508c11511a665f0f6.gif",
       "url": null
+    },
+    {
+      "input": "!luật",
+      "output": "Bị cảnh báo 3 lần bị kick",
+      "file": "mp4",
+      "localFilePath": "storage/other/shortcutMedia/1412823280572890/7689d5a7ebe4bf0f8a1a017b13c2edd2.mp4",
+      "url": null
     }
   ],
-  "1264342595796016": []
+  "1264342595796016": [
+    {
+      "input": "@Gia Long",
+      "output": "tag con cac",
+      "url": "s",
+      "short_type": {
+        "type": "tag",
+        "senderID": "61586845605819"
+      },
+      "file": "jpg",
+      "localFilePath": "storage/other/shortcutMedia/1264342595796016/e1633c8fd217ecf680d31d9b541f7df4.jpg"
+    }
+  ],
+  "861803530227487": [],
+  "1405039028063256": [
+    {
+      "input": "na",
+      "output": "huit",
+      "file": "mp4",
+      "localFilePath": "storage/other/shortcutMedia/1405039028063256/bec3d300e10d3e56f6ccebe7b33c3a6a.mp4",
+      "url": null
+    },
+    {
+      "input": "thỏ",
+      "output": "nhun 6t",
+      "file": "mp4",
+      "localFilePath": "storage/other/shortcutMedia/1405039028063256/42812d3e831f23242f3c6069b019d04c.mp4",
+      "url": null
+    },
+    {
+      "input": "@Anh Kiet",
+      "output": "tag clmm",
+      "url": "s",
+      "short_type": {
+        "type": "tag",
+        "senderID": "100051306214230"
+      }
+    }
+  ],
+  "1329932828617871": []
 }

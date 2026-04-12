@@ -1,4 +1,4 @@
-import type { Command, CommandOnCallContext, CommandOnReplyContext } from "@types";
+import type { Command, CommandOnCallContext, CommandOnReplyContext, ReplyData } from "@types";
 import axios from "axios";
 import fs from "fs";
 import type { Readable } from "node:stream";
@@ -13,7 +13,6 @@ import type {
   SearchVideoResult,
   UnknownRecord,
   YoutubeFormat,
-  YoutubeInfo,
   YoutubeVideoDetails,
 } from "../../../services/youtube/lib/types.js";
 
@@ -25,6 +24,7 @@ interface ReplyPickState {
   messageID: string;
   mode: DownloadMode;
   result: SearchVideoResult[];
+  [key: string]: unknown;
 }
 
 interface StreamResult {
@@ -558,7 +558,7 @@ const ytbCommand: Command = {
             type: REPLY_TYPE,
             mode,
             result,
-          } as unknown as ReplyPickState
+          } as ReplyData
         );
       }
     } catch (error) {

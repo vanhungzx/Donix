@@ -5,11 +5,11 @@ const robloxCommand: Command = {
   config: {
     name: "roblox",
     alias: ["rb", "robloxinfo"],
-    version: "1.2.2",
+    version: "1.3.1",
     role: 0,
     author: "DongDev + AI Support",
     info: "Check profile Roblox kèm avatar",
-    category: "Game",
+    category: "Tiện_ích",
     guides: "{pn}roblox <username>",
     cd: 5,
     prefix: true
@@ -97,8 +97,8 @@ const robloxCommand: Command = {
         ).data.data.length;
       } catch {}
 
-      // ===== STATUS =====
-      let status = "⭕ Offline";
+      // ===== STATUS (CHUẨN 100% TÊN GAME) =====
+      let status = "💬 Online";
 
       try {
         const prs = await axios.post(
@@ -106,10 +106,46 @@ const robloxCommand: Command = {
           { userIds: [userId] }
         );
 
-        const state = prs.data.userPresences[0].userPresenceType;
+        const data = prs.data.userPresences[0];
+        const state = data.userPresenceType;
 
-        if (state === 2) status = "🎮 Đang chơi game";
-        else if (state === 3) status = "💬 Online";
+        if (state === 2) {
+
+          let gameName = "";
+
+          if (data.placeId) {
+            try {
+              // B1: placeId → universeId
+              const uniRes = await axios.get(
+                `https://apis.roblox.com/universes/v1/places/${data.placeId}/universe`
+              );
+
+              const universeId = uniRes.data.universeId;
+
+              // B2: universeId → game name
+              const gameRes = await axios.get(
+                `https://games.roblox.com/v1/games?universeIds=${universeId}`
+              );
+
+              gameName = gameRes?.data?.data?.[0]?.name || "";
+
+            } catch {}
+          }
+
+          // fallback cực hiếm
+          if (!gameName) {
+            gameName = data.lastLocation || "Game Roblox";
+          }
+
+          status = `🎮 Đang chơi: ${gameName}`;
+
+        } 
+        else if (state === 3) {
+          status = "💬 Online";
+        } 
+        else {
+          status = "⭕ Offline";
+        }
 
       } catch {}
 
@@ -153,7 +189,6 @@ const robloxCommand: Command = {
         `https://thumbnails.roblox.com/v1/users/avatar?userIds=${userId}&size=420x420&format=Png&isCircular=false`;
 
       const imgRes = await axios.get(imgAPI);
-
       const imgUrl = imgRes?.data?.data?.[0]?.imageUrl;
 
       if (!imgUrl) {

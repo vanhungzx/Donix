@@ -5,16 +5,14 @@ import type {
   CommandOnCallContext,
   CommandOnReplyContext,
   MessageForm,
+  ReplyData,
   UserDataModel,
 } from "@types";
 import axios from "axios";
 import fs from "node:fs";
 import path from "node:path";
 import type { Readable } from "node:stream";
-import { fileURLToPath } from "node:url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { TEMP_DIR } from "../../../core/storagePath";
 
 let atmDir: string[] = [];
 
@@ -42,10 +40,6 @@ interface SendNotiReply {
 
 interface MessageInfo {
   messageID?: string;
-}
-
-interface ExtendedUserDataModel extends UserDataModel {
-  getName: (userID: string | number) => Promise<string | null>;
 }
 
 interface ExtendedThreadDataModel {
@@ -91,11 +85,10 @@ function fmtAdminReply(adminName: string, content: string): string {
 interface AttachmentData {
   body: string;
   attachment?: Readable[];
-  [key: string]: unknown;
 }
 
 async function getAtm(attachments: Attachment[], text: string): Promise<AttachmentData> {
-  const tempDir = path.join(__dirname, "../../../temp");
+  const tempDir = TEMP_DIR();
   if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
   const savedAttachments: Readable[] = [];
@@ -156,9 +149,9 @@ const sendNotiCommand: Command = {
         attachments?: Attachment[];
       };
       config: { BOX_ADMIN: string };
-      userData: ExtendedUserDataModel;
+      userData: UserDataModel;
       threadData: ExtendedThreadDataModel;
-      main: { onReply: Map<string, unknown> };
+      main: { onReply: Map<string, ReplyData> };
       commandName: string;
       Reply: SendNotiReply;
     };
@@ -170,6 +163,15 @@ const sendNotiCommand: Command = {
     const ADMIN_GROUP_ID = config.BOX_ADMIN;
 
     try {
+      // Keep reply flow direction stable:
+      // - "sendnoti": user/group -> admin box
+      // - "reply": admin box -> original group
+      if (Reply.type === "sendnoti") {
+        if (String(threadID) === String(ADMIN_GROUP_ID)) return;
+        if (Reply.originalSender && String(senderID) !== String(Reply.originalSender)) return;
+      }
+      if (Reply.type === "reply" && String(threadID) !== String(ADMIN_GROUP_ID)) return;
+
       const name = (await userData.getName(senderID)) || "Người dùng";
       const thread = await threadData.get(threadID);
       const info = thread?.threadInfo as ThreadInfoWithAdmins | undefined;
@@ -180,9 +182,9 @@ const sendNotiCommand: Command = {
           const text = fmtUserFeedback(name, threadName, body || "(không có nội dung)");
           const attachments = (event.attachments || []) as Attachment[];
 
-          const msgData: MessageForm = attachments.length
+          const msgData = (attachments.length
             ? await getAtm(attachments, text)
-            : ({ body: text } as MessageForm);
+            : { body: text }) as MessageForm;
 
           await new Promise<void>((resolve) => {
             client.sendMessage(msgData, ADMIN_GROUP_ID, async (err?: Error, infoMsg?: MessageInfo) => {
@@ -217,9 +219,9 @@ const sendNotiCommand: Command = {
           const text = fmtAdminReply(adminName, body || "(không có nội dung)");
           const attachments = (event.attachments || []) as Attachment[];
 
-          const msgData: MessageForm = attachments.length
+          const msgData = (attachments.length
             ? await getAtm(attachments, text)
-            : ({ body: text } as MessageForm);
+            : { body: text }) as MessageForm;
 
           await new Promise<void>((resolve) => {
             client.sendMessage(
@@ -236,7 +238,7 @@ const sendNotiCommand: Command = {
                 if (!err && infoMsg?.messageID) {
                   main.onReply.set(infoMsg.messageID, {
                     commandName,
-                    author: senderID,
+                    author: Reply.originalSender || senderID,
                     type: "sendnoti",
                     messageID: infoMsg.messageID,
                     threadID: Reply.threadID,
@@ -273,9 +275,9 @@ const sendNotiCommand: Command = {
       args: string[];
       threadData: ExtendedThreadDataModel;
       config: { BOX_ADMIN: string };
-      main: { onReply: Map<string, unknown> };
+      main: { onReply: Map<string, ReplyData> };
       commandName: string;
-      userData: ExtendedUserDataModel;
+      userData: UserDataModel;
     };
 
     const { client, event, args, threadData, config, main, commandName, userData } = ctx;
@@ -296,7 +298,7 @@ const sendNotiCommand: Command = {
         return;
       }
 
-      const tempDir = path.join(__dirname, "../../../temp");
+      const tempDir = TEMP_DIR();
       if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
       const savedAttachments: string[] = [];
