@@ -2,10 +2,10 @@
 import log from "@log";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import autoRelogin from "../../core/auth_login/auto_relogin.js";
+import autoRelogin, { isAutoLoginEnabled } from "../../core/auth_login/auto_relogin.js";
 import { getConfig } from "../../core/configManager.js";
 import type { DonixGlobalState } from "../../types/global.js";
-import type { FBResponse } from "../../types/request.js";
+import type { DefaultFuncsHttpResponse } from "../../types/request.js";
 import type { Context, GlobalOptions } from "../request/formatters/helpers.js";
 import utils, { get, makeDefaults } from "../request/index.js";
 import type { LoginCallback, LoginOptions } from "../types/login.js";
@@ -37,7 +37,7 @@ export default function login(
   const jar = utils.getJar() as Context["jar"];
   const cookieString = extractCookieString(cookieStr);
   if (!cookieString) {
-    const errorMsg = cookieStr === undefined || cookieStr === null ? "Thiếu cookieStr, vui lòng cung cấp cookie string hợp lệ trong config.json!" : typeof cookieStr === "string" && cookieStr.trim().length === 0 ? "Cookie string trong config.json đang trống, vui lòng cung cấp cookie string hợp lệ!" : "Cookie string không hợp lệ, vui lòng kiểm tra lại config.json!";
+    const errorMsg = cookieStr === undefined || cookieStr === null ? "Thiếu cookieStr, vui lòng điền cookie.txt ở thư mục gốc project!" : typeof cookieStr === "string" && cookieStr.trim().length === 0 ? "Cookie đang trống — kiểm tra cookie.txt (hoặc fallback trong config)." : "Cookie string không hợp lệ, vui lòng kiểm tra lại cookie.txt!";
     log.error(errorMsg);
     return (callback as LoginCallback)(errorMsg);
   }
@@ -45,12 +45,18 @@ export default function login(
     parseAndSetCookies(jar, cookieString);
     get("https://www.facebook.com/", jar, undefined, opts)
       .then(utils.saveCookies(jar))
-      .then(async (res: FBResponse<string>) => {
+      .then(async (res: DefaultFuncsHttpResponse) => {
         const bypassedRes = await bypassAutomation(res, jar, opts as GlobalOptions);
-        const html = bypassedRes.data || res.data;
+        const rawHtml = bypassedRes.data ?? res.data;
+        const html = typeof rawHtml === "string" ? rawHtml : String(rawHtml ?? "");
         const userID = extractUserID(jar);
         if (!userID) {
           if (!isRetry) {
+            if (!isAutoLoginEnabled()) {
+              return (callback as LoginCallback)(
+                "Không tìm thấy cookie người dùng. Auto login đã tắt (autoLogin: false) — cập nhật cookie.txt."
+              );
+            }
             log.warn("Không tìm thấy cookie người dùng, đang thử auto login...");
             try {
               const autoLoginSuccess = await autoRelogin();

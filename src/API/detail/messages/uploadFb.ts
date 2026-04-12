@@ -9,6 +9,7 @@ import { Readable } from "node:stream";
 import path from "path";
 import { CookieJar } from "tough-cookie";
 import { URL } from "url";
+import { buildSecChUaFromUserAgent } from "../../request/user-agents.js";
 import type { Context } from "../../request/formatters/helpers";
 
 interface Tokens {
@@ -18,6 +19,28 @@ interface Tokens {
   spin_r?: string;
   spin_t?: string;
   rev?: string;
+  __spin_b?: string;
+  __dyn?: string;
+  __csr?: string;
+  __hs?: string;
+  __hsi?: string;
+  __s?: string;
+  __hsdp?: string;
+  __hblp?: string;
+  __sjsp?: string;
+  __crn?: string;
+  qpl_active_flow_ids?: string;
+}
+
+interface ClientWithRupload {
+  ruploadAttachment?: (inputs: unknown) => Promise<unknown[]>;
+}
+
+let mercuryReqSeq = Math.floor(Math.random() * 1000);
+
+function nextMercuryReq(): string {
+  mercuryReqSeq += 1;
+  return mercuryReqSeq.toString(36);
 }
 
 interface NormalizedFile {
@@ -194,9 +217,44 @@ async function getTokens(ua: string, forceRefresh = false): Promise<Tokens> {
     const lsd = getFrom(html, '["LSD",[],{"token":"', '"}') || html.match(/name="lsd"\s+value="([^"]+)"/)?.[1] || "";
     const spin_r = pick(/"__spin_r":(\d+)/, html) || "";
     const spin_t = pick(/"__spin_t":(\d+)/, html) || "";
-    const rev = pick(/"__rev":(\d+)/, html) || "";
+    const __spin_b = pick(/"__spin_b":"([^"]+)"/, html) || "trunk";
+    const rev = pick(/"__rev":(\d+)/, html) || pick(/client_revision":(\d+)/, html) || "";
+    const __hs = pick(/"__hs":"([^"]+)"/, html) || pick(/__hs=([^&"'<>]+)/, html) || "";
+    const __hsi = pick(/"__hsi":(\d+)/, html) || pick(/__hsi=(\d+)/, html) || "";
+    const __s = pick(/"__s":"([^"]+)"/, html) || "";
+    const __dyn =
+      html.match(/"__dyn":"((?:\\.|[^"\\])*)"/)?.[1]?.replace(/\\"/g, '"') ||
+      html.match(/__dyn=([^&"'<>]+)/)?.[1] ||
+      "";
+    const __csr =
+      html.match(/"__csr":"((?:\\.|[^"\\])*)"/)?.[1]?.replace(/\\"/g, '"') ||
+      html.match(/__csr=([^&"'<>]+)/)?.[1] ||
+      "";
+    const __hsdp = pick(/"__hsdp":"([^"]+)"/, html) || "";
+    const __hblp = pick(/"__hblp":"([^"]+)"/, html) || "";
+    const __sjsp = pick(/"__sjsp":"([^"]+)"/, html) || "";
+    const __crn = pick(/"__crn":"([^"]+)"/, html) || "";
+    const qpl_active_flow_ids = pick(/"qpl_active_flow_ids":"([^"]+)"/, html) || "";
 
-    tokenCache = { lsd, fb_dtsg, jazoest, spin_r, spin_t, rev };
+    tokenCache = {
+      lsd,
+      fb_dtsg,
+      jazoest,
+      spin_r,
+      spin_t,
+      rev,
+      __spin_b,
+      __hs: __hs || undefined,
+      __hsi: __hsi || undefined,
+      __s: __s || undefined,
+      __dyn: __dyn || undefined,
+      __csr: __csr || undefined,
+      __hsdp: __hsdp || undefined,
+      __hblp: __hblp || undefined,
+      __sjsp: __sjsp || undefined,
+      __crn: __crn || undefined,
+      qpl_active_flow_ids: qpl_active_flow_ids || undefined,
+    };
     tokenCacheTime = now;
     return tokenCache;
   } catch (e) {
@@ -445,42 +503,107 @@ function pLimit(n: number) {
     });
 }
 
-async function singleUpload(url: string, file: NormalizedFile, ua: string, tokens: Tokens, retries = 2): Promise<{ data: unknown; status: number }> {
-  if (!http) throw new Error("HTTP client not initialized");
-  const form = new FormData();
-  form.append("farr", file.stream, { filename: file.filename, contentType: file.contentType });
-  form.append("fb_dtsg", tokens.fb_dtsg || "");
-  form.append("jazoest", tokens.jazoest || "");
+/** Ưu tiên token từ ctx (login) rồi mới HTML scrape */
+function mergeCtxMercuryTokens(ctx: Context, t: Tokens): Tokens {
+  const m = { ...t };
+  if (ctx.lsd) m.lsd = ctx.lsd;
+  if (ctx.fb_lsd && !m.lsd) m.lsd = ctx.fb_lsd;
+  if (ctx.fb_dtsg) m.fb_dtsg = ctx.fb_dtsg;
+  if (ctx.jazoest) m.jazoest = ctx.jazoest;
+  if (ctx.__dyn) m.__dyn = ctx.__dyn;
+  if (ctx.__csr) m.__csr = ctx.__csr;
+  if (ctx.__hs) m.__hs = ctx.__hs;
+  if (ctx.__hsi) m.__hsi = ctx.__hsi;
+  if (ctx.master?.__spin_r) m.spin_r = ctx.master.__spin_r;
+  if (ctx.master?.__spin_t) m.spin_t = ctx.master.__spin_t;
+  if (ctx.master?.__spin_b) m.__spin_b = ctx.master.__spin_b;
+  if (ctx.qpl_active_flow_ids) m.qpl_active_flow_ids = ctx.qpl_active_flow_ids;
+  return m;
+}
 
-  const headers: Record<string, string> = {
-    ...(form.getHeaders() as Record<string, string>),
+function buildMercuryUploadUrl(ctx: Context, tok: Tokens): string {
+  const u = new URL("https://www.facebook.com/ajax/mercury/upload.php");
+  const p = u.searchParams;
+  p.set("__aaid", "0");
+  p.set("__user", String(ctx.userID));
+  p.set("__a", "1");
+  p.set("__req", nextMercuryReq());
+  if (tok.__hs) p.set("__hs", tok.__hs);
+  p.set("dpr", "1");
+  p.set("__ccg", "EXCELLENT");
+  if (tok.rev) p.set("__rev", tok.rev);
+  if (tok.__s) p.set("__s", tok.__s);
+  if (tok.__hsi) p.set("__hsi", tok.__hsi);
+  if (tok.__dyn) p.set("__dyn", tok.__dyn);
+  if (tok.__csr) p.set("__csr", tok.__csr);
+  if (tok.__hsdp) p.set("__hsdp", tok.__hsdp);
+  if (tok.__hblp) p.set("__hblp", tok.__hblp);
+  if (tok.__sjsp) p.set("__sjsp", tok.__sjsp);
+  p.set("__comet_req", "15");
+  if (tok.fb_dtsg) p.set("fb_dtsg", tok.fb_dtsg);
+  if (tok.jazoest) p.set("jazoest", tok.jazoest);
+  if (tok.lsd) p.set("lsd", tok.lsd);
+  if (tok.spin_r) p.set("__spin_r", tok.spin_r);
+  p.set("__spin_b", tok.__spin_b || "trunk");
+  if (tok.spin_t) p.set("__spin_t", tok.spin_t);
+  p.set("__crn", tok.__crn || "comet.fbweb.CometHomeRoute");
+  if (tok.qpl_active_flow_ids) p.set("qpl_active_flow_ids", tok.qpl_active_flow_ids);
+  return u.toString();
+}
+
+function buildMercuryMultipartHeaders(ua: string, tok: Tokens, form: FormData): Record<string, string> {
+  const fp = buildSecChUaFromUserAgent(ua);
+  const fdh = form.getHeaders() as Record<string, string | string[] | undefined>;
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(fdh)) {
+    if (v === undefined) continue;
+    out[k] = Array.isArray(v) ? v.join("; ") : String(v);
+  }
+  Object.assign(out, {
     Accept: "*/*",
     "Accept-Language": "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7",
     "Accept-Encoding": "gzip, deflate, br",
     "User-Agent": ua,
+    "sec-ch-ua": fp.secChUa,
+    "sec-ch-ua-full-version-list": fp.secChUaFullVersionList,
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-model": '""',
+    "sec-ch-ua-platform": fp.secChUaPlatform,
+    "sec-ch-ua-platform-version": fp.secChUaPlatformVersion,
+    "sec-ch-prefers-color-scheme": "dark",
     "x-asbd-id": "359341",
-    "x-fb-lsd": tokens.lsd || "",
+    "x-fb-lsd": tok.lsd || "",
     "x-fb-friendly-name": "MercuryUpload",
     "x-fb-request-analytics-tags": JSON.stringify({
       network_tags: {
-        product: "256002347743983",
+        product: "6628568379",
         purpose: "none",
         request_category: "graphql",
         retry_attempt: "0",
       },
       application_tags: "graphservice",
     }),
-    "sec-ch-ua": '"Not;A=Brand";v="99", "Google Chrome";v="119", "Chromium";v="119"',
-    "sec-ch-ua-mobile": "?0",
-    "sec-ch-ua-platform": '"Windows"',
     "sec-fetch-dest": "empty",
     "sec-fetch-mode": "cors",
     "sec-fetch-site": "same-origin",
     Origin: "https://www.facebook.com",
     Referer: "https://www.facebook.com/",
-    "x-fb-rlafr": "0",
-    Connection: "keep-alive",
-  };
+  });
+  return out;
+}
+
+async function singleUpload(
+  ctx: Context,
+  file: NormalizedFile,
+  ua: string,
+  tok: Tokens,
+  retries = 2
+): Promise<{ data: unknown; status: number }> {
+  if (!http) throw new Error("HTTP client not initialized");
+  const url = buildMercuryUploadUrl(ctx, tok);
+  const form = new FormData();
+  form.append("farr", file.stream, { filename: file.filename, contentType: file.contentType });
+  const headers = buildMercuryMultipartHeaders(ua, tok, form);
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -505,7 +628,55 @@ async function singleUpload(url: string, file: NormalizedFile, ua: string, token
   throw new Error("Upload failed after retries");
 }
 
-export default function (_defaultFuncs: unknown, _api: unknown, ctx: Context) {
+async function tryMercuryRuploadFallback(
+  api: ClientWithRupload | undefined,
+  originals: unknown[]
+): Promise<UploadResult | null> {
+  if (!api?.ruploadAttachment || !originals.length) return null;
+  try {
+    const tasks = originals.map((source) => ({ source }));
+    const rres = await api.ruploadAttachment(tasks);
+    if (!Array.isArray(rres) || rres.length === 0) return null;
+    const ids: AttachmentDetail[] = [];
+    for (const raw of rres) {
+      const row = raw as Record<string, unknown>;
+      const id =
+        row.mediaId ??
+        row.media_id ??
+        row.image_id ??
+        row.video_id ??
+        row.audio_id ??
+        row.gif_id ??
+        row.file_id ??
+        row.uploadId ??
+        row.upload_id ??
+        row.id ??
+        row.fbid;
+      if (id == null) continue;
+      const idStr = String(id);
+      const mediaType = row.type;
+      const det: AttachmentDetail = { fbid: idStr, id: idStr };
+      if (mediaType === "video" || row.video_id) det.video_id = idStr;
+      else if (mediaType === "audio" || row.audio_id) det.audio_id = idStr;
+      else if (mediaType === "gif" || row.gif_id) {
+        det.gif_id = idStr;
+        det.image_id = idStr;
+      } else {
+        det.image_id = idStr;
+      }
+      if (row.uploadId != null) det.upload_id = String(row.uploadId);
+      ids.push(det);
+    }
+    if (!ids.length) return null;
+    logger.info(`[uploadFb] mercury -> ruploadAttachment fallback OK (${ids.length} item(s))`);
+    return { status: 200, ids, raw: rres };
+  } catch (e) {
+    logger.warn(`[uploadFb] ruploadAttachment fallback: ${(e as Error).message}`);
+    return null;
+  }
+}
+
+export default function (_defaultFuncs: unknown, api: ClientWithRupload | undefined, ctx: Context) {
   const ua = (ctx?.options?.userAgent as string) || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36";
   cookieJar = (ctx.jar instanceof CookieJar ? ctx.jar : new CookieJar()) as CookieJar;
 
@@ -554,61 +725,31 @@ export default function (_defaultFuncs: unknown, _api: unknown, ctx: Context) {
 
     (async () => {
       let tokens: Tokens | null = null;
+      let inputsArr: unknown[] = [];
       try {
-        const inputsArr = Array.isArray(link) ? link : [link];
+        inputsArr = Array.isArray(link) ? link : [link];
 
         if (!inputsArr.length) {
           return callback(new Error("No files to upload"));
         }
 
-        // Get tokens (with caching)
+        // Get tokens (with caching), gộp token Comet từ ctx (giống curl mercury/upload.php)
         tokens = await getTokens(ua);
+        const mergedTok = mergeCtxMercuryTokens(ctx, tokens);
 
         // Normalize all inputs in parallel
         const normAll = await Promise.all(inputsArr.map((x) => normalizeOne(x, ua)));
 
-        // Build upload URL with tokens
-        const baseUrl = `https://www.facebook.com/ajax/mercury/upload.php?__a=1&__comet_req=1${tokens.spin_r ? `&__spin_r=${tokens.spin_r}` : ""}${tokens.spin_t ? `&__spin_t=${tokens.spin_t}` : ""}${tokens.rev ? `&__rev=${tokens.rev}` : ""}`;
-
         if (options.mode === "single") {
+          const uploadUrl = buildMercuryUploadUrl(ctx, mergedTok);
           const form = new FormData();
           for (const f of normAll) {
             form.append("farr", f.stream, { filename: f.filename, contentType: f.contentType });
           }
-          form.append("fb_dtsg", tokens.fb_dtsg || "");
-          form.append("jazoest", tokens.jazoest || "");
 
-          const headers: Record<string, string> = {
-            ...(form.getHeaders() as Record<string, string>),
-            Accept: "*/*",
-            "Accept-Language": "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7",
-            "Accept-Encoding": "gzip, deflate, br",
-            "User-Agent": ua,
-            "x-asbd-id": "359341",
-            "x-fb-lsd": tokens.lsd || "",
-            "x-fb-friendly-name": "MercuryUpload",
-            "x-fb-request-analytics-tags": JSON.stringify({
-              network_tags: {
-                product: "256002347743983",
-                purpose: "none",
-                request_category: "graphql",
-                retry_attempt: "0",
-              },
-              application_tags: "graphservice",
-            }),
-            "sec-ch-ua": '"Not;A=Brand";v="99", "Google Chrome";v="119", "Chromium";v="119"',
-            "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-platform": '"Windows"',
-            "sec-fetch-dest": "empty",
-            "sec-fetch-mode": "cors",
-            "sec-fetch-site": "same-origin",
-            Origin: "https://www.facebook.com",
-            Referer: "https://www.facebook.com/",
-            "x-fb-rlafr": "0",
-            Connection: "keep-alive",
-          };
+          const headers = buildMercuryMultipartHeaders(ua, mergedTok, form);
 
-          const res = await http!.post(baseUrl, form, {
+          const res = await http!.post(uploadUrl, form, {
             headers,
             timeout: 120000,
             maxContentLength: Infinity,
@@ -630,6 +771,10 @@ export default function (_defaultFuncs: unknown, _api: unknown, ctx: Context) {
           const ids = mapAttachmentDetails(data);
 
           if (!ids.length) {
+            const fb = await tryMercuryRuploadFallback(api, inputsArr);
+            if (fb) {
+              return callback(null, fb);
+            }
             const e = new Error("UploadFb returned no metadata/ids") as Error & { code?: string; status?: number; body?: unknown };
             e.code = "NO_METADATA";
             e.status = res.status;
@@ -637,13 +782,13 @@ export default function (_defaultFuncs: unknown, _api: unknown, ctx: Context) {
             throw e;
           }
 
-          logger.info(`[uploadFb] success ${ids.length} item(s) status ${res.status}`);
+          logger.info(`[uploadFb] mercury success ${ids.length} item(s) status ${res.status}`);
           return callback(null, { status: res.status || 200, ids, raw: data });
         }
 
         const uploadConcurrency = options.concurrency || 3;
         const limit = pLimit(uploadConcurrency);
-        const tasks = normAll.map((f) => () => singleUpload(baseUrl, f, ua, tokens!));
+        const tasks = normAll.map((f) => () => singleUpload(ctx, f, ua, mergedTok));
         const results = await Promise.all(tasks.map((t) => limit(t)));
 
         const ids: AttachmentDetail[] = [];
@@ -696,6 +841,10 @@ export default function (_defaultFuncs: unknown, _api: unknown, ctx: Context) {
         }
 
         if (ids.length === 0 && errors.length > 0) {
+          const fb = await tryMercuryRuploadFallback(api, inputsArr);
+          if (fb) {
+            return callback(null, fb);
+          }
           throw errors[0].error;
         }
 
@@ -720,10 +869,15 @@ export default function (_defaultFuncs: unknown, _api: unknown, ctx: Context) {
             logger.error(`[uploadFb] Token refresh failed: ${(refreshErr as Error).message}`);
           }
         }
-        const level = error.code === "NO_METADATA" ? "warn" : "error";
-        (logger as any)[level](
-          `[uploadFb] ${level} ${error.code || error.response?.status || ""} ${error.message || error}`
-        );
+        if (error.code === "NO_METADATA") {
+          logger.warn(`[uploadFb] warn ${error.code || ""} ${error.message || error}`);
+        } else {
+          logger.error(`[uploadFb] error ${error.code || error.response?.status || ""} ${error.message || error}`);
+        }
+        const fb = await tryMercuryRuploadFallback(api, inputsArr);
+        if (fb) {
+          return callback(null, fb);
+        }
         return callback(error);
       }
     })().catch((err) => {

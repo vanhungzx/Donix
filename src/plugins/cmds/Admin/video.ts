@@ -31,23 +31,32 @@ const Command: Command = {
 
       // ON
       if (input === "on") {
-        if (!isAllow) return reply("❌ Bạn không có quyền bật video");
+        if (!isAllow) {
+          await reply("❌ Bạn không có quyền bật video");
+          return;
+        }
         settings.video.enabled = true;
         await threadData.update(threadID, { settings });
-        return reply("✅ Đã bật video");
+        await reply("✅ Đã bật video");
+        return;
       }
 
       // OFF
       if (input === "off") {
-        if (!isAllow) return reply("❌ Bạn không có quyền tắt video");
+        if (!isAllow) {
+          await reply("❌ Bạn không có quyền tắt video");
+          return;
+        }
         settings.video.enabled = false;
         await threadData.update(threadID, { settings });
-        return reply("❌ Đã tắt video");
+        await reply("❌ Đã tắt video");
+        return;
       }
 
       // nếu off thì chặn người thường
       if (settings.video.enabled === false && !isAllow) {
-        return reply("❌ Video đã bị tắt trong nhóm này");
+        await reply("❌ Video đã bị tắt trong nhóm này");
+        return;
       }
 
       // mapping nhiều cách gọi
@@ -69,7 +78,7 @@ const Command: Command = {
       const arr = map[input];
 
       if (!arr || !arr.length) {
-        return reply(
+        await reply(
 `❌ Không có video
 
 Các loại video:
@@ -78,6 +87,7 @@ Các loại video:
 • vd ani | anime
 • vd cos | cosplay`
         );
+        return;
       }
 
       await reply({

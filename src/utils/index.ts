@@ -11,13 +11,14 @@ type JSONBType = {
 let JSONB: JSONBType | null = null;
 let JSONBLoading: Promise<JSONBType> | null = null;
 
-const getJSONB = async () => {
+const getJSONB = async (): Promise<JSONBType> => {
   if (JSONB) return JSONB;
   if (JSONBLoading) return JSONBLoading;
-  JSONBLoading = import("json-bigint").then((m) => {
-    JSONB = m.default;
+  JSONBLoading = import("json-bigint").then((m): JSONBType => {
+    const j = m.default as unknown as JSONBType;
+    JSONB = j;
     JSONBLoading = null;
-    return JSONB;
+    return j;
   });
   return JSONBLoading;
 };
@@ -202,21 +203,22 @@ export function parseGraphql<T = unknown>(data: unknown): T | unknown {
 }
 
 export function parseFromJSONB<T = unknown>(data: string): T {
-
-  if (!JSONB) {
-
+  const j = JSONB;
+  if (!j) {
     try {
       return JSON.parse(data) as T;
     } catch {
-
       throw new Error("JSONB not loaded yet, please use parseFromJSONBAsync");
     }
   }
-  return JSONB.parse(data) as T;
+  return j.parse(data) as T;
 }
 
 export async function parseFromJSONBAsync<T = unknown>(data: string): Promise<T> {
   const jsonb = await getJSONB();
+  if (!jsonb) {
+    throw new Error("JSONB failed to load");
+  }
   return jsonb.parse(data) as T;
 }
 
@@ -400,8 +402,8 @@ export function isUploaderAvailable(
   uploader?: unknown,
   ruploader?: unknown
 ): boolean {
-  const hasUploader = uploader && typeof uploader === "function";
-  const hasRuploader = ruploader && typeof ruploader === "function";
+  const hasUploader = Boolean(uploader && typeof uploader === "function");
+  const hasRuploader = Boolean(ruploader && typeof ruploader === "function");
   return hasUploader || hasRuploader;
 }
 

@@ -5,7 +5,7 @@ import utils from '../../../request/formatters/helpers.js';
 const EVENT_TYPE_SUBSCRIBE = 'event';
 const LOG_MESSAGE_TYPE_SUBSCRIBE = 'log:subscribe';
 
-export default (def: any, client: any, ctx: any, delta: any, globalCallback: (err: any, msg?: any) => void): void => {
+export default (_def: unknown, _client: unknown, _ctx: unknown, delta: any, globalCallback: (err: any, msg?: any) => void): void => {
   try {
     // Fast path: cache property access
     const threadKey = delta.threadKey;

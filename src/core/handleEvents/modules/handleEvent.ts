@@ -33,9 +33,6 @@ export const createHandleEvent =
 
       const list: Promise<void>[] = [];
 
-      // Pre-compile event type check (realtime optimization)
-      const eventTypeLower = eventType.toLowerCase();
-
       // Fast path: iterate events map một lần, cache entries
       const eventEntries = Array.from(events.entries());
       const eventEntriesLen = eventEntries.length;

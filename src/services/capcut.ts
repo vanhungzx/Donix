@@ -324,6 +324,7 @@ export class CapcutAPI {
       };
     } catch (error) {
       console.error(error);
+      return undefined;
     }
   }
 
@@ -570,6 +571,7 @@ export class CapcutAPI {
           "Error:",
           error.response ? error.response.data : error.message
         );
+        return undefined;
       }
     };
 
@@ -654,6 +656,7 @@ export class CapcutAPI {
           "Error:",
           error.response ? error.response.data : error.message
         );
+        return undefined;
       }
     };
 
@@ -662,7 +665,7 @@ export class CapcutAPI {
     } else if (/^https?:\/\/mobile\.capcutshare\.com/.test(link)) {
       return await postLinkMobile(link);
     } else {
-      return;
+      return undefined;
     }
   }
 

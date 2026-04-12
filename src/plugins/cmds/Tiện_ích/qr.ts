@@ -30,7 +30,7 @@ const qrCommand: Command = {
   cd: 5,
   prefix: true,
   async onCall(ctx: CommandOnCallContext): Promise<void> {
-    const { client, event, args, reply } = ctx;
+    const { args, reply } = ctx;
 
     try {
       if (!args[0]) {

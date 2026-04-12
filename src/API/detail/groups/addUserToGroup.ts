@@ -72,8 +72,8 @@ type AddUserToGroupCallback = (
 ) => void;
 
 export default function (
-  defaultFuncs: DefaultFuncs,
-  client: Client,
+  _defaultFuncs: DefaultFuncs,
+  _client: Client,
   ctx: Context
 ): (
   userID: string | number | (string | number)[],

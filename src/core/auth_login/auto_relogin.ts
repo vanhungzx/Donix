@@ -1,7 +1,8 @@
 import { CookieJar } from "tough-cookie";
 import axios from "axios";
 import log from "../../utils/log";
-import { getConfig, updateConfigKey } from "../configManager";
+import { applySessionCookieToRuntime, getConfig, updateConfigKey } from "../configManager";
+import { writeSessionCookieSync } from "../sessionCookieFile";
 import { login as loginMessengerApp } from "./messenger_app";
 
 /** App ID cho từng loại token (Facebook) */
@@ -117,7 +118,8 @@ async function updateConfigAfterLogin(
   accessToken?: string | null
 ): Promise<void> {
   try {
-    await updateConfigKey("cookie", newCookie);
+    writeSessionCookieSync(newCookie);
+    applySessionCookieToRuntime(newCookie);
     if (accessToken && accessToken.trim()) {
       const cfg = getConfig() as ConfigWithFb;
       const existingToken: TokenConfig = (cfg.token && typeof cfg.token === "object" && !Array.isArray(cfg.token))
@@ -133,15 +135,15 @@ async function updateConfigAfterLogin(
       if (enriched.EAAAAU) extra.push("EAAAAU");
       if (enriched.EAAD6V7) extra.push("EAAD6V7");
       log.success(
-        "AUTO-LOGIN: Đã ghi cookie và token vào config.json" +
+        "AUTO-LOGIN: Đã ghi cookie vào cookie.txt và token vào config.json" +
         (extra.length ? ` (${extra.join(", ")})` : " (EAAD)")
       );
     } else {
-      log.success("AUTO-LOGIN: Đã ghi cookie vào config.json");
+      log.success("AUTO-LOGIN: Đã ghi cookie vào cookie.txt");
     }
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
-    log.error(`AUTO-LOGIN: Lỗi khi cập nhật cookie/token vào config: ${msg}`);
+    log.error(`AUTO-LOGIN: Lỗi khi cập nhật cookie/token: ${msg}`);
   }
 }
 
@@ -186,7 +188,7 @@ function updateGlobalAccount(newCookie: string): void {
       account?: { cookie?: string; token?: TokenConfig | null };
     };
     g.account = {
-      cookie: cfg.cookie ?? newCookie,
+      cookie: newCookie.trim() || cfg.cookie || "",
       token: cfg.token && typeof cfg.token === "object" && !Array.isArray(cfg.token)
         ? { ...(cfg.token as TokenConfig) }
         : null,
@@ -279,9 +281,18 @@ export async function autoReloginWithMessengerApp(ctx?: AutoReloginContext | nul
   }
 }
 
+/** `autoLogin: false` trong config.json tắt mọi auto login (mặc định bật nếu không khai báo). */
+export function isAutoLoginEnabled(): boolean {
+  const cfg = getConfig() as { autoLogin?: boolean };
+  return cfg.autoLogin !== false;
+}
+
 /**
  * Default auto relogin: dùng messenger_app.
  */
 export default async function autoRelogin(ctx?: AutoReloginContext | null): Promise<boolean> {
+  if (!isAutoLoginEnabled()) {
+    return false;
+  }
   return await autoReloginWithMessengerApp(ctx);
 }

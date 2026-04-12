@@ -3,7 +3,7 @@ import { generateOfflineThreadingID } from "../../request/formatters/index";
 import type { Context, DefaultFuncs } from "../../request/formatters/helpers";
 
 const MQTT_TOPIC = "/ls_req";
-const MQTT_QOS = 1;
+const MQTT_QOS = 1 as const;
 
 interface LiveLocation {
   latitude: number;
@@ -84,7 +84,9 @@ export default function sendLiveLocationFactory(
     return new Promise<SendLiveLocationResult>((resolve, reject) => {
       if (!mqttOk(ctx)) {
         const err = new Error("MQTT client is not connected");
-        log.error("sendLiveLocation", err);
+        log.error(
+          `sendLiveLocation: ${err instanceof Error ? err.message : String(err)}`
+        );
         cb(err);
         return reject(err);
       }
@@ -164,13 +166,15 @@ export default function sendLiveLocationFactory(
           );
         });
 
-      withRetry(sendOnce, 1)
+      withRetry(() => sendOnce(), 1)
         .then((result) => {
           cb(null, result);
           resolve(result);
         })
         .catch((err) => {
-          log.error("sendLiveLocation", err);
+          log.error(
+            `sendLiveLocation: ${err instanceof Error ? err.message : String(err)}`
+          );
           cb(err);
           reject(err);
         });

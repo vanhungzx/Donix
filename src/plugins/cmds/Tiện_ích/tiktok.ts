@@ -1,5 +1,4 @@
 import * as fs from "fs";
-import * as path from "path";
 import { tempPath } from "../../../core/storagePath";
 
 const convertTime = (timestamp: number): string => {

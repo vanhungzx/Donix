@@ -52,6 +52,19 @@ export const createOnChat =
         // ignore spam-ban errors
       }
 
+      const cfgAny = config as Record<string, unknown>;
+      if (cfgAny.botInteractionEnabled === false) {
+        const OWNER = config.OWNER;
+        const ADMIN = config.ADMIN;
+        const adminListChat: string[] = Array.isArray(ADMIN)
+          ? ADMIN.map((id) => String(id))
+          : ADMIN != null
+            ? [String(ADMIN)]
+            : [];
+        const isOwnerChat = Array.isArray(OWNER) ? OWNER.includes(sid) : String(OWNER) === sid;
+        if (!isOwnerChat && !adminListChat.includes(sid)) return;
+      }
+
       // Kiểm tra các điều kiện cơ bản: rent, ban, adminbox (không ảnh hưởng tới spam-ban)
       try {
         const [isRent, isBanned, isAdminBox] = await Promise.all([
@@ -203,8 +216,7 @@ export const createOnChat =
               if (typeof h === "function") await h();
             } catch (e: unknown) {
               // Log lỗi nếu có nhưng không dừng các handler khác
-              const error = e instanceof Error ? e : new Error(String(e));
-              console.log(e);
+              console.log(e instanceof Error ? e : new Error(String(e)));
               //scopedLogger?.error?.(`onChat:${commandName}`, error.message || String(e));
             }
           })();

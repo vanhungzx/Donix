@@ -117,7 +117,10 @@ export default function (
           .postFormData(
             "https://upload.facebook.com/ajax/react_composer/attachments/photo/upload",
             ctx.jar,
-            vari
+            vari as unknown as Record<
+              string,
+              string | number | boolean | null | undefined
+            >
           )
           .then(parseAndCheckLogin(ctx, defaultFuncs))
           .then((res: unknown) => {

@@ -34,6 +34,10 @@ export default function (
 
     const normalizedForm: Record<string, unknown> =
       (form && typeof form === "object" ? form : {}) as Record<string, unknown>;
+    const formForDefault = normalizedForm as Record<
+      string,
+      string | number | boolean | null | undefined
+    >;
 
     const cb: PostFormDataCallback =
       callback ||
@@ -43,7 +47,7 @@ export default function (
       });
 
     defaultFuncs
-      .postFormData(url, ctx.jar, normalizedForm, {})
+      .postFormData(url, ctx.jar, formForDefault, {})
       .then((resData) => {
         try {
 

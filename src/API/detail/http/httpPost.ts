@@ -40,6 +40,10 @@ export default function httpPostFactory(
 
     const normalizedForm: Record<string, unknown> =
       form && typeof form === "object" ? (form as Record<string, unknown>) : {};
+    const formForDefault = normalizedForm as Record<
+      string,
+      string | number | boolean | null | undefined
+    >;
 
     const cb: HttpPostCallback =
       callback ||
@@ -51,7 +55,7 @@ export default function httpPostFactory(
     const shouldUseDefaultPost = isGraphQLAPI ? false : notAPI;
     const executor = shouldUseDefaultPost
       ? () => networkPost(url, ctx.jar, normalizedForm, ctx.options as Record<string, unknown> | undefined, ctx)
-      : () => defaultFuncs.post(url, ctx.jar, normalizedForm, ctx);
+      : () => defaultFuncs.post(url, ctx.jar, formForDefault, ctx);
 
     const ensureFreshTokens = async (): Promise<void> => {
       if (!isGraphQLAPI) return;
@@ -63,6 +67,7 @@ export default function httpPostFactory(
       }
     };
     const runWithRetry = async (maxRetries = 2): Promise<unknown> => {
+      await ensureFreshTokens();
       let lastError: unknown;
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {

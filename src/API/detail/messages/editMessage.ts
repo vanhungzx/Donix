@@ -46,8 +46,8 @@ type EditMessageCallback = (
 ) => void;
 
 export default function (
-  defaultFuncs: DefaultFuncs,
-  client: any,
+  _defaultFuncs: DefaultFuncs,
+  _client: any,
   ctx: MQTTContext
 ): (
   text: string,

@@ -1,7 +1,59 @@
 import HttpsProxyAgent from "https-proxy-agent";
 import mqtt from "mqtt";
+import log from "@log";
 import websocket from "../../ws-stream";
+import { reconnectMqtt } from "./reconnect";
 import { topics } from "./constants";
+
+function syncClientReadyState(ctx: any, ready: boolean): void {
+  const mqttClient = ctx?.mqttClient;
+  if (mqttClient) {
+    mqttClient._donixReady = ready;
+  }
+}
+
+function clearTmsHandshakeTimeout(ctx: any): void {
+  const existingTimer = ctx?._tmsHandshakeTimeout as NodeJS.Timeout | undefined;
+  if (existingTimer) {
+    clearTimeout(existingTimer);
+  }
+  ctx._tmsHandshakeTimeout = undefined;
+}
+
+export function resetMqttReadyState(ctx: any): void {
+  clearTmsHandshakeTimeout(ctx);
+  ctx.mqttReady = false;
+  delete ctx.tmsWait;
+  syncClientReadyState(ctx, false);
+}
+
+export function markMqttActivity(ctx: any): void {
+  const now = Date.now();
+  ctx.lastMqttActivityAt = now;
+  const mqttClient = ctx?.mqttClient;
+  if (mqttClient) {
+    mqttClient._donixLastActivityAt = now;
+  }
+}
+
+export function markMqttReady(ctx: any, globalCallback?: any): void {
+  const wasReady = ctx?.mqttReady === true;
+  const now = Date.now();
+
+  clearTmsHandshakeTimeout(ctx);
+  ctx.mqttReady = true;
+  ctx.mqttReadyAt = now;
+  delete ctx.tmsWait;
+  syncClientReadyState(ctx, true);
+  markMqttActivity(ctx);
+
+  if (!wasReady) {
+    log.success("MQTT đã sẵn sàng (/t_ms)");
+    if (ctx.options.emitReady && typeof globalCallback === "function") {
+      globalCallback({ type: "ready", error: null });
+    }
+  }
+}
 
 export function createMqttClient(ctx: any): any {
   const sessionID = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER) + 1;
@@ -81,11 +133,23 @@ export function createMqttClient(ctx: any): any {
   return new (mqtt as any).Client((_: any) => websocket(host, mqttOptions.wsOptions), mqttOptions);
 }
 
-export function setupMqttConnection(mqttClient: any, ctx: any, listenMqtt: any, defaultFuncs: any, api: any, globalCallback: any): void {
+export function setupMqttConnection(
+  mqttClient: any,
+  ctx: any,
+  _listenMqtt: any,
+  _defaultFuncs: any,
+  _api: any,
+  globalCallback: any,
+  getSeqID: () => Promise<void> | void
+): void {
   const chatOn = ctx.options.online;
 
   // Only register this connect handler once per client instance.
   mqttClient.once("connect", function () {
+    resetMqttReadyState(ctx);
+    ctx.mqttConnectedAt = Date.now();
+    syncClientReadyState(ctx, false);
+
     mqttClient.subscribe(topics, { qos: 1, retain: false });
     const useSyncToken = Boolean(ctx.syncToken);
     const topic = useSyncToken ? "/messenger_sync_get_diffs" : "/messenger_sync_create_queue";
@@ -158,45 +222,31 @@ export function setupMqttConnection(mqttClient: any, ctx: any, listenMqtt: any, 
         console.error("Error publishing client settings:", err);
       }
     }
-    // Guard: if we never receive `/t_ms` to mark "ready", refresh seqID and restart MQTT.
-    const existingTimer = ctx._tmsHandshakeTimeout as NodeJS.Timeout | undefined;
-    if (existingTimer) clearTimeout(existingTimer);
-
-    const maxRetries = 3;
-    const currentRetry = (ctx._tmsHandshakeRetry || 0) as number;
-
-    const rTimeout = setTimeout(async () => {
-      ctx._tmsHandshakeTimeout = undefined;
-
-      if (currentRetry >= maxRetries) {
-        console.warn(`t_ms handshake thất bại ${maxRetries} lần, lấy seqID mới và thử lại...`);
-        ctx._tmsHandshakeRetry = 0;
-        // Reset sync state hoàn toàn - BẮT BUỘC lấy seqID mới
-        ctx.syncToken = undefined;
-        ctx.lastSeqId = undefined;
-        ctx.t_mqttCalled = false;
-      } else {
-        ctx._tmsHandshakeRetry = currentRetry + 1;
-        console.warn(`t_ms handshake timeout (lần ${currentRetry + 1}/${maxRetries}), thử lại...`);
+    // Guard: if we never receive `/t_ms` to mark "ready", restart the MQTT listen loop.
+    // Keep this conservative to avoid tight reconnect loops.
+    const handshakeTimeoutMs = Number.isFinite(ctx?.options?.mqttHandshakeTimeout)
+      ? Math.max(5000, Math.min(Number(ctx.options.mqttHandshakeTimeout), 30000))
+      : 10000;
+    const rTimeout = setTimeout(() => {
+      if (ctx.mqttClient !== mqttClient || ctx.mqttReady === true) {
+        return;
       }
 
-      try {
-        mqttClient.end(true);
-      } catch {
-        // ignore
-      }
-      ctx.mqttClient = undefined;
-      listenMqtt(defaultFuncs, api, ctx, globalCallback);
-    }, 20000);
+      resetMqttReadyState(ctx);
+      log.warn(`MQTT đã mở socket nhưng không nhận /t_ms sau ${handshakeTimeoutMs}ms, đang reconnect nhanh...`);
+      reconnectMqtt(ctx, null, getSeqID as any);
+    }, handshakeTimeoutMs);
+
+    if (typeof rTimeout.unref === "function") {
+      rTimeout.unref();
+    }
+
     ctx._tmsHandshakeTimeout = rTimeout;
     ctx.tmsWait = () => {
-      clearTimeout(rTimeout);
-      ctx._tmsHandshakeTimeout = undefined;
-      ctx._tmsHandshakeRetry = 0;
-      if (ctx.options.emitReady) {
-        globalCallback({ type: "ready", error: null });
+      if (ctx.mqttClient !== mqttClient) {
+        return;
       }
-      delete ctx.tmsWait;
+      markMqttReady(ctx, globalCallback);
     };
   });
 }

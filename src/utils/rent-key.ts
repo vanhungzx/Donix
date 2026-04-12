@@ -1,7 +1,6 @@
 import type { BotConfig, ExtendedMessageEvent, FacebookClient, ThreadDataModel, UserDataModel } from "@types";
 import fs from "fs-extra";
 import moment from "moment-timezone";
-import path from "path";
 import { RENT_KEYS_PATH, RENT_JSON_PATH } from "../core/storagePath";
 
 const KEY_PATH = RENT_KEYS_PATH();

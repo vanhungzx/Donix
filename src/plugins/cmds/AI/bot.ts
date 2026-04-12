@@ -497,7 +497,7 @@ type ApiKeyState = {
   remaining: Record<ModelKind, number>;
 };
 
-/** Chỉ dùng ./storage/gemini/api-quota.json (không dùng src/storage). */
+/** Chỉ dùng ./storage/gemini/api-quota.json. */
 const QUOTA_STATE_FILE = GEMINI_API_QUOTA_JSON();
 /** Bản cũ (trước khi thống nhất path) — migrate một lần rồi xóa. */
 const LEGACY_QUOTA_SRC = path.join(process.cwd(), "src", "storage", "gemini", "api-quota.json");

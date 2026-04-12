@@ -174,6 +174,12 @@ export interface FacebookClient {
   setThemeFromImage: (imagePath: string | Buffer, threadID: string, callback?: (err?: Error) => void) => Promise<void>;
   addUserToGroup: (userID: string, threadID: string, callback?: (err?: Error) => void) => Promise<void>;
   removeUserFromGroup: (userID: string, threadID: string, callback?: (err?: Error) => void) => Promise<void>;
+  setAdminStatus: (
+    threadID: string | number,
+    userID: string | number | (string | number)[],
+    admin: boolean,
+    callback?: (err: Error | null, result?: { success: boolean; response?: unknown }) => void
+  ) => Promise<{ success: boolean; response?: unknown }>;
 
   getUserInfo: (userID: string | string[], callback?: (err?: Error, info?: Record<string, UserInfo>) => void) => Promise<Record<string, UserInfo>>;
   shareContact: (contactID: string, targetID: string, threadID: string, callback?: (err?: Error) => void) => Promise<void>;

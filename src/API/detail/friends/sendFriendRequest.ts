@@ -34,11 +34,6 @@ export default function (
       return returnPromise;
     }
 
-    const attributionBase =
-      "ProfileCometTimelineListViewRoot.react,comet.profile.timeline.list,unexpected," +
-      Date.now() +
-      ",190055527696468,,";
-
     const form = {
       av: ctx.userID,
       fb_api_caller_class: "RelayModern",

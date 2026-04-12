@@ -1,5 +1,5 @@
 {
-  "money": "5900058",
+  "money": "5911858",
   "loan": "0",
   "isLocked": false,
   "lockReason": "",
@@ -161,6 +161,11 @@
     {
       "type": "interest_deposit_daily",
       "amount": "11776",
+      "timestamp": 1775952000000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "11800",
       "timestamp": 1775952000000
     }
   ],

@@ -1,0 +1,149 @@
+{
+  "_default": {
+    "fish": [
+      {
+        "id": "fish_01",
+        "name": "Cá diếc",
+        "emoji": "🐟",
+        "price": 800,
+        "rarity": 1,
+        "weightMin": 0.2,
+        "weightMax": 0.8
+      },
+      {
+        "id": "fish_02",
+        "name": "Cá chép",
+        "emoji": "🐠",
+        "price": 1500,
+        "rarity": 2,
+        "weightMin": 0.8,
+        "weightMax": 3
+      },
+      {
+        "id": "fish_03",
+        "name": "Cá trắm",
+        "emoji": "🐡",
+        "price": 2800,
+        "rarity": 3,
+        "weightMin": 2,
+        "weightMax": 6
+      },
+      {
+        "id": "fish_04",
+        "name": "Cá hồi",
+        "emoji": "🎣",
+        "price": 12000,
+        "rarity": 5,
+        "weightMin": 4,
+        "weightMax": 12
+      },
+      {
+        "id": "fish_05",
+        "name": "Cá mập bé",
+        "emoji": "🦈",
+        "price": 88888,
+        "rarity": 8,
+        "weightMin": 15,
+        "weightMax": 80
+      }
+    ],
+    "rods": [
+      {
+        "id": "rod_01",
+        "name": "Cần tre",
+        "price": 3000,
+        "durability": 80,
+        "maxWeight": 8
+      },
+      {
+        "id": "rod_02",
+        "name": "Cần carbon",
+        "price": 25000,
+        "durability": 200,
+        "maxWeight": 35
+      },
+      {
+        "id": "rod_03",
+        "name": "Cần titanium",
+        "price": 150000,
+        "durability": 500,
+        "maxWeight": 120
+      }
+    ],
+    "locations": [
+      {
+        "id": "location_01",
+        "name": "Ao làng",
+        "emoji": "🏞️",
+        "unlockPrice": 0,
+        "minWait": 25,
+        "maxWait": 70,
+        "rareFishBonus": 0
+      },
+      {
+        "id": "location_02",
+        "name": "Hồ nước ngọt",
+        "emoji": "💧",
+        "unlockPrice": 30000,
+        "minWait": 40,
+        "maxWait": 100,
+        "rareFishBonus": 5
+      },
+      {
+        "id": "location_03",
+        "name": "Cửa sông",
+        "emoji": "🌊",
+        "unlockPrice": 120000,
+        "minWait": 55,
+        "maxWait": 140,
+        "rareFishBonus": 15
+      }
+    ],
+    "baits": [
+      {
+        "id": "bait_01",
+        "name": "Sâu đất",
+        "price": 500,
+        "reduction": 5,
+        "luck": 3
+      },
+      {
+        "id": "bait_02",
+        "name": "Tôm con",
+        "price": 2500,
+        "reduction": 12,
+        "luck": 10
+      }
+    ],
+    "coolers": [
+      {
+        "id": "cooler_01",
+        "name": "Thùng xốp",
+        "price": 8000,
+        "multiplier": 1.05,
+        "capacity": 20
+      },
+      {
+        "id": "cooler_02",
+        "name": "Thùng đá điện",
+        "price": 55000,
+        "multiplier": 1.12,
+        "capacity": 50
+      }
+    ],
+    "ITEMS": [
+      {
+        "id": "item_luck",
+        "name": "Thuốc đỏ may mắn",
+        "price": 15000,
+        "description": "Tăng tỉ lệ cá hiếm một lúc"
+      },
+      {
+        "id": "item_repair",
+        "name": "Bảo dưỡng cần",
+        "price": 5000,
+        "description": "Hồi một ít độ bền cần"
+      }
+    ]
+  }
+}

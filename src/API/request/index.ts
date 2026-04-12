@@ -1,24 +1,30 @@
 import cheerio from "cheerio";
 import util from "util";
 import logger from "@log";
-import network from "./axios.js";
+import type { Context, GlobalOptions } from "../../types/request.js";
+import network, { type FormRecord as QueryParamRecord, type PostBodyRecord } from "./axios.js";
 import clients from "./clients.js";
 import constants from "./constants.js";
 import formatters from "./formatters.js";
 import headers from "./headers.js";
 import userAgents from "./user-agents.js";
+
+type FormField = string | number | boolean | null | undefined;
+type MergedForm = Record<string, FormField>;
+
 const json = async (
   url: string,
-  jar: any,
-  qs?: Record<string, any> | null,
-  options?: Record<string, any>,
-  ctx?: any,
+  jar: Context["jar"],
+  qs?: Record<string, FormField> | null,
+  options?: GlobalOptions | null,
+  ctx?: Context | null,
   customHeader?: Record<string, string>
-): Promise<any[]> => {
+): Promise<unknown[]> => {
   try {
     const res = await network.get(url, jar, qs || undefined, options, ctx, customHeader);
     const body = res.body;
-    const $ = cheerio.load(body);
+    const html = typeof body === "string" ? body : String(body ?? "");
+    const $ = cheerio.load(html);
     const scripts = $('script[type="application/json"]');
 
     if (scripts.length === 0) {
@@ -26,7 +32,7 @@ const json = async (
       return [];
     }
 
-    const allJsonData: any[] = [];
+    const allJsonData: unknown[] = [];
     scripts.each((index, element) => {
       try {
         const jsonContent = $(element).html();
@@ -45,27 +51,35 @@ const json = async (
   }
 };
 
-const makeDefaults = (html: string, userID: string | number, ctx: any) => {
+const makeDefaults = (html: string, userID: string | number, ctx: Context) => {
   let reqCounter = 1;
-  const revision = constants.getFrom(html, 'revision":', ",");
+  const revision =
+    constants.getFrom(html, 'revision":', ",") ||
+    constants.getFrom(html, '"client_revision":', ",") ||
+    "";
+  const requestOpts: GlobalOptions = ctx.globalOptions ?? ctx.options;
 
-  const mergeWithDefaults = (obj?: Record<string, any>) => {
-    const newObj: Record<string, any> = {
+  const mergeWithDefaults = (obj?: MergedForm): Record<string, unknown> => {
+    const newObj: Record<string, unknown> = {
       av: userID,
       __user: userID,
       __req: (reqCounter++).toString(36),
       __rev: revision,
       __a: 1,
-      ...(ctx && {
-        fb_dtsg: ctx.fb_dtsg,
-        jazoest: ctx.jazoest,
-      }),
+      fb_dtsg: ctx.fb_dtsg,
+      jazoest: ctx.jazoest,
     };
+    if (ctx.__dyn) newObj.__dyn = ctx.__dyn;
+    if (ctx.__csr) newObj.__csr = ctx.__csr;
+    if (ctx.__hs) newObj.__hs = ctx.__hs;
+    if (ctx.__hsi) newObj.__hsi = ctx.__hsi;
+    const lsdBody = ctx.fb_lsd ?? ctx.lsd;
+    if (lsdBody) newObj.lsd = lsdBody;
 
     if (!obj) return newObj;
 
     for (const prop in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, prop) && !newObj[prop]) {
+      if (Object.prototype.hasOwnProperty.call(obj, prop) && !(prop in newObj)) {
         newObj[prop] = obj[prop];
       }
     }
@@ -74,18 +88,43 @@ const makeDefaults = (html: string, userID: string | number, ctx: any) => {
   };
 
   return {
-    get: (url: string, jar: any, qs?: Record<string, any> | null, ctxx?: any, customHeader: Record<string, string> = {}) =>
-      network.get(url, jar, mergeWithDefaults(qs || undefined), ctx.globalOptions, ctxx || ctx, customHeader),
-    post: (url: string, jar: any, form?: Record<string, any>, ctxx?: any, customHeader: Record<string, string> = {}) =>
-      network.post(url, jar, mergeWithDefaults(form), ctx.globalOptions, ctxx || ctx, customHeader),
-    postFormData: (url: string, jar: any, form?: Record<string, any>, qs?: Record<string, any>, ctxx?: any) =>
+    get: (
+      url: string,
+      jar: Context["jar"],
+      qs?: MergedForm | null,
+      ctxx?: Context | null,
+      customHeader: Record<string, string> = {}
+    ) =>
+      network.get(
+        url,
+        jar,
+        mergeWithDefaults(qs || undefined) as QueryParamRecord,
+        requestOpts,
+        ctxx ?? ctx,
+        customHeader
+      ),
+    post: (
+      url: string,
+      jar: Context["jar"],
+      form?: MergedForm,
+      ctxx?: Context | null,
+      customHeader: Record<string, string> = {}
+    ) =>
+      network.post(url, jar, mergeWithDefaults(form) as PostBodyRecord, requestOpts, ctxx ?? ctx, customHeader),
+    postFormData: (
+      url: string,
+      jar: Context["jar"],
+      form?: MergedForm,
+      qs?: MergedForm,
+      ctxx?: Context | null
+    ) =>
       network.postFormData(
         url,
         jar,
         mergeWithDefaults(form),
-        mergeWithDefaults(qs),
-        ctx.globalOptions,
-        ctxx || ctx
+        mergeWithDefaults(qs) as QueryParamRecord,
+        requestOpts,
+        ctxx ?? ctx
       ),
   };
 };
@@ -99,7 +138,7 @@ const utils = {
   ...userAgents,
   json,
   makeDefaults,
-  promisify: <T extends (...args: any[]) => any>(func: T) => util.promisify(func),
+  promisify: util.promisify,
   delay: (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)),
 };
 

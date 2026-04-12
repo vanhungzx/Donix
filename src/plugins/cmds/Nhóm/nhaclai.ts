@@ -17,7 +17,7 @@ const remindReplyCommand: Command = {
   - {pn}nhaclai Nhắc mình xem lại tin này sau`,
   cd: 3,
   prefix: true,
-  onCall: async function ({ event, args, reply, client }: CommandOnCallContext): Promise<void> {
+  onCall: async function ({ event, reply, client }: CommandOnCallContext): Promise<void> {
     const { threadID, type, messageReply } = event;
 
     if (type !== "message_reply" || !messageReply || !messageReply.messageID) {

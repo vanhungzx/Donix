@@ -341,6 +341,15 @@ if (bodyStr === pre || (isBotMentioned && !bodyWithoutBotTag)) {
       }
     }
 
+    const interactionOff = (config as Record<string, unknown>).botInteractionEnabled === false;
+    if (interactionOff && !isBotAdmin && (preRe.test(bodyStr) || cmd !== null)) {
+      return client.sendMessage(
+        "⚠️ Bot đang tạm tắt tương tác (chỉ chủ bot / admin mới dùng được lệnh).",
+        tid,
+        mid
+      );
+    }
+
     if (!cmd) {
       if (!bodyStr.startsWith(pre)) return;
 

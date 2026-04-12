@@ -989,13 +989,15 @@ const antiCommand = {
               return;
             }
 
-            if (
-              logData.ADMIN_EVENT === "add_admin" ||
-              logData.ADMIN_EVENT === "remove_admin"
-            ) {
-              const targetID = String(logData.TARGET_ID || "");
+            const adminEv = String(
+              logData.ADMIN_EVENT ?? logData.admin_event ?? ""
+            ).toLowerCase();
+            const targetID = String(
+              logData.TARGET_ID ?? logData.target_id ?? logData.userFbId ?? logData.id ?? ""
+            );
+            if (adminEv === "add_admin" || adminEv === "remove_admin") {
               if (targetID === botIDStr) return;
-              if (logData.ADMIN_EVENT === "remove_admin") {
+              if (adminEv === "remove_admin") {
                 await (client.setAdminStatus as unknown as (thread: string, user: string, status: boolean) => Promise<void>)(
                   threadID,
                   authorStr,
@@ -1006,7 +1008,7 @@ const antiCommand = {
                   targetID,
                   true
                 ).catch(() => { });
-              } else if (logData.ADMIN_EVENT === "add_admin") {
+              } else if (adminEv === "add_admin") {
                 await (client.setAdminStatus as unknown as (thread: string, user: string, status: boolean) => Promise<void>)(
                   threadID,
                   authorStr,

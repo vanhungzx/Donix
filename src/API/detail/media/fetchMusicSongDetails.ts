@@ -2,6 +2,7 @@
 
 import axios from "axios";
 import crypto from "crypto";
+import type { Context, DefaultFuncs } from "../../request/formatters/helpers";
 import { DEFAULT_ORCA_UA, DEFAULT_X_ZERO_EH } from "../action/fetchMessengerMusicPickerOptimalQuery";
 
 export interface FetchMusicSongDetailsOptions {
@@ -152,4 +153,17 @@ export async function fetchMusicSongDetails(
   const songs: MusicSongDetailsSong[] = Array.isArray(container?.songs) ? container.songs : [];
 
   return { songs, raw: response.data };
+}
+
+/** Factory cho API loader — không gọi GraphQL lúc nạp; token truyền khi gọi `fetchMusicSongDetails`. */
+export default function fetchMusicSongDetailsFactory(
+  _defaultFuncs: DefaultFuncs,
+  _api: unknown,
+  _ctx: Context
+): (options: FetchMusicSongDetailsOptions) => Promise<FetchMusicSongDetailsResult> {
+  return function fetchMusicSongDetailsBound(
+    options: FetchMusicSongDetailsOptions
+  ): Promise<FetchMusicSongDetailsResult> {
+    return fetchMusicSongDetails(options);
+  };
 }

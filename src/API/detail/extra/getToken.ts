@@ -41,7 +41,7 @@ const toJSONMaybe = (s: unknown): any => {
 
 type GetTokenCallback = (err: any, token?: string) => void;
 
-export default function (defaultFuncs: any, client: any, ctx: any) {
+export default function (defaultFuncs: any, _client: any, ctx: any) {
   return async function getTokenByType(
     tokenType: string = "EAAD",
     callback?: GetTokenCallback

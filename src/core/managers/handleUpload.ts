@@ -1,12 +1,8 @@
 import fs from "fs/promises";
 import path from "path";
-import { fileURLToPath } from "url";
 import logger from "../logger";
 import { getCleanupManager } from "./cleanupManager";
 import { storagePath } from "../storagePath";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const MAX_VIDEOS = 5;
 const INTERVAL_MS = 5000;

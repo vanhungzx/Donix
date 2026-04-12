@@ -77,11 +77,7 @@ declare global {
   var data_command_ban_bau_cua_tom_ca_ga_nai: CooldownData | undefined;
 }
 
-let data = global.data_command_bcua_rooms;
-
-if (!data) {
-  data = global.data_command_bcua_rooms = {};
-}
+let data: GameData = global.data_command_bcua_rooms ?? (global.data_command_bcua_rooms = {});
 
 let d = global.data_command_ban_bau_cua_tom_ca_ga_nai;
 

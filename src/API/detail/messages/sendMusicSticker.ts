@@ -78,7 +78,14 @@ const toNum = (x: string | number): string | number => {
 const mqttOk = (ctx: Context): boolean => {
   try {
     const c = (ctx as { mqttClient?: { connected?: boolean; reconnecting?: boolean; disconnecting?: boolean; disconnected?: boolean } }).mqttClient;
-    return !!(c && c.connected && !c.reconnecting && !c.disconnecting && !c.disconnected);
+    return !!(
+      c &&
+      c.connected &&
+      (ctx as { mqttReady?: boolean }).mqttReady === true &&
+      !c.reconnecting &&
+      !c.disconnecting &&
+      !c.disconnected
+    );
   } catch {
     return false;
   }
@@ -99,10 +106,11 @@ const safePublish = (
     const isConnected = mqttClient.connected === true;
     const isDisconnecting = mqttClient.disconnecting === true;
     const isDisconnected = mqttClient.disconnected === true;
+    const isReady = mqttClient._donixReady === true;
     const readyState = mqttClient.readyState;
     const isClosing = readyState === 2;
     const isClosed = readyState === 3;
-    if (!isConnected || isDisconnecting || isDisconnected || isClosing || isClosed) {
+    if (!isConnected || !isReady || isDisconnecting || isDisconnected || isClosing || isClosed) {
       if (callback) callback(new Error("MQTT client is not connected or is closing"));
       return false;
     }

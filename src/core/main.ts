@@ -1,6 +1,6 @@
 "use strict";
 import fsPromises from "node:fs/promises";
-import path, { join } from "node:path";
+import { join } from "node:path";
 import { createAutoReconnectTimer } from "../API/detail/mqtt/listenMqtt";
 import login from "../API/index";
 import type {
@@ -838,11 +838,17 @@ if (cleanupInterval) {
 
     let currentConfig = getConfig();
     if (!currentConfig.cookie || (typeof currentConfig.cookie === "string" && currentConfig.cookie.trim().length === 0)) {
-      log.warn("Không tìm thấy cookie trong config.json, đang thử auto login...");
-      const autoRelogin = (await import("./auth_login/auto_relogin")).default;
-      const autoLoginSuccess = await autoRelogin();
+      const reloginMod = await import("./auth_login/auto_relogin");
+      if (!reloginMod.isAutoLoginEnabled()) {
+        log.error(
+          "Lỗi đăng nhập: Thiếu cookie và auto login đang tắt (autoLogin: false). Điền cookie.txt hoặc đặt autoLogin: true."
+        );
+        process.exit(1);
+      }
+      log.warn("Không tìm thấy cookie (cookie.txt hoặc fallback config.cookie), đang thử auto login...");
+      const autoLoginSuccess = await reloginMod.default();
       if (!autoLoginSuccess) {
-        log.error("Lỗi đăng nhập: Thiếu cookie và auto login thất bại. Vui lòng cung cấp cookie string hợp lệ hoặc cấu hình fbEmail/fbPassword trong config.json!");
+        log.error("Lỗi đăng nhập: Thiếu cookie và auto login thất bại. Tạo cookie.txt ở thư mục gốc project (chuỗi cookie Facebook) hoặc cấu hình fbAccounts trong config.json.");
         process.exit(1);
       }
       const reloadResult = await reloadConfig();
@@ -884,9 +890,14 @@ if (cleanupInterval) {
             errorMsg.includes("Not logged in");
 
           if (isCookieExpired) {
+            const reloginMod = await import("./auth_login/auto_relogin");
+            if (!reloginMod.isAutoLoginEnabled()) {
+              log.error(`Lỗi đăng nhập: ${errorMsg}`);
+              log.error("Auto login đang tắt (autoLogin: false). Cập nhật cookie.txt hoặc bật lại autoLogin.");
+              process.exit(0);
+            }
             log.warn("Cookie có vẻ đã hết hạn, đang thử auto login...");
-            const autoRelogin = (await import("./auth_login/auto_relogin")).default;
-            const autoLoginSuccess = await autoRelogin();
+            const autoLoginSuccess = await reloginMod.default();
             if (autoLoginSuccess) {
               const reloadResult = await reloadConfig();
               if (!reloadResult.success) {
@@ -927,8 +938,14 @@ if (cleanupInterval) {
         }
 
         try {
-          initHandleUpload({ client });
-          log.success("Khởi tạo handleUpload thành công");
+          const latestConfig = getConfig() as BotConfig;
+          const handleUploadEnabled = latestConfig.handleUploadEnabled !== false;
+          if (handleUploadEnabled) {
+            initHandleUpload({ client });
+            log.success("Khởi tạo handleUpload thành công");
+          } else {
+            log.info("Đã tắt handleUpload theo config (handleUploadEnabled=false)");
+          }
         } catch (uploadError: unknown) {
           log.error(`Không thể khởi tạo handleUpload: ${formatError(uploadError)}`);
         }
@@ -984,9 +1001,13 @@ if (cleanupInterval) {
 
               // Khi listenMqtt báo account logged out, thử auto-login rồi restart bot
               try {
+                const reloginMod = await import("./auth_login/auto_relogin");
+                if (!reloginMod.isAutoLoginEnabled()) {
+                  log.error("AUTO-LOGIN đang tắt (autoLogin: false). Cập nhật cookie.txt và khởi động lại bot.");
+                  return;
+                }
                 log.warn("Đang thử AUTO-LOGIN do tài khoản bị logout/không còn đăng nhập...");
-                const autoRelogin = (await import("./auth_login/auto_relogin")).default;
-                const ok = await autoRelogin();
+                const ok = await reloginMod.default();
                 if (ok) {
                   const reloadResult = await reloadConfig();
                   if (!reloadResult.success) {

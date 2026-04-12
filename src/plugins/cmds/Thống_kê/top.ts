@@ -7,8 +7,7 @@ import type {
 } from "@types";
 import { getDbPromisified } from "../../../core/database/schema";
 
-interface ExtendedUserDataModel extends UserDataModel {
-  getName(userID: string | number): Promise<string | undefined>;
+type ExtendedUserDataModel = UserDataModel & {
   getTopMoneyThread(
     participantIDs: string[],
     limit?: number
@@ -17,9 +16,10 @@ interface ExtendedUserDataModel extends UserDataModel {
     limit?: number
   ): Promise<Array<{ userID: string; money: number | bigint }>>;
   getTopExp(limit?: number): Promise<Array<{ userID: string; exp: number }>>;
-}
+};
 
-interface ExtendedThreadDataModel extends ThreadDataModel {
+/** Narrowing for thread store helpers not on `ThreadDataModel` typings. */
+type ThreadTopExtras = {
   getTopThreads(
     limit?: number
   ): Promise<Array<{ threadID: string; name: string | null; messageCount: number }>>;
@@ -36,7 +36,7 @@ interface ExtendedThreadDataModel extends ThreadDataModel {
     month: Array<{ id: string; count: number }>;
     count: number;
   }>;
-}
+};
 
 function formatMoney(money: number | bigint | string | undefined | null): string {
   if (money === undefined || money === null) return "0";
@@ -164,7 +164,7 @@ const topCommand: Command = {
     const { event, reply, args, userData, main, commandName, threadData } = ctx;
 
     const enhancedUserData = userData as ExtendedUserDataModel;
-    const enhancedThreadData = threadData as ExtendedThreadDataModel;
+    const enhancedThreadData = threadData as ThreadDataModel & ThreadTopExtras;
 
     if (!args || args.length === 0) {
       await reply({
@@ -275,23 +275,22 @@ const topCommand: Command = {
         case "level": {
           const allUsers = await enhancedUserData.getAll(["userID", "data"]);
 
+          const levelOf = (u: (typeof allUsers)[number]): number => {
+            const d = u.data;
+            if (d == null || typeof d !== "object") return 0;
+            const lv = (d as Record<string, unknown>).level;
+            return typeof lv === "number" ? lv : 0;
+          };
+
           const levelList = allUsers
-            .filter((user: { userID: string; data?: { level?: number } }) => user.data?.level)
-            .sort(
-              (a: { data?: { level?: number } }, b: { data?: { level?: number } }) =>
-                (b.data?.level || 0) - (a.data?.level || 0)
-            )
+            .filter((user) => levelOf(user) > 0)
+            .sort((a, b) => levelOf(b) - levelOf(a))
             .slice(0, 15)
-            .map(
-              async (
-                user: { userID: string; data?: { level?: number } },
-                index: number
-              ) => {
+            .map(async (user, index) => {
                 const medal = index < 3 ? ["👑", "🥈", "🥉"][index] : "🏅";
                 const name = await enhancedUserData.getName(user.userID);
-                return `${medal} ${index + 1}. ${name}\n📊 Level: ${user.data?.level ?? 0}`;
-              }
-            );
+                return `${medal} ${index + 1}. ${name}\n📊 Level: ${levelOf(user)}`;
+              });
 
           const formattedList = await Promise.all(levelList);
 

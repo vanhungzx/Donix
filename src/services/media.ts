@@ -1,10 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
 import { STORAGE_MEDIA } from "../core/storagePath";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const MEDIA_DIR = STORAGE_MEDIA();
 

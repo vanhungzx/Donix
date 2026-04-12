@@ -1,0 +1,136 @@
+{
+    "allquestion": [
+        {
+            "question": "Ngày nào dương lịch hàng năm được chọn là 'Ngày tôn vinh Tiếng Việt' trong cộng đồng người Việt Nam ở nước ngoài?",
+            "a": "Ngày 1/9",
+            "b": "Ngày 5/9",
+            "c": "Ngày 8/9",
+            "d": "Ngày 15/9",
+            "dapan": "C",
+            "helpone": ["C", "D"],
+            "helptwo": [15, 20, 45, 25],
+            "helpthree": ["C"],
+            "giaithich": "Ngày 8/9 hàng năm được chọn là 'Ngày tôn vinh Tiếng Việt' trong cộng đồng người Việt Nam ở nước ngoài, nhằm gìn giữ và phát huy tiếng Việt trong cộng đồng người Việt Nam ở nước ngoài."
+        },
+        {
+            "question": "Đâu là một trong bốn món ăn Việt Nam được CNN bình chọn là ngon nhất thế giới và khuyến khích du khách nên thử trong năm 2022?",
+            "a": "Bánh bò",
+            "b": "Bánh cam",
+            "c": "Bánh chưng",
+            "d": "Bánh bột lọc",
+            "dapan": "B",
+            "helpone": ["B", "D"],
+            "helptwo": [15, 60, 10, 25],
+            "helpthree": ["B"],
+            "giaithich": "Bánh cam là một trong bốn món ăn Việt Nam được CNN bình chọn là ngon nhất thế giới và khuyến khích du khách nên thử trong năm 2022, bên cạnh các món ăn khác như phở, bánh mì và cà phê sữa đá."
+        },
+        {
+            "question": "Cụm từ 'Takatalvi' mô tả một hiện tượng thời tiết bất thường ở quốc gia nào trên thế giới?",
+            "a": "Thổ nhĩ kỳ",
+            "b": "Phần Lan",
+            "c": "Thuỵ Điển",
+            "d": "Tây Ban Nha",
+            "dapan": "B",
+            "helpone": ["B", "D"],
+            "helptwo": [15, 60, 10, 25],
+            "helpthree": ["B"],
+            "giaithich": "'Takatalvi' là một từ trong tiếng Phần Lan, dùng để chỉ hiện tượng tuyết rơi bất thường vào mùa xuân sau khi thời tiết đã ấm lên."
+        },
+        {
+            "question": "Hình ảnh của 4 loài cây nào được thể hiện trên poster chính thức của Festival Huế 2022?",
+            "a": "Mai - Lan - Cúc - Trúc",
+            "b": "Tùng - Cúc - Trúc - Mai",
+            "c": "Mai - Sen - Cúc - Tùng",
+            "d": "Hồng - Mai - Sen - Cúc",
+            "dapan": "C",
+            "helpone": ["C", "D"],
+            "helptwo": [15, 10, 60, 25],
+            "helpthree": ["C"],
+            "giaithich": "Poster chính thức của Festival Huế 2022 thể hiện hình ảnh của 4 loài cây: Mai - Sen - Cúc - Tùng, tượng trưng cho bốn mùa và vẻ đẹp của cố đô Huế."
+        },
+        {
+            "question": "Lễ hội lửa Hogmanay đón mừng năm mới diễn ra ở đất nước nào?",
+            "a": "Ireland",
+            "b": "Scotland",
+            "c": "Ấn Độ",
+            "d": "Iran",
+            "dapan": "B",
+            "helpone": ["B", "D"],
+            "helptwo": [15, 60, 5, 25],
+            "helpthree": ["B"],
+            "giaithich": "Hogmanay là lễ hội lửa truyền thống đón năm mới của Scotland, được tổ chức vào đêm giao thừa với các nghi lễ đặc sắc như diễu hành với đuốc, múa lửa và biểu diễn âm nhạc."
+        },
+        {
+            "question": "Nhà máy in đầu tiên của chính quyền cách mạng Việt Nam được đặt tại khu vực nay thuộc địa phần tỉnh, thành nào?",
+            "a": "Hoà Bình",
+            "b": "Hải Phòng",
+            "c": "Thái Nguyên",
+            "d": "Cao Bằng",
+            "dapan": "A",
+            "helpone": ["A", "D"],
+            "helptwo": [60, 10, 5, 35],
+            "helpthree": ["A"],
+            "giaithich": "Nhà máy in đầu tiên của chính quyền cách mạng Việt Nam được đặt tại khu vực nay thuộc tỉnh Hòa Bình, đóng vai trò quan trọng trong việc in ấn tài liệu phục vụ cách mạng trong thời kỳ kháng chiến."
+        },
+        {
+            "question": "Trò chơi nhân gian nào của người Mông chủ yếu chỉ dành riêng cho nam giới tham gia?",
+            "a": "Ném pao",
+            "b": "Đánh yến",
+            "c": "Đánh tu lu",
+            "d": "Đẩy gậy",
+            "dapan": "C",
+            "helpone": ["A", "C"],
+            "helptwo": [30, 10, 60, 15],
+            "helpthree": ["C"],
+            "giaithich": "Đánh tu lu là trò chơi truyền thống của người Mông, chỉ dành cho nam giới tham gia. Tu lu là một loại côn bằng gỗ, người chơi sẽ dùng gậy đánh tu lu bay xa và chính xác vào mục tiêu."
+        },
+        {
+            "question": "Triết gia Hy Lạp nào được xem là người đầu tiên thực hiện những khảo cứu về hiện tượng tĩnh điện?",
+            "a": "Aristotle",
+            "b": "Thales",
+            "c": "Socrates",
+            "d": "Platon",
+            "dapan": "B",
+            "helpone": ["B", "C"],
+            "helptwo": [5, 60, 30, 15],
+            "helpthree": ["B"],
+            "giaithich": "Thales là triết gia Hy Lạp đầu tiên thực hiện những khảo cứu về hiện tượng tĩnh điện khi ông phát hiện ra hiện tượng hổ phách khi cọ xát có thể hút các vật nhẹ vào khoảng 600 TCN."
+        },
+        {
+            "question": "Bảo tàng đón nhiều khách du lịch nhất thế giới năm 2022?",
+            "a": "Bảo tàng lịch sử tự nhiên Mỹ",
+            "b": "Bảo tàng lịch sử quốc gia Anh",
+            "c": "Bảo tàng Vatican",
+            "d": "Bảo tàng Louvre",
+            "dapan": "D",
+            "helpone": ["B", "D"],
+            "helptwo": [5, 30, 10, 65],
+            "helpthree": ["D"],
+            "giaithich": "Bảo tàng Louvre ở Paris, Pháp là bảo tàng đón nhiều khách du lịch nhất thế giới năm 2022 với hơn 7,8 triệu lượt khách tham quan."
+        },
+        {
+            "question": "Tháng 6/2023, quốc gia nào ở Trung Á đã quyết định miễn thị thực cho công dân mang hộ chiếu Việt Nam",
+            "a": "Tajikistan",
+            "b": "Turkmenistan",
+            "c": "Kazakhstan",
+            "d": "Kyrgyzstan",
+            "dapan": "C",
+            "helpone": ["A", "C"],
+            "helptwo": [30, 10, 60, 5],
+            "helpthree": ["C"],
+            "giaithich": "Tháng 6/2023, Kazakhstan đã quyết định miễn thị thực cho công dân mang hộ chiếu Việt Nam trong thời gian 14 ngày, nhằm thúc đẩy quan hệ hợp tác song phương và thu hút khách du lịch."
+        },
+        {
+            "question": "Tổ chức nào được thành lập vào năm 1945 với mục tiêu thúc đẩy hòa bình và hợp tác quốc tế?",
+            "a": "Liên minh châu Âu",
+            "b": "Liên hợp quốc",
+            "c": "Tổ chức thương mại thế giới",
+            "d": "Tổ chức y tế thế giới",
+            "dapan": "B",
+            "helpone": ["A", "B"],
+            "helptwo": [5, 60, 10, 25],
+            "helpthree": ["B"],
+            "giaithich": "Liên hợp quốc (UN) được thành lập vào năm 1945 với mục tiêu thúc đẩy hòa bình, an ninh và hợp tác quốc tế giữa các quốc gia."
+        }
+    ]
+}

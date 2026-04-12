@@ -50,8 +50,8 @@ type ForwardMessageCallback = (
 let count_req = 0;
 
 export default function (
-  defaultFuncs: DefaultFuncs,
-  client: any,
+  _defaultFuncs: DefaultFuncs,
+  _client: any,
   ctx: MQTTContext
 ): (
   threadID: string | number,

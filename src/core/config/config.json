@@ -3,7 +3,6 @@
   "BOTNAME": "Obito",
   "DevMode": false,
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
-  "cookie": "c_user=61574857936692; xs=28:OcksgPUY_ZuZsw:2:1775864385:-1:-1; fr=0JmCoCntkPBlkE5rn.AWd3LFy1YbIi9WsZZYH3kLY1eM800wyZ2O3dWUfwJyLz5kO95bc.Bp2YpA..AAA.0.0.Bp2YpA.AWcMZ0rZtiVasi2VILSTl323iWQ; datr=QkQjaaPYXqr7elYbhXm9k25K",
   "OWNER": "61586845605819",
   "ADMIN": [
     "",
@@ -110,6 +109,11 @@
         "minDelayMs": 2500,
         "maxDelayMs": 6000,
         "commentTemplates": []
+      },
+      "autoRestart": {
+        "enabled": false,
+        "type": "everyH",
+        "hours": 4
       }
     }
   }

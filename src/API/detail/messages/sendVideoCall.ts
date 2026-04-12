@@ -13,6 +13,7 @@ const safePublish = (mqttClient: any, topic: string, message: string | Buffer, o
   try {
     // Check if client is connected and not closing
     const isConnected = mqttClient.connected === true;
+    const isReady = mqttClient._donixReady === true;
     const isDisconnecting = mqttClient.disconnecting === true;
     const isDisconnected = mqttClient.disconnected === true;
     const readyState = mqttClient.readyState;
@@ -21,7 +22,7 @@ const safePublish = (mqttClient: any, topic: string, message: string | Buffer, o
     const isClosing = readyState === 2;
     const isClosed = readyState === 3;
 
-    if (!isConnected || isDisconnecting || isDisconnected || isClosing || isClosed) {
+    if (!isConnected || !isReady || isDisconnecting || isDisconnected || isClosing || isClosed) {
       const err = new Error("MQTT client is not connected or is closing");
       if (callback) callback(err);
       return false;

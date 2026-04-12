@@ -330,7 +330,7 @@ class CyberpunkInterface {
       titleText = ">>> THÀNH VIÊN RỜI NHÓM <<<",
       memberName = "Người Dùng",
       groupName = "Tên Nhóm",
-      memberNumber = 20, 
+      memberNumber: _memberNumber = 20,
       leaveTime = "31/07/2025 - 18:01:02",
     } = config;
 
@@ -528,7 +528,7 @@ class CyberpunkInterface {
     return this.canvas;
   }
 
-  getBuffer(format: "image/png" | "image/jpeg" | "image/webp" = "image/png") {
+  getBuffer(_format: "image/png" | "image/jpeg" | "image/webp" = "image/png") {
     return this.canvas.toBuffer((err: any, result: Buffer<ArrayBufferLike>) => {
       if (err) {
         throw err;

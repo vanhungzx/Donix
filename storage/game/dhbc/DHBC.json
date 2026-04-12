@@ -1,0 +1,605 @@
+{
+  "allquestions": [
+    {
+      "path": "DHBC-Image/1.jpg",
+      "Answer": "Hành lang",
+      "sokytu": "☐☐☐☐ ☐☐☐☐",
+      "help": "H☐☐☐ l☐☐☐"
+    },
+    {
+      "path": "DHBC-Image/2.jpg",
+      "Answer": "Ba hoa",
+      "sokytu": "☐☐ ☐☐☐",
+      "help": "B☐ h☐☐"
+    },
+    {
+      "path": "DHBC-Image/3.jpg",
+      "Answer": "Ca dao",
+      "sokytu": "☐☐ ☐☐☐",
+      "help": "C☐ d☐☐"
+    },
+    {
+      "path": "DHBC-Image/4.jpg",
+      "Answer": "Cân bằng",
+      "sokytu": "☐☐☐ ☐☐☐☐",
+      "help": "C☐☐ b☐☐☐"
+    },
+    {
+      "path": "DHBC-Image/5.jpg",
+      "Answer": "Mật mã",
+      "sokytu": "☐☐☐ ☐☐",
+      "help": "☐☐t M☐"
+    },
+    {
+      "path": "DHBC-Image/6.jpg",
+      "Answer": "Neo đơn",
+      "sokytu": "☐☐☐ ☐☐☐",
+      "help": "☐☐o đ☐☐"
+    },
+    {
+      "path": "DHBC-Image/7.jpg",
+      "Answer": "Giấy bạc",
+      "sokytu": "☐☐☐☐ ☐☐☐",
+      "help": "G☐☐☐ ☐ạ☐"
+    },
+    {
+      "path": "DHBC-Image/8.jpg",
+      "Answer": "Hoa hậu",
+      "sokytu": "☐☐☐ ☐☐☐",
+      "help": "☐o☐ h☐☐"
+    },
+    {
+      "path": "DHBC-Image/9.jpg",
+      "Answer": "Hỏi cung",
+      "sokytu": "☐☐☐ ☐☐☐☐",
+      "help": "H☐☐ ☐☐☐☐"
+    },
+    {
+      "path": "DHBC-Image/10.jpg",
+      "Answer": "Cầu mây",
+      "sokytu": "☐☐☐ ☐☐☐",
+      "help": "☐ầ☐ m☐☐"
+    },
+    {
+      "path": "DHBC-Image/11.jpg",
+      "Answer": "Mỹ nhân ngư",
+      "sokytu": "☐☐ ☐☐☐☐ ☐☐☐ ",
+      "help": "M☐ ☐☐☐☐ n☐☐"
+    },
+    {
+      "path": "DHBC-Image/12.jpg",
+      "Answer": "Chỉ điểm",
+      "sokytu": "☐☐☐ ☐☐☐☐",
+      "help": "C☐☐ ☐☐☐☐"
+    },
+    {
+      "path": "DHBC-Image/13.jpg",
+      "Answer": "Hứng thú",
+      "sokytu": "☐☐☐☐ ☐☐☐",
+      "help": "H☐☐☐ ☐☐☐"
+    },
+    {
+      "path": "DHBC-Image/14.jpg",
+      "Answer": "Bao phủ",
+      "sokytu": "☐☐☐ ☐☐☐",
+      "help": "☐a☐ ☐☐☐"
+    },
+    {
+      "path": "DHBC-Image/15.jpg",
+      "Answer": "Mỹ tâm",
+      "sokytu": "☐☐ ☐☐☐",
+      "help": "M☐ ☐☐☐"
+    },
+    {
+      "path": "DHBC-Image/16.jpg",
+      "Answer": "Bạc tình",
+      "sokytu": "☐☐☐ ☐☐☐☐",
+      "help": "☐ạ☐ ☐☐☐☐"
+    },
+    {
+      "path": "DHBC-Image/17.jpg",
+      "Answer": "Đồng cam cộng khổ",
+      "sokytu": "☐☐☐☐ ☐☐☐ ☐☐☐☐ ☐☐☐",
+      "help": "Đ☐☐☐ ☐☐☐ c☐☐☐ ☐ổ☐"
+    },
+    {
+      "path": "DHBC-Image/18.jpg",
+      "Answer": "Tay trắng",
+      "sokytu": "☐☐☐ ☐☐☐☐☐",
+      "help": "☐☐☐ t☐☐☐☐"
+    },
+    {
+      "path": "DHBC-Image/19.jpg",
+      "Answer": "Cổ loa",
+      "sokytu": "☐☐ ☐☐☐",
+      "help": "C☐ ☐☐☐"
+    },
+    {
+      "path": "DHBC-Image/20.jpg",
+      "Answer": "Chân tướng",
+      "sokytu": "☐☐☐☐ ☐☐☐☐☐",
+      "help": "☐☐☐☐ t☐☐☐☐"
+    },
+    {
+      "path": "DHBC-Image/21.jpg",
+      "Answer": "Xe tăng",
+      "sokytu": "☐☐ ☐☐☐☐",
+      "help": "☐e t☐☐☐"
+    },
+    {
+      "path": "DHBC-Image/22.jpg",
+      "Answer": "Cá ngựa",
+      "sokytu": "☐☐ ☐☐☐☐",
+      "help": "C☐ ☐g☐☐"
+    },
+    {
+      "path": "DHBC-Image/23.jpg",
+      "Answer": "Đầu thú",
+      "sokytu": "☐☐☐ ☐☐☐",
+      "help": "☐ầ☐ ☐h☐"
+    },
+    {
+      "path": "DHBC-Image/24.jpg",
+      "Answer": "Tình trường",
+      "sokytu": "☐☐☐☐ ☐☐☐☐☐☐",
+      "help": "T☐☐h tr☐☐☐☐"
+    },
+    {
+      "path": "DHBC-Image/25.jpg",
+      "Answer": "Học đường",
+      "sokytu": "☐☐☐ ☐☐☐☐☐",
+      "help": "☐ọ☐ đ☐☐☐☐"
+    },
+    {
+      "path": "DHBC-Image/26.jpg",
+      "Answer": "Chân thành",
+      "sokytu": "☐☐☐☐ ☐☐☐☐☐",
+      "help": "Ch☐☐ ☐h☐☐☐"
+    },
+    {
+      "path": "DHBC-Image/27.jpg",
+      "Answer": "Bao la",
+      "sokytu": "☐☐☐ ☐☐",
+      "help": "☐a☐ ☐a"
+    },
+    {
+      "path": "DHBC-Image/28.jpg",
+      "Answer": "Kinh độ",
+      "sokytu": "☐☐☐☐ ☐☐",
+      "help": "K☐☐h ☐ộ"
+    },
+    {
+      "path": "DHBC-Image/29.jpg",
+      "Answer": "Đầu gấu",
+      "sokytu": "☐☐☐ ☐☐☐",
+      "help": "☐ầ☐ g☐☐"
+    },
+    {
+      "path": "DHBC-Image/30.jpg",
+      "Answer": "Ném đá giấu tay",
+      "sokytu": "☐☐☐ ☐☐ ☐☐☐☐ ☐☐☐",
+      "help": "☐é☐ ☐á g☐☐☐ ☐a☐"
+    },
+    {
+      "path": "DHBC-Image/31.jpg",
+      "Answer": "Lang thang",
+      "sokytu": "☐☐☐☐ ☐☐☐☐☐",
+      "help": "L☐☐g th☐☐☐"
+    },
+    {
+      "path": "DHBC-Image/32.jpg",
+      "Answer": "Gấu ngựa",
+      "sokytu": "☐☐☐ ☐☐☐☐",
+      "help": "☐ấ☐ ng☐☐"
+    },
+    {
+      "path": "DHBC-Image/33.jpg",
+      "Answer": "Bao hàm",
+      "sokytu": "☐☐☐ ☐☐☐",
+      "help": "☐a☐ h☐☐"
+    },
+    {
+      "path": "DHBC-Image/34.jpg",
+      "Answer": "Gạch hoa",
+      "sokytu": "☐☐☐☐ ☐☐☐",
+      "help": "G☐☐h ☐o☐"
+    },
+    {
+      "path": "DHBC-Image/35.jpg",
+      "Answer": "Bài bạc",
+      "sokytu": "☐☐☐ ☐☐☐",
+      "help": "☐à☐ ☐ạ☐"
+    },
+    {
+      "path": "DHBC-Image/36.jpg",
+      "Answer": "Dầu cá",
+      "sokytu": "☐☐☐ ☐☐",
+      "help": "☐ầ☐ ☐á"
+    },
+    {
+      "path": "DHBC-Image/37.jpg",
+      "Answer": "Xương rồng",
+      "sokytu": "☐☐☐☐☐ ☐☐☐☐",
+      "help": "X☐☐☐g ☐ồ☐☐"
+    },
+    {
+      "path": "DHBC-Image/38.jpg",
+      "Answer": "Xe hoa",
+      "sokytu": "☐☐ ☐☐☐",
+      "help": "☐e ☐o☐"
+    },
+    {
+      "path": "DHBC-Image/39.jpg",
+      "Answer": "Thờ ơ",
+      "sokytu": "☐☐☐ ☐",
+      "help": "☐h☐ ơ"
+    },
+    {
+      "path": "DHBC-Image/40.jpg",
+      "Answer": "Nhà hát",
+      "sokytu": "☐☐☐ ☐☐☐",
+      "help": "☐h☐ ☐á☐"
+    },
+    {
+      "path": "DHBC-Image/41.jpg",
+      "Answer": "Nhạc cụ",
+      "sokytu": "☐☐☐☐ ☐☐",
+      "help": "☐h☐c ☐ụ"
+    },
+    {
+      "path": "DHBC-Image/42.jpg",
+      "Answer": "Hành hạ",
+      "sokytu": "☐☐☐☐ ☐☐",
+      "help": "H☐☐h ☐ạ"
+    },
+    {
+      "path": "DHBC-Image/43.jpg",
+      "Answer": "Bà mối",
+      "sokytu": "☐☐ ☐☐☐",
+      "help": "☐à m☐☐"
+    },
+    {
+      "path": "DHBC-Image/44.jpg",
+      "Answer": "Cơ bắp",
+      "sokytu": "☐☐ ☐☐☐",
+      "help": "☐ơ ☐ắ☐"
+    },
+    {
+      "path": "DHBC-Image/45.jpg",
+      "Answer": "Bao quát",
+      "sokytu": "☐☐☐ ☐☐☐☐",
+      "help": "☐a☐ qu☐☐"
+    },
+    {
+      "path": "DHBC-Image/46.jpg",
+      "Answer": "Ba đầu sáu tay",
+      "sokytu": "☐☐ ☐☐☐ ☐☐☐ ☐☐☐",
+      "help": "☐a ☐ầ☐ ☐á☐ ☐a☐"
+    },
+    {
+      "path": "DHBC-Image/47.jpg",
+      "Answer": "Trái cây",
+      "sokytu": "☐☐☐☐ ☐☐☐",
+      "help": "☐r☐i ☐â☐"
+    },
+    {
+      "path": "DHBC-Image/48.jpg",
+      "Answer": "Ba trợn",
+      "sokytu": "☐☐ ☐☐☐☐",
+      "help": "B☐ ☐r☐n"
+    },
+    {
+      "path": "DHBC-Image/49.jpg",
+      "Answer": "Xích lô",
+      "sokytu": "☐☐☐☐ ☐☐",
+      "help": "X☐☐h ☐ô"
+    },
+    {
+      "path": "DHBC-Image/50.jpg",
+      "Answer": "Ngựa ô",
+      "sokytu": "☐☐☐☐ ☐",
+      "help": "☐g☐a ô"
+    },
+    {
+      "path": "DHBC-Image/51.jpg",
+      "Answer": "Xem tướng",
+      "sokytu": "☐☐☐ ☐☐☐☐☐",
+      "help": "☐e☐ tư☐☐☐"
+    },
+    {
+      "path": "DHBC-Image/52.jpg",
+      "Answer": "Hài lòng",
+      "sokytu": "☐☐☐ ☐☐☐☐",
+      "help": "H☐☐ ☐ò☐☐"
+    },
+    {
+      "path": "DHBC-Image/53.jpg",
+      "Answer": "Bóng đá",
+      "sokytu": "☐☐☐☐ ☐☐",
+      "help": "☐ó☐g ☐á"
+    },
+    {
+      "path": "DHBC-Image/54.jpg",
+      "Answer": "Tai hoạ",
+      "sokytu": "☐☐☐ ☐☐☐",
+      "help": "☐a☐ h☐ạ"
+    },
+    {
+      "path": "DHBC-Image/55.jpg",
+      "Answer": "Ba chìm bảy nổi",
+      "sokytu": "☐☐ ☐☐☐☐ ☐☐☐ ☐☐☐",
+      "help": "☐a ☐h☐m ☐ả☐ ☐ổ☐"
+    },
+    {
+      "path": "DHBC-Image/56.jpg",
+      "Answer": "Bút ký",
+      "sokytu": "☐☐☐ ☐☐",
+      "help": "B☐t ☐ý"
+    },
+    {
+      "path": "DHBC-Image/57.jpg",
+      "Answer": "Ngã ngũ",
+      "sokytu": "☐☐☐ ☐☐☐",
+      "help": "☐g☐ ng☐"
+    },
+    {
+      "path": "DHBC-Image/58.jpg",
+      "Answer": "Hồng tâm",
+      "sokytu": "☐☐☐☐ ☐☐☐",
+      "help": "H☐☐g ☐â☐"
+    },
+    {
+      "path": "DHBC-Image/59.jpg",
+      "Answer": "Nội thất",
+      "sokytu": "☐☐☐ ☐☐☐☐",
+      "help": "☐ộ☐ th☐☐"
+    },
+    {
+      "path": "DHBC-Image/60.jpg",
+      "Answer": "Áo mưa",
+      "sokytu": "☐☐ ☐☐☐",
+      "help": "Á☐ m☐a"
+    },
+    {
+      "path": "DHBC-Image/61.jpg",
+      "Answer": "Rửa tiền",
+      "sokytu": "☐☐☐ ☐☐☐☐",
+      "help": "R☐☐ t☐ề☐"
+    },
+    {
+      "path": "DHBC-Image/62.jpg",
+      "Answer": "Công giáo",
+      "sokytu": "☐☐☐☐ ☐☐☐☐",
+      "help": "☐ô☐g gi☐o"
+    },
+    {
+      "path": "DHBC-Image/63.jpg",
+      "Answer": "Kiếm chuyện",
+      "sokytu": "☐☐☐☐ ☐☐☐☐☐☐",
+      "help": "K☐ế☐ ☐h☐☐ện"
+    },
+    {
+      "path": "DHBC-Image/64.jpg",
+      "Answer": "Báo thức",
+      "sokytu": "☐☐☐ ☐☐☐☐",
+      "help": "☐á☐ th☐c"
+    },
+    {
+      "path": "DHBC-Image/65.jpg",
+      "Answer": "Mũi nhọn",
+      "sokytu": "☐☐☐ ☐☐☐☐",
+      "help": "M☐i ☐h☐n"
+    },
+    {
+      "path": "DHBC-Image/66.jpg",
+      "Answer": "Ma cà rồng",
+      "sokytu": "☐☐ ☐☐ ☐☐☐☐",
+      "help": "M☐ c☐ ☐ồ☐g"
+    },
+    {
+      "path": "DHBC-Image/67.jpg",
+      "Answer": "Bao tay",
+      "sokytu": "☐☐☐ ☐☐☐",
+      "help": "B☐o ☐a☐"
+    },
+    {
+      "path": "DHBC-Image/68.jpg",
+      "Answer": "Đại tướng",
+      "sokytu": "☐☐☐ ☐☐☐☐☐",
+      "help": "Đ☐i t☐ớ☐g"
+    },
+    {
+      "path": "DHBC-Image/69.jpg",
+      "Answer": "Bao tử",
+      "sokytu": "☐☐☐ ☐☐",
+      "help": "☐a☐ ☐ử"
+    },
+    {
+      "path": "DHBC-Image/70.jpg",
+      "Answer": "Báo mộng",
+      "sokytu": "☐☐☐ ☐☐☐☐",
+      "help": "☐á☐ m☐☐g"
+    },
+    {
+      "path": "DHBC-Image/71.jpg",
+      "Answer": "Mã hóa",
+      "sokytu": "☐☐ ☐☐☐",
+      "help": "M☐ ☐ó☐"
+    },
+    {
+      "path": "DHBC-Image/72.jpg",
+      "Answer": "Tăng ca",
+      "sokytu": "☐☐☐☐ ☐☐",
+      "help": "☐ă☐g ☐a"
+    },
+    {
+      "path": "DHBC-Image/73.jpg",
+      "Answer": "Hòm công đức",
+      "sokytu": "☐☐☐ ☐☐☐☐ ☐☐☐",
+      "help": "H☐m ☐ô☐g đ☐c"
+    },
+    {
+      "path": "DHBC-Image/74.jpg",
+      "Answer": "Bán đảo",
+      "sokytu": "☐☐☐ ☐☐☐",
+      "help": "☐á☐ đ☐o"
+    },
+    {
+      "path": "DHBC-Image/75.jpg",
+      "Answer": "Bi hài",
+      "sokytu": "☐☐ ☐☐☐",
+      "help": "☐i h☐i"
+    },
+    {
+      "path": "DHBC-Image/76.jpg",
+      "Answer": "Bi quan",
+      "sokytu": "☐☐ ☐☐☐☐",
+      "help": "B☐ q☐☐n"
+    },
+    {
+      "path": "DHBC-Image/77.jpg",
+      "Answer": "Ba chân bốn cẳng",
+      "sokytu": "☐☐ ☐☐☐☐ ☐☐☐ ☐☐☐☐",
+      "help": "☐a ch☐n ☐ố☐ c☐☐g"
+    },
+    {
+      "path": "DHBC-Image/78.jpg",
+      "Answer": "Tấn công",
+      "sokytu": "☐☐☐ ☐☐☐☐",
+      "help": "T☐n c☐☐g"
+    },
+    {
+      "path": "DHBC-Image/79.jpg",
+      "Answer": "Khoan hồng",
+      "sokytu": "☐☐☐☐☐ ☐☐☐☐",
+      "help": "☐h☐an h☐☐g"
+    },
+    {
+      "path": "DHBC-Image/80.jpg",
+      "Answer": "Dài lưng tốn vải",
+      "sokytu": "☐☐☐ ☐☐☐☐ ☐☐☐ ☐☐☐",
+      "help": "D☐i ☐ư☐g ☐ố☐ v☐i"
+    },
+    {
+      "path": "DHBC-Image/81.jpg",
+      "Answer": "Thảm họa",
+      "sokytu": "☐☐☐☐ ☐☐☐",
+      "help": "☐h☐m h☐a"
+    },
+    {
+      "path": "DHBC-Image/82.jpg",
+      "Answer": "Cao kiến",
+      "sokytu": "☐☐☐ ☐☐☐☐",
+      "help": "C☐o k☐ế☐"
+    },
+    {
+      "path": "DHBC-Image/83.jpg",
+      "Answer": "Kéo cưa lừa xẻ",
+      "sokytu": "☐☐☐ ☐☐☐ ☐☐☐ ☐☐",
+      "help": "K☐o c☐a ☐ừ☐ ☐ẻ"
+    },
+    {
+      "path": "DHBC-Image/84.jpg",
+      "Answer": "Âu yếm",
+      "sokytu": "☐☐ ☐☐☐",
+      "help": "Â☐ ☐ế☐"
+    },
+    {
+      "path": "DHBC-Image/85.jpg",
+      "Answer": "Bi kịch",
+      "sokytu": "☐☐ ☐☐☐☐",
+      "help": "☐i k☐ch"
+    },
+    {
+      "path": "DHBC-Image/86.jpg",
+      "Answer": "Ba lô",
+      "sokytu": "☐☐ ☐☐",
+      "help": "☐a ☐ô"
+    },
+    {
+      "path": "DHBC-Image/87.jpg",
+      "Answer": "Hình bình hành",
+      "sokytu": "☐☐☐☐ ☐☐☐☐ ☐☐☐☐",
+      "help": "H☐☐h b☐☐h h☐nh"
+    },
+    {
+      "path": "DHBC-Image/88.jpg",
+      "Answer": "Kích động",
+      "sokytu": "☐☐☐☐ ☐☐☐☐",
+      "help": "K☐☐h đ☐☐g"
+    },
+    {
+      "path": "DHBC-Image/89.jpg",
+      "Answer": "Bình chân như vại",
+      "sokytu": "☐☐☐☐ ☐☐☐☐ ☐☐☐ ☐☐☐",
+      "help": "B☐☐h ch☐n ☐h☐ v☐i"
+    },
+    {
+      "path": "DHBC-Image/90.jpg",
+      "Answer": "Mật khẩu",
+      "sokytu": "☐☐☐ ☐☐☐☐",
+      "help": "M☐t ☐h☐u"
+    },
+    {
+      "path": "DHBC-Image/91.jpg",
+      "Answer": "Thích thú",
+      "sokytu": "☐☐☐☐☐ ☐☐☐",
+      "help": "Th☐☐h ☐h☐"
+    },
+    {
+      "path": "DHBC-Image/92.jpg",
+      "Answer": "Yên bình",
+      "sokytu": "☐☐☐ ☐☐☐☐",
+      "help": "Y☐n ☐ì☐h"
+    },
+    {
+      "path": "DHBC-Image/93.jpg",
+      "Answer": "Nhãn hiệu",
+      "sokytu": "☐☐☐☐ ☐☐☐☐",
+      "help": "☐h☐n h☐ệ☐"
+    },
+    {
+      "path": "DHBC-Image/94.jpg",
+      "Answer": "Nhẫn tâm",
+      "sokytu": "☐☐☐☐ ☐☐☐",
+      "help": "Nh☐n t☐m"
+    },
+    {
+      "path": "DHBC-Image/95.jpg",
+      "Answer": "Cân đẩu vân",
+      "sokytu": "☐☐☐ ☐☐☐ ☐☐☐",
+      "help": "C☐n ☐ấ☐ v☐n"
+    },
+    {
+      "path": "DHBC-Image/96.jpg",
+      "Answer": "Xấu hổ",
+      "sokytu": "☐☐☐ ☐☐",
+      "help": "☐ấ☐ h☐"
+    },
+    {
+      "path": "DHBC-Image/97.jpg",
+      "Answer": "Cơ hội",
+      "sokytu": "☐☐ ☐☐☐",
+      "help": "C☐ h☐i"
+    },
+    {
+      "path": "DHBC-Image/98.jpg",
+      "Answer": "Yêu sách",
+      "sokytu": "☐☐☐ ☐☐☐☐",
+      "help": "Y☐u s☐☐h"
+    },
+    {
+      "path": "DHBC-Image/99.jpg",
+      "Answer": "Tung tăng",
+      "sokytu": "☐☐☐☐ ☐☐☐☐",
+      "help": "☐u☐g t☐☐g"
+    },
+    {
+      "path": "DHBC-Image/100.jpg",
+      "Answer": "Vườn bách thú",
+      "sokytu": "☐☐☐☐ ☐☐☐☐ ☐☐☐",
+      "help": "V☐ờ☐ ☐á☐h t☐ú"
+    }
+  ],
+  "tempAnswer": null
+}

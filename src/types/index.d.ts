@@ -348,6 +348,12 @@ export interface BotConfig {
   prefix: string;
   admin: string[];
   userAgent: string;
+  /** false: chỉ OWNER/ADMIN dùng lệnh; onChat/onReply tắt với người khác */
+  botInteractionEnabled?: boolean;
+  /** false: tắt autodown toàn bot (ghi đè bật theo nhóm) */
+  botAutodownEnabled?: boolean;
+  /** false: tắt preload/upload cache video nền (handleUpload manager) */
+  handleUploadEnabled?: boolean;
   token?: {
     EAAAAU?: string;
     EAAD6V7?: string;
@@ -444,10 +450,12 @@ export interface ReplyData {
   messageID: string;
   author: string;
   case?: string;
-  data?: string | number | boolean | null | undefined | Record<string, string | number | boolean | null | undefined>;
+  /** Arbitrary payload (game state, DB rows, etc.). */
+  data?: unknown;
   role?: number;
   delete?: () => void;
-  [key: string]: string | number | boolean | null | undefined | (() => void) | Record<string, string | number | boolean | null | undefined>;
+  /** Plugin payloads (lists, game state, timers, etc.) — kept loose so handlers can narrow. */
+  [key: string]: unknown;
 }
 
 export interface ReactData {
@@ -461,7 +469,8 @@ export interface ReactData {
 export type ReplyHandler = (data: ReplyData) => void | Promise<void> | boolean | number | { handled?: boolean; matched?: boolean } | (() => Promise<void>);
 
 export interface MainData {
-  processData: Map<string, string | number | boolean | null | undefined | Record<string, string | number | boolean | null | undefined>>;
+  /** Ephemeral command/game state; values are narrowed at use sites. */
+  processData: Map<string, unknown>;
   cmds: Map<string, Command>;
   events: Map<string, BotEvent>;
   cd: Map<string, Map<string, number>>;
@@ -491,4 +500,15 @@ export type { FacebookClient, MessageForm, MusicStickerItem } from "./client";
 export type { ThreadDataModel, UserDataModel } from "./database";
 export type { BotEvent as BotEventType, ExtendedMessageEvent } from "./event";
 export type { Logger } from "./logger";
-export type { Context, CookieJar, DefaultFuncs, FBResponse, GlobalOptions, ParseContext, RequestClient } from "./request";
+export type {
+  Context,
+  Cookie,
+  CookieJar,
+  DefaultFuncs,
+  DefaultFuncsHttpResponse,
+  FBResponse,
+  FbNetworkResponse,
+  GlobalOptions,
+  ParseContext,
+  RequestClient,
+} from "./request";

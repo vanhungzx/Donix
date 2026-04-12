@@ -1,0 +1,124 @@
+{
+    "allquestion": [
+        {
+            "question": "Trên bề mặt của la bàn từ, hướng Nam được ký hiệu bằng chữ cái Tiếng Anh nào?",
+            "a": "E",
+            "b": "W",
+            "c": "S",
+            "d": "N",
+            "dapan": "C",
+            "helpone": ["C", "D"],
+            "helptwo": [10, 15, 55, 20],
+            "helpthree": ["C"],
+            "giaithich": "Trên la bàn, 'S' (South) là ký hiệu cho hướng Nam."
+        },
+        {
+            "question": "Loại quả nào thường được gọi là 'Vua của các loại trái cây'?",
+            "a": "Sầu riêng",
+            "b": "Bí đao",
+            "c": "Phật thủ",
+            "d": "Sim",
+            "dapan": "A",
+            "helpone": ["A", "D"],
+            "helptwo": [55, 10, 15, 20],
+            "helpthree": ["A"],
+            "giaithich": "Sầu riêng được coi là 'Vua của các loại trái cây'."
+        },
+        {
+            "question": "Sông nào sau đây thuộc miền Bắc?",
+            "a": "Sông Đà",
+            "b": "Sông Thu Bồn",
+            "c": "Sông Vàm Cỏ",
+            "d": "Sông Tiền",
+            "dapan": "A",
+            "helpone": ["A", "C"],
+            "helptwo": [55, 10, 15, 20],
+            "helpthree": ["A"],
+            "giaithich": "Sông Đà là một trong những con sông lớn thuộc miền Bắc Việt Nam."
+        },
+        {
+            "question": "Hành động nào còn thiếu trong câu nói nổi tiếng của triết gia Hy lạp cổ đại Heraclitus: 'Không ai ... hai lần trên một dòng sông'?",
+            "a": "Tắm",
+            "b": "Uống",
+            "c": "Lặn",
+            "d": "Câu",
+            "dapan": "A",
+            "helpone": ["A", "D"],
+            "helptwo": [55, 10, 15, 20],
+            "helpthree": ["A"],
+            "giaithich": "Câu nói của Heraclitus là 'Không ai tắm hai lần trên một dòng sông', ám chỉ sự thay đổi liên tục."
+        },
+        { 
+            "question": "Từ nào sau đây viết đúng chính tả Tiếng Việt?",
+            "a": "Sơ xài",
+            "b": "Sơ sài",
+            "c": "Xơ xài",
+            "d": "Xơ sài",
+            "dapan": "B",
+            "helpone": ["B", "C"],
+            "helptwo": [10, 50, 26, 15],
+            "helpthree": ["B"],
+            "giaithich": "Trong Tiếng Việt, từ đúng là 'sơ sài'."
+        },
+        {
+            "question": "Bí đỏ còn được gọi là gì?",
+            "a": "Bí đao",
+            "b": "Bí ngòi",
+            "c": "Bí bách",
+            "d": "Bí ngô",
+            "dapan": "D",
+            "helpone": ["D", "C"],
+            "helptwo": [10, 15, 20, 55],
+            "helpthree": ["D"],
+            "giaithich": "Bí đỏ thường được gọi là bí ngô."
+        },
+        {
+            "question": "Ruột quả chanh leo (chanh dây) khi chín thường có màu gì?",
+            "a": "Tím",
+            "b": "Vàng",
+            "c": "Đen",
+            "d": "Xanh nước biển",
+            "dapan": "B",
+            "helpone": ["B", "C"],
+            "helptwo": [10, 55, 25, 10],
+            "helpthree": ["B"],
+            "giaithich": "Ruột quả chanh leo khi chín thường có màu vàng."
+        },
+        {
+            "question": "Nhân vật nào không xuất hiện trong truyện cổ tích 'Cô bé quàng khăn đỏ'?",
+            "a": "Bác thợ săn",
+            "b": "Bà ngoại",
+            "c": "Chó sói",
+            "d": "Mụ phù thuỷ",
+            "dapan": "D",
+            "helpone": ["D", "C"],
+            "helptwo": [10, 15, 20, 55],
+            "helpthree": ["D"],
+            "giaithich": "Nhân vật mụ phù thuỷ không xuất hiện trong truyện 'Cô bé quàng khăn đỏ'."
+        },
+        {
+            "question": "Theo thành ngữ: 'Trông mặt mà bắt ...' gì?",
+            "a": "Hình vuông",
+            "b": "Hình nhân",
+            "c": "Hình dong",
+            "d": "Hình thoi",
+            "dapan": "C",
+            "helpone": ["C", "B"],
+            "helptwo": [10, 24, 55, 5],
+            "helpthree": ["C"],
+            "giaithich": "Thành ngữ đầy đủ là 'Trông mặt mà bắt hình dong'."
+        },
+        {
+            "question": "Những người đã lập gia đình thường đeo nhẫn ở ngón nào của bàn tay trái?",
+            "a": "Ngón trỏ",
+            "b": "Ngón giữa",
+            "c": "Ngón cái",
+            "d": "Ngón áp út",
+            "dapan": "D",
+            "helpone": ["B", "D"],
+            "helptwo": [10, 25, 20, 55],
+            "helpthree": ["D"],
+            "giaithich": "Ngón áp út của bàn tay trái thường được chọn để đeo nhẫn cưới theo phong tục nhiều nơi trên thế giới."
+        }
+    ]
+}

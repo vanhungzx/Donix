@@ -1,29 +1,34 @@
 import log from "@log";
-import type { AxiosRequestConfig, AxiosResponse } from "axios";
+import type { AxiosRequestConfig } from "axios";
 import { CookieJar as ToughCookieJar } from "tough-cookie";
 
-import type {
-  RequestClient as Client,
-  Context,
-  CookieJar,
-  DefaultFuncs,
-  FBResponse,
-  ParseContext,
-} from "@types";
+import type { RequestClient as Client, Context, CookieJar, DefaultFuncs, FBResponse, ParseContext } from "@types";
+import type { Cookie as ToughCookie } from "tough-cookie";
 import { makeParsable } from "../../constants.js";
 import { randomUserAgent } from "../../user-agents.js";
 import { tryPromise } from "./type.js";
 
 const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
-const formatCookie = ([k, v, , p]: any[], d: string): string =>
-  `${k}=${v}; Path=${p}; Domain=${d}.com`;
+/** Axios/got headers: string hoặc string[] */
+function contentTypeFromHeaders(headers: AxiosRequestConfig["headers"] | undefined): string {
+  if (headers == null || typeof headers !== "object") return "";
+  const h = headers as Record<string, unknown>;
+  const v = h["Content-Type"] ?? h["content-type"];
+  if (typeof v === "string") return v;
+  if (Array.isArray(v) && v.length > 0) return String(v[0]);
+  return v != null ? String(v) : "";
+}
+
+/** jsmods Cookie row: [name, value, ?, path, ...] */
+const formatCookie = (parts: readonly string[], d: string): string =>
+  `${parts[0]}=${parts[1]}; Path=${parts[3]}; Domain=${d}.com`;
 
 const saveCookies =
   (jar: ToughCookieJar & CookieJar) =>
     (res: FBResponse<string>): FBResponse<string> => {
-      const headersAny = res.headers as any;
-      const setCookieHeader = headersAny?.["set-cookie"] || headersAny?.["Set-Cookie"];
+      const hdr = res.headers as Record<string, string | string[] | undefined>;
+      const setCookieHeader = hdr["set-cookie"] ?? hdr["Set-Cookie"];
       if (setCookieHeader) {
         const cookies = Array.isArray(setCookieHeader) ? setCookieHeader : [setCookieHeader];
         cookies.forEach((c: string) => {
@@ -41,7 +46,7 @@ const saveCookies =
       return res;
     };
 
-const getAppState = (jar: ToughCookieJar & CookieJar): any[] => {
+const getAppState = (jar: ToughCookieJar & CookieJar): ToughCookie[] => {
   const cookies1 = jar.getCookiesSync
     ? jar.getCookiesSync("https://business.facebook.com")
     : jar.getCookies("https://business.facebook.com");
@@ -55,16 +60,20 @@ const getAppState = (jar: ToughCookieJar & CookieJar): any[] => {
 };
 
 class CustomError extends Error {
-  // Allow attaching arbitrary extra properties for richer error information
-  [key: string]: any;
+  declare detail?: unknown;
+  declare res?: unknown;
+  declare statusCode?: number;
+  declare sourceCall?: Error;
 
-  constructor(obj: any) {
-    if (typeof obj === "string") obj = { message: obj };
-    if (typeof obj !== "object" || obj === null) {
+  constructor(obj: string | Record<string, unknown>) {
+    const o = typeof obj === "string" ? { message: obj } : { ...obj };
+    if (typeof o !== "object" || o === null) {
       throw new TypeError("Object required");
     }
-    obj.message ? super(obj.message) : super();
-    Object.assign(this, obj);
+    const m = o.message;
+    if (typeof m === "string" && m.length > 0) super(m);
+    else super();
+    Object.assign(this, o);
   }
 }
 
@@ -87,34 +96,38 @@ function parseAndCheckLogin(
       return e as Error;
     }
   })()
-): (data: FBResponse<string> | AxiosResponse | any) => Promise<any> {
-  return (data: FBResponse<string> | AxiosResponse | any) =>
+): (data: unknown) => Promise<unknown> {
+  return (data: unknown) =>
     tryPromise(async () => {
       let rawBody: string;
       let statusCode: number;
-      let config: AxiosRequestConfig & { fbOriginalForm?: any; method?: string; url?: string };
+      type ConfigShape = AxiosRequestConfig & {
+        fbOriginalForm?: Record<string, string | number | boolean | null | undefined>;
+        method?: string;
+        url?: string;
+      };
+      let config: ConfigShape;
 
       if (data && typeof data === "object") {
-        if ("data" in data && typeof (data as any).data === "string") {
-          rawBody = (data as AxiosResponse<string>).data;
-        } else if ("body" in data && typeof (data as any).body === "string") {
-          rawBody = (data as any).body;
-        } else if ("data" in data && (data as any).data && typeof (data as any).data === "object") {
-          rawBody = JSON.stringify((data as any).data);
+        const d = data as Record<string, unknown> & { config?: ConfigShape };
+        if ("data" in d && typeof d.data === "string") {
+          rawBody = d.data;
+        } else if ("body" in d && typeof d.body === "string") {
+          rawBody = d.body;
+        } else if (d.data && typeof d.data === "object") {
+          rawBody = JSON.stringify(d.data);
         } else {
-          rawBody = typeof data === "string" ? data : JSON.stringify(data ?? "");
+          rawBody = JSON.stringify(data ?? "");
         }
 
-        const anyData: any = data;
-        statusCode =
-          anyData.status && anyData.status >= 200 && anyData.status < 600
-            ? anyData.status
-            : anyData.statusCode || 200;
-        config = (anyData.config || {}) as any;
+        const st = typeof d.status === "number" ? d.status : undefined;
+        const sc = typeof d.statusCode === "number" ? d.statusCode : undefined;
+        statusCode = st !== undefined && st >= 200 && st < 600 ? st : sc ?? 200;
+        config = (d.config && typeof d.config === "object" ? d.config : {}) as ConfigShape;
       } else {
         rawBody = typeof data === "string" ? data : JSON.stringify(data ?? "");
         statusCode = 200;
-        config = {} as any;
+        config = {} as ConfigShape;
       }
 
       // Handle empty response body - skip check for rate limit errors to provide better error message
@@ -131,9 +144,8 @@ function parseAndCheckLogin(
       if (statusCode === 429 && retry < 3) {
         const t = (Math.random() * 10000 + 5000) | 0; // 5-15 seconds delay for rate limits
         const urlStr = (config?.url as string) || "";
-        const headers = config?.headers as Record<string, any> | undefined;
-        const contentType = headers?.["Content-Type"] || headers?.["content-type"] || "";
-        const isMultipart = contentType?.toString().startsWith("multipart");
+        const contentType = contentTypeFromHeaders(config?.headers);
+        const isMultipart = contentType.split(";")[0].trim().toLowerCase().startsWith("multipart");
         const postFunc = isMultipart ? def.postFormData : def.post;
         const method = isMultipart ? "POST (FormData)" : "POST";
 
@@ -153,11 +165,16 @@ function parseAndCheckLogin(
         );
 
         // Update fbOriginalForm with new random UA headers
-        const originalForm = (config as any)?.fbOriginalForm || {};
-        const updatedForm = {
+        const originalForm = config.fbOriginalForm ?? {};
+        const customHdr = originalForm.customHeader;
+        const prevCustom =
+          customHdr && typeof customHdr === "object" && !Array.isArray(customHdr)
+            ? (customHdr as Record<string, string>)
+            : {};
+        const updatedForm: Record<string, string | number | boolean | null | undefined | Record<string, string>> = {
           ...originalForm,
           customHeader: {
-            ...(originalForm.customHeader || {}),
+            ...prevCustom,
             ...randomUAHeaders,
           },
         };
@@ -165,15 +182,22 @@ function parseAndCheckLogin(
         return delay(t)
           .then(() => {
             if (isMultipart) {
-              // For FormData, pass customHeader in form options
-              return postFunc(urlStr, (ctx as Context).jar, {
-                ...updatedForm,
-                customHeader: randomUAHeaders,
-              });
-            } else {
-              // For regular POST, pass customHeader as 5th parameter
-              return (postFunc as any)(urlStr, (ctx as Context).jar, updatedForm, ctx, randomUAHeaders);
+              return postFunc(
+                urlStr,
+                (ctx as Context).jar,
+                { ...updatedForm, customHeader: randomUAHeaders } as unknown as Record<
+                  string,
+                  string | number | boolean | null | undefined
+                >
+              );
             }
+            return def.post(
+              urlStr,
+              (ctx as Context).jar,
+              updatedForm as unknown as Record<string, string | number | boolean | null | undefined>,
+              ctx as Context,
+              randomUAHeaders
+            );
           })
           .then(parseAndCheckLogin(ctx, def, retry + 1, src))
           .then((result) => {
@@ -182,9 +206,9 @@ function parseAndCheckLogin(
             );
             return result;
           })
-          .catch((error) => {
+          .catch((error: unknown) => {
             log.error(
-              `parseAndCheckLogin: Đã retry rate limit lần ${retry + 1} thất bại - ${method} ${urlStr} - ${(error as any)?.message || error
+              `parseAndCheckLogin: Đã retry rate limit lần ${retry + 1} thất bại - ${method} ${urlStr} - ${error instanceof Error ? error.message : String(error)
               }`
             );
             throw error;
@@ -195,9 +219,8 @@ function parseAndCheckLogin(
       if (statusCode >= 500 && retry < 5) {
         const t = (Math.random() * 5000) | 0;
         const urlStr = (config?.url as string) || "";
-        const headers = config?.headers as Record<string, any> | undefined;
-        const contentType = headers?.["Content-Type"] || headers?.["content-type"] || "";
-        const isMultipart = contentType?.toString().startsWith("multipart");
+        const contentType = contentTypeFromHeaders(config?.headers);
+        const isMultipart = contentType.split(";")[0].trim().toLowerCase().startsWith("multipart");
         const postFunc = isMultipart ? def.postFormData : def.post;
         const method = isMultipart ? "POST (FormData)" : "POST";
 
@@ -207,7 +230,7 @@ function parseAndCheckLogin(
         );
 
         return delay(t)
-          .then(() => postFunc(urlStr, (ctx as Context).jar, (config as any)?.fbOriginalForm))
+          .then(() => postFunc(urlStr, (ctx as Context).jar, config.fbOriginalForm))
           .then(parseAndCheckLogin(ctx, def, retry + 1, src))
           .then((result) => {
             log.info(
@@ -217,7 +240,7 @@ function parseAndCheckLogin(
           })
           .catch((error) => {
             log.error(
-              `parseAndCheckLogin: Đã retry lần ${retry + 1} thất bại - ${method} ${urlStr} - ${(error as any)?.message || error
+              `parseAndCheckLogin: Đã retry lần ${retry + 1} thất bại - ${method} ${urlStr} - ${error instanceof Error ? error.message : String(error)
               }`
             );
             throw error;
@@ -241,90 +264,96 @@ function parseAndCheckLogin(
         });
       }
 
-      let res: any;
+      let res: unknown;
       try {
         const parsableBody = makeParsable(rawBody);
         if (!parsableBody || parsableBody.trim() === "") {
           throw new Error("Empty parsable body");
         }
         res = JSON.parse(parsableBody);
-      } catch (e: any) {
+      } catch (e: unknown) {
+        const em = e instanceof Error ? e.message : String(e);
         throw new CustomError({
-          message: `JSON.parse error: ${e?.message || e}`,
+          message: `JSON.parse error: ${em}`,
           detail: e,
           res: rawBody?.substring(0, 500) || "",
           sourceCall: src,
         });
       }
 
-      // Detect checkpoint redirect
-      if (res.jsmods?.require) {
-        for (const i of res.jsmods.require) {
-          if (i[0] === "ServerRedirect" && i[1] === "redirectPageTo") {
-            const m = i[3]?.[0]?.match(/\/checkpoint\/(\d+)/);
-            if (m) {
-              res.die = true;
-              res.type = m[1];
-              break;
+      if (!Array.isArray(res)) {
+        const r = res as Record<string, unknown> & {
+          jsmods?: { require?: unknown[][] };
+          error?: unknown;
+          redirect?: string;
+          die?: boolean;
+          type?: string;
+          logout?: boolean;
+        };
+
+        if (r.jsmods?.require) {
+          for (const i of r.jsmods.require) {
+            if (!Array.isArray(i)) continue;
+            if (i[0] === "ServerRedirect" && i[1] === "redirectPageTo") {
+              const arg0 = (i[3] as unknown[] | undefined)?.[0];
+              const s = typeof arg0 === "string" ? arg0 : "";
+              const m = s.match(/\/checkpoint\/(\d+)/);
+              if (m) {
+                r.die = true;
+                r.type = m[1];
+                break;
+              }
             }
           }
         }
-      }
 
-      if (res.error === 1357001) res.logout = true;
+        if (r.error === 1357001) r.logout = true;
 
-      // Follow redirect for GET
-      if (res.redirect && (config?.method || "").toUpperCase() === "GET") {
-        return def
-          .get(res.redirect, (ctx as Context).jar)
-          .then(parseAndCheckLogin(ctx, def, undefined, src));
-      }
-
-      // Handle cookie updates
-      if (res.jsmods?.require?.[0]?.[0] === "Cookie") {
-        (ctx as Context).jar.setCookie(
-          formatCookie(res.jsmods.require[0][3], "facebook"),
-          "https://www.facebook.com"
-        );
-        (ctx as Context).jar.setCookie(
-          formatCookie(res.jsmods.require[0][3], "facebook"),
-          "https://business.facebook.com"
-        );
-        (ctx as Context).jar.setCookie(
-          formatCookie(res.jsmods.require[0][3], "messenger"),
-          "https://www.messenger.com"
-        );
-      }
-
-      // Extract fb_dtsg token
-      for (const i of res.jsmods?.require || []) {
-        if (i[0] === "DTSG" && i[1] === "setToken") {
-          (ctx as Context).fb_dtsg = i[3][0];
-          (ctx as Context).ttstamp =
-            "2" + [...((ctx as Context).fb_dtsg || "")].map((c) => c.charCodeAt(0)).join("");
+        if (r.redirect && (config?.method || "").toUpperCase() === "GET") {
+          return def
+            .get(String(r.redirect), (ctx as Context).jar)
+            .then(parseAndCheckLogin(ctx, def, undefined, src));
         }
+
+        const req0 = r.jsmods?.require?.[0];
+        if (Array.isArray(req0) && req0[0] === "Cookie" && Array.isArray(req0[3])) {
+          const parts = req0[3] as string[];
+          (ctx as Context).jar.setCookie(formatCookie(parts, "facebook"), "https://www.facebook.com");
+          (ctx as Context).jar.setCookie(formatCookie(parts, "facebook"), "https://business.facebook.com");
+          (ctx as Context).jar.setCookie(formatCookie(parts, "messenger"), "https://www.messenger.com");
+        }
+
+        for (const i of r.jsmods?.require || []) {
+          if (!Array.isArray(i)) continue;
+          if (i[0] === "DTSG" && i[1] === "setToken") {
+            const tok = (i[3] as unknown[] | undefined)?.[0];
+            if (typeof tok === "string") {
+              (ctx as Context).fb_dtsg = tok;
+              (ctx as Context).ttstamp =
+                "2" + [...((ctx as Context).fb_dtsg || "")].map((c) => c.charCodeAt(0)).join("");
+            }
+          }
+        }
+
+        return {
+          ...r,
+          body: rawBody,
+        };
       }
 
-      // If response is already an array, attach body for debugging
-      if (Array.isArray(res)) {
-        (res as any).body = rawBody;
-        return res;
-      }
-
-      return {
-        ...res,
-        body: rawBody,
-      };
+      const arr = res as unknown[] & { body?: string };
+      arr.body = rawBody;
+      return arr;
     });
 }
 
 function markDelivery(ctx: Context, client: Client, threadID: string, messageID: string): void {
   if (threadID && messageID) {
-    client.markAsDelivered(threadID, messageID, (err?: any) => {
+    client.markAsDelivered(threadID, messageID, (err?: Error) => {
       if (err) {
         log.error(`markAsDelivered: ${err.message || err}`);
       } else if (ctx.options.autoMarkRead) {
-        client.markAsRead(threadID, (err2?: any) => {
+        client.markAsRead(threadID, (err2?: Error) => {
           if (err2) log.error(`markAsRead: ${err2.message || err2}`);
         });
       }
@@ -335,7 +364,8 @@ function markDelivery(ctx: Context, client: Client, threadID: string, messageID:
 const getJar = (): ToughCookieJar & CookieJar => {
   const jar = new ToughCookieJar();
   const boundGetCookieStringSync = jar.getCookieStringSync.bind(jar);
-  (jar as any).cookieString = () => boundGetCookieStringSync("https://business.facebook.com");
+  (jar as ToughCookieJar & CookieJar & { cookieString?: () => string }).cookieString = () =>
+    boundGetCookieStringSync("https://business.facebook.com");
   return jar as ToughCookieJar & CookieJar;
 };
 

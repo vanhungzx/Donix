@@ -40,12 +40,19 @@ interface ThreadInfo {
 
 interface CustomMessageConfig {
   text: string;
-  type: 'text_only' | 'text_image_link' | 'text_image_upload' | 'text_video_link' | 'canvas_auto';
+  type:
+    | 'text_only'
+    | 'text_image_link'
+    | 'text_image_upload'
+    | 'text_video_link'
+    | 'text_video_upload'
+    | 'canvas_auto';
   hasMedia: boolean;
   imageUrl?: string;
   uploadedImage?: string;
   imagePath?: string;
   videoUrl?: string;
+  uploadedVideo?: string;
   videoPath?: string;
 }
 
@@ -116,6 +123,8 @@ interface OnReplyEntry {
   author: string | number;
   threadID: string | number;
   type: string;
+  /** Nội dung text đã nhập ở bước 1 (upload ảnh/video 2 bước). */
+  pendingText?: string;
 }
 
 interface OnReplyStore {
@@ -138,6 +147,7 @@ interface BotConfig {
 interface ReplyMetadata {
   type: string;
   author: string | number;
+  pendingText?: string;
 }
 
 function getMediaDir(threadID: string | number): string {
@@ -229,31 +239,73 @@ function mergeSettings<T extends object, U extends object>(oldSettings: T | unde
 
 
 
-function getVariablesDescription(): string {
-  return `📌 CÁC BIẾN CÓ THỂ DÙNG:\n\n` +
-    `📌 BIẾN NGƯỜI DÙNG:\n` +
-    `• {name}      → Tên người dùng (ví dụ: "Nguyễn Văn A")\n` +
-    `• {uid}       → ID Facebook (ví dụ: "1000123456789")\n` +
-    `• {tag}       → Tag người dùng (ví dụ: "@Nguyễn Văn A")\n` +
-    `• {link}      → Link Facebook (ví dụ: "https://www.facebook.com/profile.php?id=1000123456789")\n\n` +
-    `📌 BIẾN NHÓM:\n` +
-    `• {groupName} → Tên nhóm\n` +
-    `• {count}     → Số thành viên\n\n` +
-    `📌 BIẾN THỜI GIAN:\n` +
-    `• {time}      → Thời gian đầy đủ (DD/MM/YYYY - HH:mm:ss)\n` +
-    `• {date}      → Ngày tháng (DD/MM/YYYY)\n` +
-    `• {timeOnly}  → Chỉ giờ phút giây (HH:mm:ss)\n` +
-    `• {hour}      → Giờ hiện tại (ví dụ: "14")\n` +
-    `• {minute}    → Phút hiện tại (ví dụ: "30")\n` +
-    `• {day}       → Ngày trong tháng (ví dụ: "25")\n` +
-    `• {month}     → Tháng (ví dụ: "12")\n` +
-    `• {year}      → Năm (ví dụ: "2024")\n` +
-    `• {dayOfWeek} → Ngày trong tuần (Thứ 2, Thứ 3, ...)\n` +
-    `• {timestamp} → Timestamp Unix\n\n` +
-    `📌 BIẾN ĐẶC BIỆT:\n` +
-    `• {random}    → Số ngẫu nhiên 1-100\n` +
-    `• {emoji}     → Emoji ngẫu nhiên\n\n`;
+/** Mẫu chữ khi reply đúng một chữ `s` (không tự gõ nội dung). */
+const DEFAULT_JOIN_TEXT =
+  '🎉 Chào mừng {name} đã đến với {groupName}!\nBạn là thành viên thứ {count} của nhóm 🥳';
+
+const DEFAULT_LEAVE_TEXT = '📝 {name} đã rời khỏi nhóm';
+
+function isDefaultTextReply(body: string): boolean {
+  return String(body || '').trim().toLowerCase() === 's';
 }
+
+function resolveSetText(raw: string, kind: 'join' | 'leave'): string {
+  const t = String(raw || '').trim();
+  if (isDefaultTextReply(t)) return kind === 'join' ? DEFAULT_JOIN_TEXT : DEFAULT_LEAVE_TEXT;
+  return t;
+}
+
+/** Gợi ý ngắn trong luồng; chi tiết trong guide / lệnh full. */
+function setGuideRef(): string {
+  return (
+    '💬 Nội dung hoặc reply s (text mặc định).\n' +
+    '📖 Chi tiết: guide hoặc set full.'
+  );
+}
+
+/** Menu chọn kiểu tin join/leave — tách dòng cho dễ đọc. */
+function setJoinLeaveTypeMenu(headerLine: string): string {
+  return (
+    `${headerLine}\n\n` +
+    '1 · Chỉ text\n' +
+    '2 · Ảnh + link (text | URL)\n' +
+    '3 · Ảnh upload — 2 bước\n' +
+    '4 · Video + link (text | URL)\n' +
+    '5 · Video upload — 2 bước\n' +
+    '6 · Canvas\n\n' +
+    '────────\n' +
+    setGuideRef()
+  );
+}
+
+const SET_COMMAND_GUIDE =
+  '📋 SET — chi tiết trong guide này\n\n' +
+  '▸ {pn} full — gửi lại toàn bộ hướng dẫn trong chat\n' +
+  '▸ {pn} join | leave — chọn kiểu 1–6 (reply số)\n' +
+  '▸ {pn} noti [join|leave] — không tham số: reply 1 / 2 / "1 2"\n' +
+  '▸ {pn} preview | reset\n\n' +
+  '━━ Kiểu tin (sau join/leave) ━━\n' +
+  '1 Chỉ text\n' +
+  '2 Text + ảnh link — "nội dung | https://...jpg/png/gif" (có thể: s | url = chỉ media + text mặc định)\n' +
+  '3 Text + ảnh upload — 2 bước: (1) text hoặc s (2) reply + đính ảnh\n' +
+  '4 Text + video link — "nội dung | https://...mp4/webm/mov" (có thể: s | url)\n' +
+  '5 Text + video upload — 2 bước: (1) text hoặc s (2) reply + đính video\n' +
+  '6 Canvas — text banner hoặc s\n\n' +
+  '━━ Text mặc định (reply đúng chữ s) ━━\n' +
+  'Join: mẫu chào có {name} {groupName} {count} như bot mặc định.\n' +
+  'Leave: mẫu 📝 {name} đã rời khỏi nhóm.\n\n' +
+  '━━ Biến trong text ━━\n' +
+  '{name} {tag} {uid} {link} · {groupName} {count} · {time} {date} {timeOnly} {hour} {minute} {day} {month} {year} {dayOfWeek} {timestamp} · {random} {emoji}\n\n' +
+  '━━ Ví dụ ━━\n' +
+  '• join → 1 → s\n' +
+  '• join → 2 → s | https://i.imgur.com/x.png\n' +
+  '• leave → 4 → Bye {name}! | https://…/v.mp4\n' +
+  '• Kiểu 3 hoặc 5: bước 1 có thể gõ s\n\n' +
+  '━━ Lưu ý ━━\n' +
+  '• Link ảnh/video: dùng " | " (cách – dấu | – cách) giữa phần chữ và URL. Có thể gõ "s | https://..." = text mặc định + media.\n' +
+  '• Thông báo: phải bật join/leave ({pn} noti, reply 1 / 2 / "1 2" hoặc {pn} noti join|leave) thì bot mới gửi tin khi có người vào/ra.\n' +
+  '• Media: ảnh/video tải về hoặc upload được lưu theo từng nhóm tại storage/set_media/<ID nhóm>/ (gốc project). Đổi mẫu: {pn} join / {pn} leave; xem nhanh: {pn} preview; xóa cấu hình + file: {pn} reset.\n' +
+  '• Xem lại toàn bộ hướng dẫn: {pn} full hoặc mục guide lệnh set trên menu bot.';
 
 
 function createFullContext(baseCtx: {
@@ -346,6 +398,10 @@ function formatText(t: string, ctx: FormatContext): string {
 function isPhoto(att: { type?: string } | undefined): boolean {
   const k = String(att?.type || '').toLowerCase();
   return k === 'photo' || k === 'image' || k === 'sticker';
+}
+
+function isVideo(att: { type?: string } | undefined): boolean {
+  return String(att?.type || '').toLowerCase() === 'video';
 }
 
 function nowVN(): string {
@@ -1145,7 +1201,7 @@ class CyberpunkInterfaceJoin {
 
 async function renderJoinCanvas(
   uid: string | number,
-  threadID: string | number,
+  _threadID: string | number,
   name: string,
   groupName: string,
   count: number
@@ -1170,7 +1226,7 @@ async function renderJoinCanvas(
 
 async function renderLeaveCanvas(
   uid: string | number,
-  threadID: string | number,
+  _threadID: string | number,
   name: string,
   groupName: string
 ): Promise<string> {
@@ -1193,98 +1249,20 @@ async function renderLeaveCanvas(
 
 const command = {
   name: 'set',
-  version: '1.3.2',
+  version: '1.4.3',
   role: 1,
-  desc: 'Tùy chỉnh tin nhắn chào mừng/tạm biệt với ảnh, video, canvas',
-  guide:
-    '📋 HƯỚNG DẪN SỬ DỤNG LỆNH SET\n\n' +
-    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
-    '🎯 CÁC LỆNH CHÍNH:\n\n' +
-    '1️⃣ Tùy chỉnh tin nhắn chào mừng:\n' +
-    '   {pn} join\n' +
-    '   → Chọn kiểu tin nhắn (1-5)\n' +
-    '   → Nhập nội dung tin nhắn\n\n' +
-    '2️⃣ Tùy chỉnh tin nhắn tạm biệt:\n' +
-    '   {pn} leave\n' +
-    '   → Chọn kiểu tin nhắn (1-5)\n' +
-    '   → Nhập nội dung tin nhắn\n\n' +
-    '3️⃣ Bật/tắt thông báo:\n' +
-    '   {pn} noti          → Xem trạng thái và bật/tắt (reply số 1 hoặc 2)\n' +
-    '   {pn} noti join    → Bật/tắt thông báo join trực tiếp\n' +
-    '   {pn} noti leave   → Bật/tắt thông báo leave trực tiếp\n' +
-    '   💡 Có thể reply "1 2" để bật/tắt cả hai cùng lúc\n\n' +
-    '4️⃣ Xem preview:\n' +
-    '   {pn} preview\n' +
-    '   → Xem tin nhắn và trạng thái hiện tại\n\n' +
-    '5️⃣ Reset về mặc định:\n' +
-    '   {pn} reset\n' +
-    '   → Xóa tất cả cài đặt và file media\n\n' +
-    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
-    '📝 CÁC BIẾN CÓ THỂ DÙNG TRONG TIN NHẮN:\n\n' +
-    '📌 BIẾN NGƯỜI DÙNG:\n' +
-    '• {name}      → Tên người dùng\n' +
-    '  Ví dụ: "Chào mừng {name}!" → "Chào mừng Nguyễn Văn A!"\n\n' +
-    '• {uid}       → ID Facebook của người dùng\n' +
-    '  Ví dụ: "ID của bạn: {uid}" → "ID của bạn: 1000123456789"\n\n' +
-    '• {tag}       → Tag người dùng\n' +
-    '  Ví dụ: "Chào mừng {tag}!" → "Chào mừng @Nguyễn Văn A!"\n\n' +
-    '• {link}      → Link Facebook của người dùng\n' +
-    '  Ví dụ: "Xem profile: {link}"\n\n' +
-    '📌 BIẾN NHÓM:\n' +
-    '• {groupName} → Tên nhóm\n' +
-    '  Ví dụ: "Chào mừng đến {groupName}!" → "Chào mừng đến Nhóm ABC!"\n\n' +
-    '• {count}     → Số thành viên trong nhóm\n' +
-    '  Ví dụ: "Bạn là thành viên thứ {count}" → "Bạn là thành viên thứ 50"\n\n' +
-    '📌 BIẾN THỜI GIAN:\n' +
-    '• {time}      → Thời gian đầy đủ (DD/MM/YYYY - HH:mm:ss)\n' +
-    '  Ví dụ: "Tham gia lúc {time}" → "Tham gia lúc 25/12/2024 - 14:30:45"\n\n' +
-    '• {date}      → Ngày tháng (DD/MM/YYYY)\n' +
-    '  Ví dụ: "Ngày {date}" → "Ngày 25/12/2024"\n\n' +
-    '• {timeOnly}  → Chỉ giờ phút giây (HH:mm:ss)\n' +
-    '  Ví dụ: "Lúc {timeOnly}" → "Lúc 14:30:45"\n\n' +
-    '• {hour}      → Giờ hiện tại\n' +
-    '• {minute}    → Phút hiện tại\n' +
-    '• {day}       → Ngày trong tháng\n' +
-    '• {month}     → Tháng\n' +
-    '• {year}      → Năm\n' +
-    '• {dayOfWeek} → Ngày trong tuần (Thứ 2, Thứ 3, ...)\n' +
-    '  Ví dụ: "Hôm nay là {dayOfWeek}" → "Hôm nay là Thứ 2"\n\n' +
-    '• {timestamp} → Timestamp Unix\n\n' +
-    '📌 BIẾN ĐẶC BIỆT:\n' +
-    '• {random}    → Số ngẫu nhiên từ 1-100\n' +
-    '  Ví dụ: "Số may mắn: {random}" → "Số may mắn: 42"\n\n' +
-    '• {emoji}     → Emoji ngẫu nhiên\n' +
-    '  Ví dụ: "Chào mừng {name}! {emoji}" → "Chào mừng Nguyễn Văn A! 🎉"\n\n' +
-    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
-    '💡 VÍ DỤ SỬ DỤNG:\n\n' +
-    'Ví dụ 1: Thiết lập tin nhắn chào mừng đơn giản\n' +
-    '  {pn} join\n' +
-    '  → Chọn: 1 (chỉ text)\n' +
-    '  → Nhập: "🎉 Chào mừng {name} đến với {groupName}!\n' +
-    '           Bạn là thành viên thứ {count} của nhóm 🥳"\n\n' +
-    'Ví dụ 2: Thiết lập tin nhắn với ảnh từ link\n' +
-    '  {pn} join\n' +
-    '  → Chọn: 2 (text + ảnh từ link)\n' +
-    '  → Nhập: "Chào mừng {name}! | https://i.imgur.com/abc123.jpg"\n\n' +
-    'Ví dụ 3: Thiết lập tin nhắn với canvas tự động\n' +
-    '  {pn} leave\n' +
-    '  → Chọn: 5 (canvas tự động)\n' +
-    '  → Nhập: "👋 {name} đã rời khỏi {groupName}. Hẹn gặp lại!"\n\n' +
-    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
-    '📌 LƯU Ý:\n' +
-    '• Các biến {name}, {groupName}, {count}, {uid} sẽ tự động được thay thế\n' +
-    '• Khi dùng link ảnh/video, nhớ có dấu " | " ở giữa\n' +
-    '• Canvas tự động sẽ tạo ảnh đẹp với avatar người dùng\n' +
-    '• Phải bật thông báo (noti) thì bot mới gửi tin nhắn',
+  desc: 'Tùy chỉnh tin join/leave: full, text/link/upload/canvas, reply s = mẫu mặc định',
+  guide: SET_COMMAND_GUIDE,
   prefix: true,
   onCall: async function ({
-    bot,
+    bot: _bot,
     client,
     args,
     threadData,
     event,
     main,
-    commandName
+    commandName,
+    config
   }: {
     bot: unknown;
     client: MessengerClient;
@@ -1293,15 +1271,14 @@ const command = {
     event: FacebookEvent;
     main: MainContext;
     commandName: string;
+    config: BotConfig;
   }) {
     const { threadID, senderID } = event;
+    const pn = `${config.PREFIX}${commandName}`;
     if (!args[0]) {
       return client.sendMessage(
         {
-          body:
-            `📋 LỆNH SET\n` +
-            `• {pn} join / leave / noti / preview / reset\n` +
-            `• Chi tiết và ví dụ xem ở phần guide của lệnh này.`
+          body: `📋 ${pn} join | leave | noti | preview | reset | full`
         },
         threadID
       );
@@ -1310,16 +1287,16 @@ const command = {
     const settings = thread.settings || {};
     const customMessages = settings.customMessages || {};
     switch (String(args[0]).toLowerCase()) {
+      case 'full': {
+        return client.sendMessage(
+          {
+            body: SET_COMMAND_GUIDE.replace(/\{pn\}/g, pn)
+          },
+          threadID
+        );
+      }
       case 'join': {
-        const setupMsg =
-          `🎨 THIẾT LẬP TIN NHẮN CHÀO MỪNG\n\n` +
-          `Chọn kiểu (reply số):\n` +
-          `1️⃣ Chỉ text\n` +
-          `2️⃣ Text + ảnh link\n` +
-          `3️⃣ Text + ảnh upload\n` +
-          `4️⃣ Text + video link\n` +
-          `5️⃣ Text + canvas tự động\n\n` +
-          `Chi tiết và ví dụ xem trong guide.`;
+        const setupMsg = setJoinLeaveTypeMenu('🎨 Chào mừng — reply số 1–6');
         return client.sendMessage(
           {
             body: setupMsg
@@ -1338,15 +1315,7 @@ const command = {
         );
       }
       case 'leave': {
-        const setupMsg =
-          `💔 THIẾT LẬP TIN NHẮN TẠM BIỆT\n\n` +
-          `Chọn kiểu (reply số):\n` +
-          `1️⃣ Chỉ text\n` +
-          `2️⃣ Text + ảnh link\n` +
-          `3️⃣ Text + ảnh upload\n` +
-          `4️⃣ Text + video link\n` +
-          `5️⃣ Text + canvas tự động\n\n` +
-          `Chi tiết và ví dụ xem trong guide.`;
+        const setupMsg = setJoinLeaveTypeMenu('💔 Tạm biệt — reply số 1–6');
         return client.sendMessage(
           {
             body: setupMsg
@@ -1431,8 +1400,8 @@ const command = {
           `   • Reply "2" → Bật/tắt thông báo leave\n` +
           `   • Reply "1 2" → Bật/tắt cả hai cùng lúc\n\n` +
           `Cách 2: Dùng lệnh trực tiếp\n` +
-          `   • {pn} noti join  → Bật/tắt thông báo join\n` +
-          `   • {pn} noti leave → Bật/tắt thông báo leave\n\n` +
+          `   • ${pn} noti join  → Bật/tắt thông báo join\n` +
+          `   • ${pn} noti leave → Bật/tắt thông báo leave\n\n` +
           `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
           `⚠️ LƯU Ý:\n` +
           `• Phải bật thông báo thì bot mới gửi tin nhắn chào mừng/tạm biệt\n` +
@@ -1456,10 +1425,9 @@ const command = {
       }
       case 'preview': {
         const joinMsg =
-          customMessages.join?.text ||
-          'Mặc định: Chào mừng {name} đã tham gia nhóm!';
+          customMessages.join?.text || `[chưa set] ${DEFAULT_JOIN_TEXT}`;
         const leaveMsg =
-          customMessages.leave?.text || 'Mặc định: {name} đã rời khỏi nhóm';
+          customMessages.leave?.text || `[chưa set] ${DEFAULT_LEAVE_TEXT}`;
         let joinMediaStatus = '📎 Không có media';
         let leaveMediaStatus = '📎 Không có media';
         if (customMessages.join?.hasMedia) {
@@ -1491,8 +1459,8 @@ const command = {
           `📋 PREVIEW TIN NHẮN HIỆN TẠI\n\n` +
           `🎉 Tin nhắn chào mừng:\n${joinMsg}\n${joinMediaStatus}\n📢 Thông báo: ${joinNotiStatus}\n\n` +
           `💔 Tin nhắn tạm biệt:\n${leaveMsg}\n${leaveMediaStatus}\n📢 Thông báo: ${leaveNotiStatus}\n\n` +
-          `📁 Folder media: bot/data/set_media/${threadID}/\n` +
-          `📂 Temp canvas: temp/set_canvas/${threadID}/`;
+          `📁 Folder media: storage/set_media/${threadID}/\n` +
+          `📂 Canvas: file PNG tạm trong temp/ khi bot gửi`;
         return client.sendMessage(
           {
             body: previewText
@@ -1503,14 +1471,14 @@ const command = {
       default:
         return client.sendMessage(
           {
-            body: `❗ Lựa chọn không hợp lệ. Dùng: join, leave, noti, reset, preview`
+            body: `❗ Dùng: join, leave, noti, preview, reset, full`
           },
           threadID
         );
     }
   },
   onReply: async function ({
-    bot,
+    bot: _bot,
     client,
     event,
     main,
@@ -1593,205 +1561,40 @@ const command = {
       if (type === 'join_type_selection' || type === 'leave_type_selection') {
         const choice = parseInt(String(body || '').trim(), 10);
         const messageType = type.includes('join') ? 'join' : 'leave';
-        if (![1, 2, 3, 4, 5].includes(choice)) {
+        if (![1, 2, 3, 4, 5, 6].includes(choice)) {
           return client.sendMessage(
             {
-              body: '❗ Vui lòng chọn số từ 1 đến 5!'
+              body: '❗ Chọn số 1–6 (xem guide lệnh set).'
             },
             threadID
           );
         }
         let promptMsg = '';
         let nextType = '';
-        const messageTypeName = messageType === 'join' ? 'chào mừng' : 'tạm biệt';
+        const hint = setGuideRef();
+        const kind = messageType === 'join' ? 'chào mừng' : 'tạm biệt';
         if (choice === 1) {
-          promptMsg =
-            `📝 NHẬP NỘI DUNG TIN NHẮN ${messageTypeName.toUpperCase()}\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `💬 Nhập nội dung tin nhắn bạn muốn:\n\n` +
-            getVariablesDescription() +
-            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `💡 VÍ DỤ ${messageType === 'join' ? 'CHÀO MỪNG' : 'TẠM BIỆT'}:\n\n` +
-            (messageType === 'join'
-              ? `Ví dụ 1: Tin nhắn đầy đủ\n` +
-              `"🎉 Chào mừng {name} đã tham gia {groupName}!\n` +
-              `Bạn là thành viên thứ {count} của nhóm 🥳\n` +
-              `Chúc bạn có những trải nghiệm tuyệt vời!"\n\n` +
-              `Ví dụ 2: Tin nhắn ngắn gọn\n` +
-              `"Chào mừng {name} đến với {groupName}! 🎉"\n\n` +
-              `Ví dụ 3: Tin nhắn với tất cả biến\n` +
-              `"✨ Xin chào {name}!\n` +
-              `Chào mừng bạn đến với {groupName}\n` +
-              `Bạn là thành viên thứ {count}\n` +
-              `ID của bạn: {uid}\n` +
-              `Chúc bạn có những trải nghiệm tuyệt vời! 🎊"`
-              : `Ví dụ 1: Tin nhắn đầy đủ\n` +
-              `"👋 {name} đã rời khỏi {groupName}\n` +
-              `Cảm ơn bạn đã đồng hành cùng chúng tôi!\n` +
-              `Hẹn gặp lại trong tương lai! 💙"\n\n` +
-              `Ví dụ 2: Tin nhắn ngắn gọn\n` +
-              `"{name} đã rời khỏi {groupName}. Hẹn gặp lại! 👋"\n\n` +
-              `Ví dụ 3: Tin nhắn với tất cả biến\n` +
-              `"✨ Tạm biệt {name}!\n` +
-              `Cảm ơn bạn đã là một phần của {groupName}\n` +
-              `Nhóm hiện còn lại {count} thành viên\n` +
-              `ID của bạn: {uid}\n` +
-              `Chúc bạn may mắn và thành công! 🎊"`) +
-            `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `👉 Reply tin nhắn của bạn (có thể dùng các biến như {name}, {groupName}, {count}, {time}, {emoji}, ...):`;
+          promptMsg = `📝 Reply nội dung ${kind} (hoặc s = mẫu mặc định).\n${hint}`;
           nextType = `${messageType}_text_only`;
         }
         if (choice === 2) {
-          promptMsg =
-            `📝 THIẾT LẬP TEXT + ẢNH TỪ LINK\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `📋 ĐỊNH DẠNG BẮT BUỘC:\n\n` +
-            `Nội dung tin nhắn | Link ảnh\n\n` +
-            `⚠️ LƯU Ý QUAN TRỌNG:\n` +
-            `• Phải có dấu " | " (khoảng trắng + dấu gạch đứng + khoảng trắng)\n` +
-            `• Link ảnh phải hợp lệ và có thể truy cập được\n` +
-            `• Hỗ trợ định dạng: .jpg, .jpeg, .png, .gif\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            getVariablesDescription() +
-            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `💡 VÍ DỤ ${messageType === 'join' ? 'CHÀO MỪNG' : 'TẠM BIỆT'}:\n\n` +
-            (messageType === 'join'
-              ? `Ví dụ 1: Tin nhắn đầy đủ\n` +
-              `"🎉 Chào mừng {name} đến với {groupName}! | https://i.imgur.com/abc123.jpg"\n\n` +
-              `Ví dụ 2: Tin nhắn ngắn gọn\n` +
-              `"Chào mừng {name}! | https://example.com/welcome.jpg"\n\n` +
-              `Ví dụ 3: Tin nhắn với nhiều biến\n` +
-              `"Chào mừng {name} đến với {groupName}! Bạn là thành viên thứ {count} | https://i.imgur.com/xyz.jpg"`
-              : `Ví dụ 1: Tin nhắn đầy đủ\n` +
-              `"👋 Tạm biệt {name}! Cảm ơn bạn đã đồng hành! | https://i.imgur.com/xyz789.jpg"\n\n` +
-              `Ví dụ 2: Tin nhắn ngắn gọn\n` +
-              `"Tạm biệt {name}! | https://example.com/goodbye.jpg"\n\n` +
-              `Ví dụ 3: Tin nhắn với nhiều biến\n` +
-              `"{name} đã rời khỏi {groupName}. Nhóm còn lại {count} thành viên | https://i.imgur.com/abc.jpg"`) +
-            `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `👉 Reply theo định dạng: "Nội dung | Link ảnh" (có dấu | ở giữa):`;
+          promptMsg = `📷 Reply: nội dung | link ảnh — có thể s | url.\n${hint}`;
           nextType = `${messageType}_text_image_link`;
         }
         if (choice === 3) {
-          promptMsg =
-            `📎 UPLOAD ẢNH KÈM NỘI DUNG\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `📋 CÁCH LÀM:\n\n` +
-            `1. Upload ảnh (kèm theo tin nhắn này)\n` +
-            `2. Nhập nội dung tin nhắn\n\n` +
-            `⚠️ LƯU Ý QUAN TRỌNG:\n` +
-            `• Phải upload ảnh cùng lúc với tin nhắn!\n` +
-            `• Không thể upload ảnh riêng, phải reply kèm ảnh\n` +
-            `• Hỗ trợ định dạng: .jpg, .jpeg, .png, .gif\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            getVariablesDescription() +
-            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `💡 VÍ DỤ ${messageType === 'join' ? 'CHÀO MỪNG' : 'TẠM BIỆT'}:\n\n` +
-            (messageType === 'join'
-              ? `Ví dụ 1: Tin nhắn đầy đủ\n` +
-              `[Upload ảnh chào mừng] + "🎉 Chào mừng {name} đến với {groupName}!\n` +
-              `Bạn là thành viên thứ {count} của nhóm 🥳"\n\n` +
-              `Ví dụ 2: Tin nhắn ngắn gọn\n` +
-              `[Upload ảnh] + "Chào mừng {name} đến với {groupName}!"\n\n` +
-              `Ví dụ 3: Tin nhắn với nhiều biến\n` +
-              `[Upload ảnh] + "✨ Xin chào {name}!\n` +
-              `Chào mừng bạn đến với {groupName}\n` +
-              `Bạn là thành viên thứ {count}\n` +
-              `ID của bạn: {uid}"`
-              : `Ví dụ 1: Tin nhắn đầy đủ\n` +
-              `[Upload ảnh tạm biệt] + "👋 {name} đã rời khỏi {groupName}\n` +
-              `Cảm ơn bạn đã đồng hành cùng chúng tôi!"\n\n` +
-              `Ví dụ 2: Tin nhắn ngắn gọn\n` +
-              `[Upload ảnh] + "{name} đã rời khỏi nhóm. Hẹn gặp lại!"\n\n` +
-              `Ví dụ 3: Tin nhắn với nhiều biến\n` +
-              `[Upload ảnh] + "✨ Tạm biệt {name}!\n` +
-              `Cảm ơn bạn đã là một phần của {groupName}\n` +
-              `Nhóm hiện còn lại {count} thành viên\n` +
-              `ID của bạn: {uid}"`) +
-            `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `👉 Reply kèm ảnh và nội dung tin nhắn:`;
-          nextType = `${messageType}_text_image_upload`;
+          promptMsg = `📷 Bước 1/2 — text hoặc s (ảnh ở bước sau).\n${hint}`;
+          nextType = `${messageType}_image_upload_text`;
         }
         if (choice === 4) {
-          promptMsg =
-            `📝 THIẾT LẬP TEXT + VIDEO TỪ LINK\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `📋 ĐỊNH DẠNG BẮT BUỘC:\n\n` +
-            `Nội dung tin nhắn | Link video\n\n` +
-            `⚠️ LƯU Ý QUAN TRỌNG:\n` +
-            `• Phải có dấu " | " (khoảng trắng + dấu gạch đứng + khoảng trắng)\n` +
-            `• Link video phải hợp lệ và có thể truy cập được\n` +
-            `• Hỗ trợ định dạng: .mp4, .webm, .mov\n` +
-            `• Video không được quá lớn (khuyến nghị < 50MB)\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            getVariablesDescription() +
-            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `💡 VÍ DỤ ${messageType === 'join' ? 'CHÀO MỪNG' : 'TẠM BIỆT'}:\n\n` +
-            (messageType === 'join'
-              ? `Ví dụ 1: Tin nhắn đầy đủ\n` +
-              `"🎉 Chào mừng {name} đến với {groupName}! | https://example.com/videos/welcome.mp4"\n\n` +
-              `Ví dụ 2: Tin nhắn ngắn gọn\n` +
-              `"Chào mừng {name}! | https://example.com/welcome.mp4"\n\n` +
-              `Ví dụ 3: Tin nhắn với nhiều biến\n` +
-              `"Chào mừng {name} đến với {groupName}! Bạn là thành viên thứ {count} | https://example.com/videos/welcome.mp4"`
-              : `Ví dụ 1: Tin nhắn đầy đủ\n` +
-              `"👋 Tạm biệt {name}! Cảm ơn bạn đã đồng hành! | https://example.com/videos/goodbye.mp4"\n\n` +
-              `Ví dụ 2: Tin nhắn ngắn gọn\n` +
-              `"Tạm biệt {name}! | https://example.com/goodbye.mp4"\n\n` +
-              `Ví dụ 3: Tin nhắn với nhiều biến\n` +
-              `"{name} đã rời khỏi {groupName}. Nhóm còn lại {count} thành viên | https://example.com/videos/goodbye.mp4"`) +
-            `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `👉 Reply theo định dạng: "Nội dung | Link video" (có dấu | ở giữa):`;
+          promptMsg = `🎬 Reply: nội dung | link — có thể s | url.\n${hint}`;
           nextType = `${messageType}_text_video_link`;
         }
         if (choice === 5) {
-          promptMsg =
-            `🎨 THIẾT LẬP CANVAS TỰ ĐỘNG\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `📋 CANVAS SẼ TỰ ĐỘNG TẠO ẢNH ĐẸP VỚI:\n\n` +
-            `✨ Tính năng tự động:\n` +
-            `• Avatar người dùng (tự động lấy từ Facebook)\n` +
-            `• Tên nhóm (tự động lấy từ thông tin nhóm)\n` +
-            `• Số thành viên (tự động cập nhật)\n` +
-            `• Thời gian (tự động hiển thị)\n\n` +
-            `🎨 Hiệu ứng đẹp mắt:\n` +
-            `• ${messageType === 'join' ? 'Màu xanh cyan (cyberpunk style)' : 'Màu đỏ cyberpunk (futuristic style)'}\n` +
-            `• Hiệu ứng matrix background\n` +
-            `• Glitch effects và animations\n` +
-            `• Progress bar và data visualization\n\n` +
-            `📝 Nội dung bạn nhập sẽ hiển thị trên banner\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            getVariablesDescription() +
-            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `💡 VÍ DỤ ${messageType === 'join' ? 'CHÀO MỪNG' : 'TẠM BIỆT'}:\n\n` +
-            (messageType === 'join'
-              ? `Ví dụ 1: Tin nhắn đầy đủ\n` +
-              `"🎉 Chào mừng {name} đến với {groupName}!\n` +
-              `Bạn là thành viên thứ {count} của nhóm 🥳"\n\n` +
-              `Ví dụ 2: Tin nhắn ngắn gọn\n` +
-              `"Chào mừng {name} đến với {groupName}!"\n\n` +
-              `Ví dụ 3: Tin nhắn với nhiều biến\n` +
-              `"✨ Xin chào {name}!\n` +
-              `Chào mừng bạn đến với {groupName}\n` +
-              `Bạn là thành viên thứ {count}\n` +
-              `ID của bạn: {uid}\n` +
-              `Chúc bạn có những trải nghiệm tuyệt vời! 🎊"`
-              : `Ví dụ 1: Tin nhắn đầy đủ\n` +
-              `"👋 {name} đã rời khỏi {groupName}\n` +
-              `Cảm ơn bạn đã đồng hành cùng chúng tôi!\n` +
-              `Hẹn gặp lại trong tương lai! 💙"\n\n` +
-              `Ví dụ 2: Tin nhắn ngắn gọn\n` +
-              `"{name} đã rời khỏi {groupName}. Hẹn gặp lại!"\n\n` +
-              `Ví dụ 3: Tin nhắn với nhiều biến\n` +
-              `"✨ Tạm biệt {name}!\n` +
-              `Cảm ơn bạn đã là một phần của {groupName}\n` +
-              `Nhóm hiện còn lại {count} thành viên\n` +
-              `ID của bạn: {uid}\n` +
-              `Chúc bạn may mắn và thành công! 🎊"`) +
-            `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-            `💡 Canvas sẽ tự động tạo ảnh với thiết kế đẹp mắt!\n` +
-            `Không cần upload ảnh, chỉ cần nhập nội dung.\n\n` +
-            `👉 Reply nội dung banner (có thể dùng các biến như {name}, {groupName}, {count}, {time}, {emoji}, ...):`;
+          promptMsg = `🎬 Bước 1/2 — text hoặc s (video ở bước sau).\n${hint}`;
+          nextType = `${messageType}_video_upload_text`;
+        }
+        if (choice === 6) {
+          promptMsg = `🎨 Canvas — text banner hoặc s.\n${hint}`;
           nextType = `${messageType}_canvas_auto`;
         }
         return client.sendMessage(
@@ -1811,47 +1614,199 @@ const command = {
           }
         );
       }
-      const messageType = type.includes('join') ? 'join' : 'leave';
-      if (type.endsWith('_text_only')) {
+      if (
+        type === 'join_image_upload_text' ||
+        type === 'leave_image_upload_text'
+      ) {
+        const messageType = type.startsWith('join') ? 'join' : 'leave';
+        const raw = String(body || '').trim();
+        if (!raw) {
+          return client.sendMessage(
+            { body: '❗ Reply nội dung hoặc s (mặc định).' },
+            threadID
+          );
+        }
+        const text = resolveSetText(raw, messageType);
+        return client.sendMessage(
+          {
+            body: '📷 Bước 2/2: reply tin này và đính kèm ảnh.'
+          },
+          threadID,
+          (err: Error | null, info?: SendMessageInfo) => {
+            if (err || !info) return;
+            main.onReply.set(info.messageID, {
+              commandName,
+              messageID: info.messageID,
+              author,
+              threadID,
+              type: `${messageType}_image_upload_media`,
+              pendingText: text
+            });
+          }
+        );
+      }
+      if (
+        type === 'join_image_upload_media' ||
+        type === 'leave_image_upload_media'
+      ) {
+        const messageType = type.startsWith('join') ? 'join' : 'leave';
+        const pendingText = String(Reply.pendingText || '').trim();
+        if (!pendingText) {
+          return client.sendMessage(
+            {
+              body:
+                '❗ Hết phiên thiết lập. Gõ lại lệnh set join hoặc set leave.'
+            },
+            threadID
+          );
+        }
+        if (!attachments?.length || !isPhoto(attachments[0])) {
+          return client.sendMessage(
+            {
+              body: '❗ Bước 2: reply kèm ảnh (jpg/png/gif). Chi tiết: guide.'
+            },
+            threadID
+          );
+        }
+        const filename = `${messageType}_upload_${Date.now()}`;
+        const url = attachments[0].url;
+        const savedPath = await saveUploadedMedia(url, filename, threadID);
+        if (!savedPath) {
+          return client.sendMessage(
+            { body: '❌ Không lưu được ảnh.' },
+            threadID
+          );
+        }
         customMessages[messageType] = {
-          text: body || '',
-          type: 'text_only',
-          hasMedia: false
+          text: pendingText,
+          uploadedImage: url,
+          imagePath: savedPath,
+          type: 'text_image_upload',
+          hasMedia: true
         };
         await threadData.update(threadID, { settings: nextSettings() });
         return client.sendMessage(
           {
-            body:
-              `✅ Đã thiết lập tin nhắn ${messageType === 'join' ? 'chào mừng' : 'tạm biệt'
-              } chỉ text!`
+            body: `✅ Ảnh upload xong. Lưu: storage/set_media/${threadID}/`
+          },
+          threadID
+        );
+      }
+      if (
+        type === 'join_video_upload_text' ||
+        type === 'leave_video_upload_text'
+      ) {
+        const messageType = type.startsWith('join') ? 'join' : 'leave';
+        const raw = String(body || '').trim();
+        if (!raw) {
+          return client.sendMessage(
+            { body: '❗ Reply nội dung hoặc s (mặc định).' },
+            threadID
+          );
+        }
+        const text = resolveSetText(raw, messageType);
+        return client.sendMessage(
+          {
+            body: '🎬 Bước 2/2: reply tin này và đính kèm video.'
+          },
+          threadID,
+          (err: Error | null, info?: SendMessageInfo) => {
+            if (err || !info) return;
+            main.onReply.set(info.messageID, {
+              commandName,
+              messageID: info.messageID,
+              author,
+              threadID,
+              type: `${messageType}_video_upload_media`,
+              pendingText: text
+            });
+          }
+        );
+      }
+      if (
+        type === 'join_video_upload_media' ||
+        type === 'leave_video_upload_media'
+      ) {
+        const messageType = type.startsWith('join') ? 'join' : 'leave';
+        const pendingText = String(Reply.pendingText || '').trim();
+        if (!pendingText) {
+          return client.sendMessage(
+            {
+              body:
+                '❗ Hết phiên thiết lập. Gõ lại lệnh set join hoặc set leave.'
+            },
+            threadID
+          );
+        }
+        if (!attachments?.length || !isVideo(attachments[0])) {
+          return client.sendMessage(
+            {
+              body: '❗ Bước 2: reply kèm video. Chi tiết: guide.'
+            },
+            threadID
+          );
+        }
+        const filename = `${messageType}_vid_${Date.now()}`;
+        const url = attachments[0].url;
+        const savedPath = await saveUploadedMedia(url, filename, threadID);
+        if (!savedPath) {
+          return client.sendMessage(
+            { body: '❌ Không lưu được video.' },
+            threadID
+          );
+        }
+        customMessages[messageType] = {
+          text: pendingText,
+          uploadedVideo: url,
+          videoPath: savedPath,
+          type: 'text_video_upload',
+          hasMedia: true
+        };
+        await threadData.update(threadID, { settings: nextSettings() });
+        return client.sendMessage(
+          {
+            body: `✅ Video upload xong. Lưu: storage/set_media/${threadID}/`
+          },
+          threadID
+        );
+      }
+      const messageType = type.includes('join') ? 'join' : 'leave';
+      if (type.endsWith('_text_only')) {
+        const raw = String(body || '').trim();
+        if (!raw) {
+          return client.sendMessage(
+            { body: '❗ Reply nội dung hoặc s (mặc định).' },
+            threadID
+          );
+        }
+        const text = resolveSetText(raw, messageType);
+        customMessages[messageType] = {
+          text,
+          type: 'text_only',
+          hasMedia: false
+        };
+        await threadData.update(threadID, { settings: nextSettings() });
+        const usedDefault = isDefaultTextReply(raw);
+        return client.sendMessage(
+          {
+            body: `✅ Đã lưu tin ${messageType === 'join' ? 'chào mừng' : 'tạm biệt'}${usedDefault ? ' (mẫu mặc định).' : '.'}`
           },
           threadID
         );
       }
       if (type.endsWith('_text_image_link')) {
-        const { text, url } = splitMessageAndUrl(body || '');
-        if (!text || !url) {
+        const { text: rawText, url } = splitMessageAndUrl(body || '');
+        const trimmedText = String(rawText || '').trim();
+        if (!trimmedText || !url) {
           return client.sendMessage(
             {
               body:
-                `❗ SAI ĐỊNH DẠNG!\n\n` +
-                `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-                `📋 ĐỊNH DẠNG ĐÚNG:\n\n` +
-                `Nội dung tin nhắn | Link ảnh\n\n` +
-                `⚠️ LƯU Ý:\n` +
-                `• Phải có dấu " | " (khoảng trắng + gạch đứng + khoảng trắng)\n` +
-                `• Không được thiếu nội dung hoặc link\n\n` +
-                `💡 VÍ DỤ ĐÚNG:\n\n` +
-                `Ví dụ 1:\n` +
-                `"Chào mừng {name}! | https://example.com/image.jpg"\n\n` +
-                `Ví dụ 2:\n` +
-                `"🎉 Chào mừng {name} đến với {groupName}! | https://i.imgur.com/abc123.jpg"\n\n` +
-                `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-                `👉 Vui lòng reply lại theo đúng định dạng trên!`
+                '❗ Định dạng: nội dung hoặc s | link ảnh (có " | "). Xem guide.'
             },
             threadID
           );
         }
+        const text = resolveSetText(trimmedText, messageType);
         const filename = `${messageType}_img_${Date.now()}`;
         const savedPath = await downloadMedia(url, filename, threadID);
         if (!savedPath) {
@@ -1872,88 +1827,24 @@ const command = {
         await threadData.update(threadID, { settings: nextSettings() });
         return client.sendMessage(
           {
-            body: `✅ Đã thiết lập với ảnh từ link!\n📁 Lưu: bot/data/set_media/${threadID}/`
-          },
-          threadID
-        );
-      }
-      if (type.endsWith('_text_image_upload')) {
-        if (!attachments || !attachments.length || !isPhoto(attachments[0])) {
-          return client.sendMessage(
-            {
-              body:
-                `❗ CHƯA UPLOAD ẢNH!\n\n` +
-                `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-                `📋 CÁCH LÀM ĐÚNG:\n\n` +
-                `1. Upload ảnh (kèm theo tin nhắn này)\n` +
-                `2. Nhập nội dung tin nhắn\n\n` +
-                `⚠️ LƯU Ý:\n` +
-                `• Phải upload ảnh cùng lúc với tin nhắn!\n` +
-                `• Không thể upload ảnh riêng, phải reply kèm ảnh\n` +
-                `• Hỗ trợ định dạng: .jpg, .jpeg, .png, .gif\n\n` +
-                `💡 VÍ DỤ:\n\n` +
-                `Ví dụ 1:\n` +
-                `[Upload ảnh] + "Chào mừng {name}!"\n\n` +
-                `Ví dụ 2:\n` +
-                `[Upload ảnh] + "🎉 Chào mừng {name} đến với {groupName}!\n` +
-                `Bạn là thành viên thứ {count} của nhóm 🥳"\n\n` +
-                `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-                `👉 Vui lòng reply lại kèm ảnh và nội dung!`
-            },
-            threadID
-          );
-        }
-        const filename = `${messageType}_upload_${Date.now()}`;
-        const url = attachments[0].url;
-        const savedPath = await saveUploadedMedia(url, filename, threadID);
-        if (!savedPath) {
-          return client.sendMessage(
-            {
-              body: `❌ Không thể lưu ảnh upload!`
-            },
-            threadID
-          );
-        }
-        customMessages[messageType] = {
-          text: body || '',
-          uploadedImage: url,
-          imagePath: savedPath,
-          type: 'text_image_upload',
-          hasMedia: true
-        };
-        await threadData.update(threadID, { settings: nextSettings() });
-        return client.sendMessage(
-          {
-            body: `✅ Đã thiết lập với ảnh upload!\n📁 Lưu: bot/data/set_media/${threadID}/`
+            body: `✅ Ảnh link OK. Lưu: storage/set_media/${threadID}/`
           },
           threadID
         );
       }
       if (type.endsWith('_text_video_link')) {
-        const { text, url } = splitMessageAndUrl(body || '');
-        if (!text || !url) {
+        const { text: rawText, url } = splitMessageAndUrl(body || '');
+        const trimmedText = String(rawText || '').trim();
+        if (!trimmedText || !url) {
           return client.sendMessage(
             {
               body:
-                `❗ SAI ĐỊNH DẠNG!\n\n` +
-                `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-                `📋 ĐỊNH DẠNG ĐÚNG:\n\n` +
-                `Nội dung tin nhắn | Link video\n\n` +
-                `⚠️ LƯU Ý:\n` +
-                `• Phải có dấu " | " (khoảng trắng + gạch đứng + khoảng trắng)\n` +
-                `• Không được thiếu nội dung hoặc link\n` +
-                `• Hỗ trợ định dạng: .mp4, .webm, .mov\n\n` +
-                `💡 VÍ DỤ ĐÚNG:\n\n` +
-                `Ví dụ 1:\n` +
-                `"Chào mừng {name}! | https://example.com/video.mp4"\n\n` +
-                `Ví dụ 2:\n` +
-                `"🎉 Chào mừng {name} đến với {groupName}! | https://example.com/videos/welcome.mp4"\n\n` +
-                `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-                `👉 Vui lòng reply lại theo đúng định dạng trên!`
+                '❗ Định dạng: nội dung hoặc s | link video (có " | "). Xem guide.'
             },
             threadID
           );
         }
+        const text = resolveSetText(trimmedText, messageType);
         const filename = `${messageType}_video_${Date.now()}`;
         const savedPath = await downloadMedia(url, filename, threadID);
         if (!savedPath) {
@@ -1974,21 +1865,29 @@ const command = {
         await threadData.update(threadID, { settings: nextSettings() });
         return client.sendMessage(
           {
-            body: `✅ Đã thiết lập với video!\n📁 Lưu: bot/data/set_media/${threadID}/`
+            body: `✅ Video link OK. Lưu: storage/set_media/${threadID}/`
           },
           threadID
         );
       }
       if (type.endsWith('_canvas_auto')) {
+        const raw = String(body || '').trim();
+        if (!raw) {
+          return client.sendMessage(
+            { body: '❗ Reply text banner hoặc s (mặc định).' },
+            threadID
+          );
+        }
+        const text = resolveSetText(raw, messageType);
         customMessages[messageType] = {
-          text: body || '',
+          text,
           type: 'canvas_auto',
           hasMedia: true
         };
         await threadData.update(threadID, { settings: nextSettings() });
         return client.sendMessage(
           {
-            body: `✅ Đã thiết lập canvas tự động!`
+            body: `✅ Canvas đã lưu${isDefaultTextReply(raw) ? ' (mẫu mặc định).' : '.'}`
           },
           threadID
         );
@@ -2058,7 +1957,10 @@ const command = {
                   fsCore.createReadStream(customMessages.leave.imagePath)
                 );
               }
-            } else if (customMessages.leave.type === 'text_video_link') {
+            } else if (
+              customMessages.leave.type === 'text_video_link' ||
+              customMessages.leave.type === 'text_video_upload'
+            ) {
               if (
                 customMessages.leave.videoPath &&
                 (await fs.pathExists(customMessages.leave.videoPath))
@@ -2148,7 +2050,10 @@ const command = {
                     fsCore.createReadStream(customMessages.join.imagePath)
                   );
                 }
-              } else if (customMessages.join.type === 'text_video_link') {
+              } else if (
+                customMessages.join.type === 'text_video_link' ||
+                customMessages.join.type === 'text_video_upload'
+              ) {
                 if (
                   customMessages.join.videoPath &&
                   (await fs.pathExists(customMessages.join.videoPath))

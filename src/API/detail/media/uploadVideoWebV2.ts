@@ -118,7 +118,7 @@ function generateReqCounter(start: number = 10): () => string {
 
 // PHASE 1: START - Request video_id + chunk size
 async function startUploadV2(
-  defaultFuncs: DefaultFuncs,
+  _defaultFuncs: DefaultFuncs,
   ctx: Context,
   fileSize: number,
   fileExtension: string,

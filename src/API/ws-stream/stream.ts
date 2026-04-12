@@ -144,10 +144,10 @@ export default function WebSocketStream(
   stream.socket = socket;
 
   if (eventListenerSupport) {
-    socket.addEventListener?.('open', (event) => onopen(event));
-    socket.addEventListener?.('close', (event) => onclose(event));
-    socket.addEventListener?.('error', (event) => onerror(event));
-    socket.addEventListener?.('message', (event) => onmessage(event));
+    socket.addEventListener?.('open', (event: WebSocket.Event) => onopen(event));
+    socket.addEventListener?.('close', (event: WebSocket.CloseEvent) => onclose(event));
+    socket.addEventListener?.('error', (event: WebSocket.ErrorEvent) => onerror(event));
+    socket.addEventListener?.('message', (event: WebSocket.MessageEvent) => onmessage(event));
   } else {
     socket.onopen = onopen;
     socket.onclose = onclose;

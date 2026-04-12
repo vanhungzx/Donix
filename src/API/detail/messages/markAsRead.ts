@@ -5,8 +5,8 @@ interface MarkAsReadCallback {
 }
 
 export default function (
-  defaultFuncs: DefaultFuncs,
-  client: any,
+  _defaultFuncs: DefaultFuncs,
+  _client: any,
   ctx: MQTTContext
 ): (
   threadID: string | number,

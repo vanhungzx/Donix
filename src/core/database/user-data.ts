@@ -408,7 +408,7 @@ class UserDataModel {
         // Tự động tạo user với money = 0 nếu chưa tồn tại
         await this.set(uid, {
           name: `User ${uid}`,
-          money: 0,
+          money: 0n,
           userInfo: {},
           setting: {},
           data: {},
@@ -438,7 +438,7 @@ class UserDataModel {
         // Tự động tạo user với money = 0 nếu chưa tồn tại
         await this.set(uid, {
           name: `User ${uid}`,
-          money: 0,
+          money: 0n,
           userInfo: {},
           setting: {},
           data: {},
@@ -476,7 +476,7 @@ class UserDataModel {
         // Tự động tạo user với money = 0 nếu chưa tồn tại
         await this.set(uid, {
           name: `User ${uid}`,
-          money: 0,
+          money: 0n,
           userInfo: {},
           setting: {},
           data: {},

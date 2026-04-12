@@ -1,6 +1,5 @@
 import type { EventContext } from "@types";
 import fs from "fs-extra";
-import path from "path";
 import { RENT_JSON_PATH, RENT_KEYS_PATH } from "../../core/storagePath";
 
 const RENT_PATH = RENT_JSON_PATH();

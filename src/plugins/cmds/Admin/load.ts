@@ -5,6 +5,7 @@ import { cleanupRequireCache } from "@utils/memory";
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { tsImport } from "tsx/esm/api";
 
 type MutableBotConfig = BotConfig & {
   loadSrcips: {
@@ -93,6 +94,16 @@ const MAX_VERSION_MAP_SIZE = 500;
 
 const BATCH_SIZE = 5;
 const BATCH_DELAY = 50;
+
+/**
+ * Hot-reload lệnh/sự kiện: `import(url?query)` chỉ tách cache ở file đầu vào;
+ * dependency + cache tsx/esbuild vẫn có thể giữ bản cũ. `tsImport` tạo namespace mới mỗi lần → nạp lại đúng code trên đĩa.
+ */
+async function importReloadableTs(absPath: string): Promise<Record<string, unknown>> {
+  const resolved = path.resolve(absPath);
+  const href = pathToFileURL(resolved).href;
+  return tsImport(href, { parentURL: href });
+}
 
 function cleanupVersionMap(): void {
   const rssMB = process.memoryUsage().rss / 1024 / 1024;
@@ -257,13 +268,12 @@ async function loadCommands({
   const processModule = async (entry: CommandFileEntry) => {
     const { absPath, name: nameModule, folder } = entry;
     try {
-
-      const version = (importVersionMap.get(absPath) || 0) + 1;
-      importVersionMap.set(absPath, version);
-      const fileUrl = pathToFileURL(absPath).href;
-      const moduleUrl = `${fileUrl}?update=${version}`;
-      const imported = await import(moduleUrl);
-      const command: Command & Record<string, any> = imported.default || imported;
+      const resolved = path.resolve(absPath);
+      const version = (importVersionMap.get(resolved) || 0) + 1;
+      importVersionMap.set(resolved, version);
+      const imported = await importReloadableTs(resolved);
+      const command: Command & Record<string, any> =
+        (imported.default ?? imported) as Command & Record<string, any>;
 
       const registeredName = (command?.name || nameModule) as string;
 
@@ -391,7 +401,7 @@ async function unloadCommands({ names, main, config }: UnloadCommandOptions): Pr
       main.onChat = main.onChat.filter((i: any) => i !== nameModule);
     }
 
-    importVersionMap.delete(absPath);
+    importVersionMap.delete(path.resolve(absPath));
 
     config.loadSrcips.cmdDis = config.loadSrcips.cmdDis.filter(
       (f) => f !== file && f !== `${nameModule}.js` && f !== `${nameModule}.ts`
@@ -439,13 +449,12 @@ async function loadEvents({ names, main, config, logger, client }: LoadEventOpti
   const processEvent = async (entry: EventFileEntry) => {
     const { absPath, name: nameModule, file } = entry;
     try {
-
-      const version = (importVersionMap.get(absPath) || 0) + 1;
-      importVersionMap.set(absPath, version);
-      const fileUrl = pathToFileURL(absPath).href;
-      const moduleUrl = `${fileUrl}?update=${version}`;
-      const imported = await import(moduleUrl);
-      const eventModule: Record<string, any> = imported.default || imported;
+      const resolved = path.resolve(absPath);
+      const version = (importVersionMap.get(resolved) || 0) + 1;
+      importVersionMap.set(resolved, version);
+      const imported = await importReloadableTs(resolved);
+      const eventModule: Record<string, any> =
+        (imported.default ?? imported) as Record<string, any>;
 
       const registeredName = (eventModule?.name || nameModule) as string;
 
@@ -533,7 +542,7 @@ async function unloadEvents({ names, main, config }: UnloadEventOptions): Promis
       main.events.delete(nameModule);
     }
 
-    importVersionMap.delete(absPath);
+    importVersionMap.delete(path.resolve(absPath));
 
     config.loadSrcips.eventDis = config.loadSrcips.eventDis.filter(
       (f) => f !== file && f !== `${nameModule}.js` && f !== `${nameModule}.ts`
@@ -568,7 +577,7 @@ async function unloadEvents({ names, main, config }: UnloadEventOptions): Promis
 const loadCommand: Command = {
   name: "load",
   alias: ["load"],
-  version: "1.2.0",
+  version: "1.2.1",
   role: 3,
   desc: "Load/unload commands or events",
   guide: `

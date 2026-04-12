@@ -6,6 +6,11 @@ export {
   formatDeltaReadReceipt,
   getAdminTextMessageType
 } from "./data/formatDelta.js";
+export type {
+  FormattedDeltaEvent,
+  FormattedDeltaMessage,
+  FormattedDeltaReadReceipt,
+} from "./data/formatDelta.js";
 
 export { default as formatCookie } from "./value/formatCookie.js";
 export { default as formatDate } from "./value/formatDate.js";

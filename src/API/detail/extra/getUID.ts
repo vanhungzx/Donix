@@ -40,9 +40,9 @@ const USER_AGENT_ARRAY: readonly string[] = [
 ] as const;
 
 export default function (
-  defaultFuncs: DefaultFuncs,
-  api: any,
-  ctx: FacebookContext
+  _defaultFuncs: DefaultFuncs,
+  _api: unknown,
+  _ctx: FacebookContext
 ): (link: string, callback?: GetUIDCallback) => Promise<string> {
   return function getUID(
     link: string,

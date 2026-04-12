@@ -2,7 +2,7 @@ import axios from 'axios'
 import qs from 'qs'
 import { TIKTOK_API_URL } from '../constants/index.js'
 import createMobileHeadersSignature from '../tiktok-signer/signHeadersMobile.js'
-import { extractXttTokenFromCookie, getTiktokCredentials } from './helpers.js'
+import { getTiktokCredentials } from './helpers.js'
 import type { BaseOptions, TikTokCredentials } from '../types/index.js'
 
 export const resolveShortLink = async (shortUrl: string, options: BaseOptions = {}): Promise<string> => {

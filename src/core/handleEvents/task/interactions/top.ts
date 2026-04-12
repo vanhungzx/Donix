@@ -48,14 +48,24 @@ export async function sendTop(
 
   let sendMessagesEnabled = true;
   try {
-    const config = getConfig();
-    if (config?.scheduler?.tasks?.sendTop?.send?.enabled !== undefined) {
-      sendMessagesEnabled = config.scheduler.tasks.sendTop.send.enabled !== false;
+    const config = getConfig() as Record<string, unknown> | null;
+    const sched = config?.scheduler as Record<string, unknown> | undefined;
+    const tasks = sched?.tasks as Record<string, unknown> | undefined;
+    const sendTopTask = tasks?.sendTop as Record<string, unknown> | undefined;
+    const sendBlock = sendTopTask?.send as Record<string, unknown> | undefined;
+    const nested = sendBlock?.enabled;
+    const root = config?.sendTopMessagesEnabled;
+
+    if (root === true && nested === false) {
+      sendMessagesEnabled = true;
+    } else if (nested !== undefined) {
+      sendMessagesEnabled = nested !== false;
+    } else if (root !== undefined) {
+      sendMessagesEnabled = root !== false;
     } else if (donix.send_toptt_enabled !== undefined) {
       sendMessagesEnabled = donix.send_toptt_enabled !== false;
     }
   } catch {
-
     sendMessagesEnabled = donix.send_toptt_enabled !== false;
   }
 
@@ -163,7 +173,7 @@ export async function sendTop(
     const sendWithCallback = async (
       threadID: string,
       text: string,
-      timeoutMs: number = 10000
+      timeoutMs: number = 55000
     ): Promise<SendResult> => {
       let timeoutHandle: NodeJS.Timeout | null = null;
 
@@ -343,7 +353,7 @@ export async function sendTop(
             logger?.info?.(`[TopTT] Đã reset dữ liệu cho ${threadID}`);
           }
 
-          await slp(2000);
+          await slp(900 + Math.floor(Math.random() * 400));
         } catch (e: unknown) {
           fail += 1;
           const err = e instanceof Error ? e : new Error(String(e));
@@ -385,14 +395,19 @@ export async function setSendTopMessagesEnabled(enabled: boolean): Promise<boole
 }
 
 export function getSendTopMessagesEnabled(): boolean {
-
   try {
-    const config = getConfig();
-    if (config?.scheduler?.tasks?.sendTop?.send?.enabled !== undefined) {
-      return config.scheduler.tasks.sendTop.send.enabled !== false;
-    }
+    const config = getConfig() as Record<string, unknown> | null;
+    const sendTopTask = (config?.scheduler as Record<string, unknown> | undefined)?.tasks as
+      | Record<string, unknown>
+      | undefined;
+    const st = sendTopTask?.sendTop as Record<string, unknown> | undefined;
+    const nested = (st?.send as Record<string, unknown> | undefined)?.enabled;
+    const root = config?.sendTopMessagesEnabled;
+    if (root === true && nested === false) return true;
+    if (nested !== undefined) return nested !== false;
+    if (root !== undefined) return root !== false;
   } catch {
-
+    /* ignore */
   }
 
   const donix = getDonixState();

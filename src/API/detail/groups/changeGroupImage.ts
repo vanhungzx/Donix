@@ -102,7 +102,8 @@ export default function (
         {}
       )
       .then(parseAndCheckLogin(ctx, defaultFuncs))
-      .then((resData: UploadResponse) => {
+      .then((res) => {
+        const resData = res as UploadResponse;
         if (resData.error) throw resData;
         if (!resData.payload?.metadata?.[0]?.image_id) {
           throw new Error("Upload failed: no image_id in response");

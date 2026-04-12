@@ -1,7 +1,7 @@
 import logger from "@log";
 import utils, { Client, Context, DefaultFuncs } from "../../request/formatters/helpers.js";
 
-export default function (defaultFuncs: DefaultFuncs, client: Client, ctx: Context): (photoID: string, callback?: (err?: any, url?: string) => void) => Promise<string | undefined> {
+export default function (defaultFuncs: DefaultFuncs, _client: Client, ctx: Context): (photoID: string, callback?: (err?: any, url?: string) => void) => Promise<string | undefined> {
   return function resolvePhotoUrl(photoID: string, callback?: (err?: any, url?: string) => void): Promise<string | undefined> {
     let resolveFunc: (value?: string) => void = function () { };
     let rejectFunc: (reason?: any) => void = function () { };

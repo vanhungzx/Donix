@@ -2,12 +2,7 @@
 
 import type { Command, CommandOnCallContext } from "@types";
 import fs from "fs-extra";
-import path from "path";
-import { fileURLToPath } from "url";
 import { storagePath, STORAGE_OTHER } from "../../../core/storagePath";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 interface GroupSettings {
   maxWarn: number;

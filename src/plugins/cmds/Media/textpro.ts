@@ -421,7 +421,7 @@ const command = {
     "{pn} textpro <link> <text> → Tạo ảnh hiệu ứng chữ với link tùy chỉnh\n{pn} textpro <text> → Tạo ảnh hiệu ứng chữ với link mặc định\n{pn} textpro list → Xem danh sách hiệu ứng có sẵn\n   {pn} → Prefix lệnh bot",
   cd: 10,
   prefix: true,
-  onCall: async ({ client, event, args, api, main, commandName, utils }: any) => {
+  onCall: async ({ client, event, args, api, main, commandName }: any) => {
     try {
       if (!args[0]) {
         return client.sendMessage("Vui lòng nhập nội dung để tạo hiệu ứng", event.threadID, event.messageID);
@@ -445,7 +445,7 @@ const command = {
         return client.sendMessage(
           msg,
           event.threadID,
-          (err: any, info: any) => {
+          (_err: any, info: any) => {
             main.onReply.set(info.messageID, {
               commandName,
               messageID: info.messageID,
@@ -534,7 +534,7 @@ const command = {
             attachment
           },
           event.threadID,
-          (err: any, info: any) => {
+          (_err: any, info: any) => {
             main.onReply.set(info.messageID, {
               commandName,
               messageID: info.messageID,

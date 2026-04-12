@@ -399,6 +399,7 @@ class InstagramAPI {
         scriptContent = child.data;
         return false;
       }
+      return undefined;
     });
 
     if (!scriptContent) {
@@ -661,6 +662,7 @@ class InstagramAPI {
         scriptContent = child.data;
         return false;
       }
+      return undefined;
     });
 
     const extracted = extract(url);

@@ -42,8 +42,8 @@ type ChangeNicknameCallback = (
 ) => void;
 
 export default function (
-  defaultFuncs: DefaultFuncs,
-  api: any,
+  _defaultFuncs: DefaultFuncs,
+  _api: any,
   ctx: MQTTContext
 ): (
   nickname: string | null | undefined,

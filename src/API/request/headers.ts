@@ -1,4 +1,5 @@
-import { randomUserAgent } from "./user-agents";
+import type { BrowserFingerprint, Context, GlobalOptions } from "../../types/request.js";
+import { buildSecChUaFromUserAgent, defaultUserAgent } from "./user-agents";
 
 type HeaderRecord = Record<string, string>;
 
@@ -6,10 +7,30 @@ type CustomHeaders = HeaderRecord & {
   noRef?: boolean;
 };
 
+function resolveFingerprint(
+  ctx?: Context | null,
+  options?: GlobalOptions | null
+): BrowserFingerprint {
+  const uaFromOpts = options?.userAgent;
+  const uaFromCtx = ctx?.options?.userAgent ?? ctx?.globalOptions?.userAgent;
+  const ua = uaFromOpts || uaFromCtx || defaultUserAgent;
+
+  if (ctx) {
+    const fp = ctx._browserFingerprint;
+    if (!fp || fp.userAgent !== ua) {
+      const built = buildSecChUaFromUserAgent(ua);
+      ctx._browserFingerprint = built;
+      return built;
+    }
+    return fp;
+  }
+  return buildSecChUaFromUserAgent(ua);
+}
+
 const getHeaders = (
   urlStr: string,
-  _options?: Record<string, unknown>,
-  ctx?: any,
+  _options?: GlobalOptions | null,
+  ctx?: Context | null,
   customHeader?: CustomHeaders,
   method: string = "GET"
 ): HeaderRecord => {
@@ -20,7 +41,8 @@ const getHeaders = (
     const cookieString = ctx.jar?.getCookieStringSync
       ? ctx.jar.getCookieStringSync(`https://${host}/`)
       : ctx.jar?.cookieString?.() || "";
-    const { userAgent, secChUa, secChUaFullVersionList, secChUaPlatform, secChUaPlatformVersion } = randomUserAgent();
+    const { userAgent, secChUa, secChUaFullVersionList, secChUaPlatform, secChUaPlatformVersion } =
+      resolveFingerprint(ctx, _options);
     const graphQLHeaders: HeaderRecord = {
       'accept': '*/*',
       'accept-encoding': 'gzip, deflate, br',
@@ -68,12 +90,15 @@ const getHeaders = (
     return graphQLHeaders;
   }
 
-  // Get user agent for non-GraphQL requests
-  const { userAgent, secChUa, secChUaFullVersionList, secChUaPlatform, secChUaPlatformVersion } = randomUserAgent();
+  const { userAgent, secChUa, secChUaFullVersionList, secChUaPlatform, secChUaPlatformVersion } = resolveFingerprint(
+    ctx,
+    _options
+  );
 
   const baseHeaders: HeaderRecord = {
     "Accept-Encoding": "gzip, deflate, br",
     "Accept-Language": "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7",
+    "DNT": "1",
     // Note: "Connection" header is not allowed in HTTP/2, so we don't include it
     "Dpr": "1",
     "Origin": `https://${host}`,
@@ -108,6 +133,7 @@ const getHeaders = (
     baseHeaders["Sec-Fetch-Dest"] = "empty";
     baseHeaders["Sec-Fetch-Mode"] = "cors";
     baseHeaders["Sec-Fetch-Site"] = "same-origin";
+    baseHeaders["X-Requested-With"] = "XMLHttpRequest";
 
     baseHeaders["Priority"] = "u=1, i";
   } else {
@@ -121,8 +147,31 @@ const getHeaders = (
 
   const headers: HeaderRecord = { ...baseHeaders };
 
-  if (ctx?.fb_dtsg) {
-    headers["X-Fb-Lsd"] = ctx.lsd;
+  const lsdVal = ctx?.lsd || ctx?.fb_lsd;
+  if (lsdVal) {
+    headers["X-Fb-Lsd"] = String(lsdVal);
+  }
+
+  const u = (() => {
+    try {
+      return new URL(urlStr);
+    } catch {
+      return null;
+    }
+  })();
+  const isMercuryUpload = u?.pathname.includes("/ajax/mercury/upload.php");
+  if (isMercuryUpload && ctx) {
+    headers["X-Asbd-Id"] = "359341";
+    headers["Priority"] = "u=1, i";
+    if (lsdVal) {
+      headers["X-Fb-Lsd"] = String(lsdVal);
+    }
+    if (ctx.fb_dtsg) {
+      headers["X-Fb-Dtsg"] = String(ctx.fb_dtsg);
+    }
+    if (ctx.qpl_active_flow_ids) {
+      headers["X-FB-QPL-Active-Flows"] = String(ctx.qpl_active_flow_ids);
+    }
   }
   if (ctx?.region) {
     headers["X-MSGR-Region"] = ctx.region;

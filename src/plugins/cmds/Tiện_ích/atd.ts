@@ -1,4 +1,5 @@
 import fs from "fs";
+import { getConfig } from "../../../core/configManager";
 import { tempPath } from "../../../core/storagePath";
 import { downloadYoutubeVideo } from "./sing";
 import j2download, { J2DownloadResponse, J2DownloadMedia } from "../../../services/j2";
@@ -64,6 +65,9 @@ async function isPlatformEnabled(
   threadID: string
 ): Promise<boolean> {
   try {
+    const g = getConfig() as Record<string, unknown>;
+    if (g.botAutodownEnabled === false) return false;
+
     const thread = await threadData.get(threadID);
 
     if (!thread) return true;

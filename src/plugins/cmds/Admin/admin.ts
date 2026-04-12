@@ -4,14 +4,11 @@ import type { Command, CommandOnCallContext, CommandOnReplyContext } from "@type
 import { exec } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { loadConfig, writeConfig } from "../../../core/configManager";
 import { STORAGE_BACKUPS } from "../../../core/storagePath";
 
 const execAsync = promisify(exec);
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 async function loadFreshConfig(): Promise<any> {
   try {
@@ -178,7 +175,7 @@ const adminCommand: Command = {
         void reply(
           {
             body:
-              `[ CHỦ BOT ]\n\nTên: Gia Long (Obito)\nFacebook: fb.com/guns.lol/deptraiboy.zz\n\n[ DANH SÁCH ADMIN ]\n\n${adminListText}\nReply tin nhắn này với stt để xoá admin`,
+              `[ CHỦ BOT ]\n\nTên: Nam Nguyễn\nFacebook: fb.com/598962120\n\n[ DANH SÁCH ADMIN ]\n\n${adminListText}\nReply tin nhắn này với stt để xoá admin`,
           },
           (error: any, info: any) => {
             if (!error) {
@@ -217,7 +214,7 @@ const adminCommand: Command = {
         void reply(
           {
             body:
-              `[ CHỦ BOT ]\n\nTên: Phạm Minh Đồng (Donix)\nFacebook: fb.com/minhdong.dev\n\n[ DANH SÁCH ADMIN ]\n\n${adminListText}\n👆 Reply tin nhắn này với số thứ tự để xóa admin (VD: 1, 2, 3 hoặc 1 2 3)`,
+              `[ CHỦ BOT ]\n\nTên: Nam Nguyễn\nFacebook: fb.com/598962120\n\n[ DANH SÁCH ADMIN ]\n\n${adminListText}\n👆 Reply tin nhắn này với số thứ tự để xóa admin (VD: 1, 2, 3 hoặc 1 2 3)`,
           },
           (error: any, info: any) => {
             if (!error) {

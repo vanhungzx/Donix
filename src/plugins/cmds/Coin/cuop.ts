@@ -84,7 +84,8 @@ const command: Command = {
         "participantIDs" in threadInfo &&
         Array.isArray(threadInfo.participantIDs)
           ? threadInfo.participantIDs.filter(
-              (id): id is string => typeof id === "string" && id !== senderID
+              (id: unknown): id is string =>
+                typeof id === "string" && id !== senderID
             )
           : [];
       if (participants.length === 0) {

@@ -8,6 +8,27 @@ export type FBResponse<T = string> = AxiosResponse<T> & {
   config: AxiosRequestConfig & { fbOriginalForm?: Record<string, string | number | boolean | null | undefined> };
 };
 
+/** Body từ layer got (`axios.ts` normalize) — dùng chung với FBResponse trong DefaultFuncs */
+export interface FbNetworkResponse {
+  data: unknown;
+  status?: number;
+  statusCode?: number;
+  statusText?: string;
+  headers: Record<string, string | string[] | undefined>;
+  config?: Record<string, unknown> & {
+    fbOriginalForm?: Record<string, string | number | boolean | null | undefined>;
+    url?: string;
+    baseURL?: string;
+  };
+  request?: Record<string, unknown> & {
+    res?: { responseUrl?: string };
+  };
+  url?: string;
+  body?: unknown;
+}
+
+export type DefaultFuncsHttpResponse = FBResponse<string> | FbNetworkResponse;
+
 
 export interface Cookie {
   name: string;
@@ -30,7 +51,15 @@ export interface CookieJar {
 }
 
 
-export interface GlobalOptions {
+/** Trường runtime gắn trên GlobalOptions hoặc Context để throttle request */
+export interface RequestCooldownState {
+  _checkpointCooldownUntil?: number;
+  _checkpointCooldownReason?: string;
+  _checkpointCooldownLogMap?: Map<string, number>;
+  _autoLoginCooldownUntil?: number;
+}
+
+export interface GlobalOptions extends RequestCooldownState {
   userAgent?: string;
   pageID?: string;
   autoMarkRead?: boolean;
@@ -43,12 +72,41 @@ export interface GlobalOptions {
 }
 
 
-export interface Context {
+export interface BrowserFingerprint {
+  userAgent: string;
+  secChUa: string;
+  secChUaFullVersionList: string;
+  secChUaPlatform: string;
+  secChUaPlatformVersion: string;
+}
+
+export interface MessengerSpinHeaders {
+  __spin_r?: string;
+  __spin_b?: string;
+  __spin_t?: string;
+}
+
+export interface Context extends RequestCooldownState {
   userID: string;
   jar: ToughCookieJar & CookieJar;
   clientID: string;
   options: GlobalOptions;
+  /** Alias của options — dùng cho request layer */
+  globalOptions?: GlobalOptions;
   fb_dtsg: string;
+  lsd?: string;
+  fb_lsd?: string;
+  jazoest?: string;
+  __dyn?: string;
+  __csr?: string;
+  __hs?: string;
+  __hsi?: string;
+  qpl_active_flow_ids?: string;
+  _browserFingerprint?: BrowserFingerprint;
+  auto_login?: boolean;
+  _autoLoginPromise?: Promise<unknown>;
+  _autoLoginRequestInFlight?: boolean;
+  master?: MessengerSpinHeaders;
   access_token: string;
   clientMutationId: number;
   loggedIn: boolean;
@@ -80,9 +138,9 @@ export interface ParseContext {
 
 
 export interface DefaultFuncs {
-  get: (url: string, jar: ToughCookieJar & CookieJar, qs?: Record<string, string | number | boolean | null | undefined> | null, cx?: Context | null, customHeader?: Record<string, string>) => Promise<FBResponse<string>>;
-  post: (url: string, jar: ToughCookieJar & CookieJar, form?: Record<string, string | number | boolean | null | undefined>, cx?: Context | null, customHeader?: Record<string, string>) => Promise<FBResponse<string>>;
-  postFormData: (url: string, jar: ToughCookieJar & CookieJar, form?: Record<string, string | number | boolean | null | undefined>, qs?: Record<string, string | number | boolean | null | undefined>, cx?: Context | null) => Promise<FBResponse<string>>;
+  get: (url: string, jar: ToughCookieJar & CookieJar, qs?: Record<string, string | number | boolean | null | undefined> | null, cx?: Context | null, customHeader?: Record<string, string>) => Promise<DefaultFuncsHttpResponse>;
+  post: (url: string, jar: ToughCookieJar & CookieJar, form?: Record<string, string | number | boolean | null | undefined>, cx?: Context | null, customHeader?: Record<string, string>) => Promise<DefaultFuncsHttpResponse>;
+  postFormData: (url: string, jar: ToughCookieJar & CookieJar, form?: Record<string, string | number | boolean | null | undefined>, qs?: Record<string, string | number | boolean | null | undefined>, cx?: Context | null) => Promise<DefaultFuncsHttpResponse>;
   json?: (url: string, jar: ToughCookieJar & CookieJar, qs?: Record<string, string | number | boolean | null | undefined> | null, options?: Record<string, string | number | boolean | null | undefined>, ctx?: Context | null, customHeader?: Record<string, string>) => Promise<Array<Record<string, string | number | boolean | null | undefined>>>;
 }
 

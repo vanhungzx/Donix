@@ -1,6 +1,5 @@
 import type { Command, CommandOnCallContext } from "@types";
 import fs from "fs";
-import path from "path";
 import { DB_PATH } from "../../../core/storagePath";
 import { checkDatabaseHealth, getDbMetrics, getDbPromisified } from "../../../core/database/schema";
 import { getThreadData } from "../../../core/database/thread-data";

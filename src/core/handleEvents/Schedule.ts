@@ -136,23 +136,44 @@ function ensureDefaults(
   return { out, dirty };
 }
 
+/** Sau mốc HH:mm, vẫn chạy bù nếu bot khởi động trễ / timer trễ (tránh nhảy thẳng sang ngày sau, mất Top 00h). */
+const AT_TASK_GRACE_MS = 5 * 60 * 1000;
+
 function makeAt(timeStr: string, fn: () => Promise<void>): TaskHandler {
   let active = true;
   let t: NodeJS.Timeout | null = null;
   let next: Date | null = null;
 
-  const loop = (): void => {
+  const loop = (afterSuccessfulRun: boolean): void => {
     if (!active) return;
 
     const [h, m] = String(timeStr).split(":").map(Number);
     const n = now();
-    let nx = now().hour(h || 0).minute(m || 0).second(0).millisecond(0);
+    let nx;
+    let diff: number;
 
-    if (!nx.isAfter(n)) nx = nx.add(1, "day");
+    if (afterSuccessfulRun) {
+      nx = n
+        .clone()
+        .add(1, "day")
+        .hour(h || 0)
+        .minute(m || 0)
+        .second(0)
+        .millisecond(0);
+      diff = Math.max(100, nx.diff(n));
+    } else {
+      nx = n.clone().hour(h || 0).minute(m || 0).second(0).millisecond(0);
+      if (!nx.isAfter(n)) {
+        const lateMs = n.diff(nx);
+        if (lateMs > AT_TASK_GRACE_MS) {
+          nx = nx.add(1, "day");
+        }
+      }
+      diff = nx.isAfter(n) ? Math.max(100, nx.diff(n)) : 100;
+    }
 
     next = nx.toDate();
 
-    const diff = nx.diff(n);
     t = setTimeout(async () => {
       if (!active) return;
       try {
@@ -160,11 +181,11 @@ function makeAt(timeStr: string, fn: () => Promise<void>): TaskHandler {
       } catch {
 
       }
-      loop();
+      loop(true);
     }, diff);
   };
 
-  loop();
+  loop(false);
 
   return {
     stop: () => {
@@ -292,8 +313,9 @@ async function initializeScheduler({
         tokenCheck: { enabled: true, type: "everyH", hours: 2, ensureAll: false, strict: false },
         updNick: { enabled: true, type: "at", time: "00:10" },
         notifyExp: { enabled: true, type: "at", time: "16:00" },
-        sendTop: { enabled: true, type: "at", time: "00:01" },
+        sendTop: { enabled: true, type: "at", time: "00:01", send: { enabled: true } },
         resetGeminiQuota: { enabled: true, type: "at", time: "00:01" },
+        autoRestart: { enabled: false, type: "everyH", hours: 4 },
         autoInteractFeed: { enabled: false, type: "everyMin", chunk: 30, maxPerRun: 3, fetchLimit: 8, reaction: "LIKE", minDelayMs: 2500, maxDelayMs: 6000 },
       },
     },
@@ -352,6 +374,10 @@ async function initializeScheduler({
     resetGeminiQuota: async () => {
       logger?.info?.("Reset daily quota Gemini");
       resetGeminiDailyQuota();
+    },
+    autoRestart: async () => {
+      logger?.warn?.("Auto restart mỗi 4h: tiến hành khởi động lại bot");
+      setTimeout(() => process.exit(1), 1000);
     },
   };
 

@@ -1,7 +1,7 @@
 import { createCanvas } from "canvas";
 import fs from "fs-extra";
 import { join } from "path";
-import { STORAGE_BANK } from "../../../core/storagePath";
+import { STORAGE_BANK, TEMP_DIR } from "../../../core/storagePath";
 
 async function getPrefix(threadId: string, threadData: any, config: any) {
   const thread = await threadData.get(threadId);
@@ -97,7 +97,7 @@ const isValidURL = (s: string): boolean => {
 
 const dayMs = 24 * 60 * 60 * 1000;
 const baseDir = STORAGE_BANK();
-const tempDir = join(process.cwd(), "src", "temp");
+const tempDir = TEMP_DIR();
 fs.ensureDirSync(baseDir);
 fs.ensureDirSync(tempDir);
 

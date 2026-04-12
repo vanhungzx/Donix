@@ -1,10 +1,7 @@
 import log from "@log";
-import cheerio from "cheerio";
 import type { Cookie as ToughCookie } from "tough-cookie";
-import type { FBResponse } from "../../types/request.js";
 import { getSequenceIdFromHtml } from "../handle/mqtt/htmlSequenceId.js";
 import type { Context, DefaultFuncs, GlobalOptions } from "../request/formatters/helpers.js";
-import { parseAndCheckLogin } from "../request/formatters/helpers.js";
 import { getFrom } from "../utils/htmlParser.js";
 
 export function extractUserID(jar: Context["jar"]): string | null {
@@ -33,6 +30,17 @@ export function buildContext(
   const clientID = (Math.random() * 2147483648 | 0).toString(16);
   const endpoint = html.match(/"endpoint":"([^"]+)"/)?.[1]?.replace(/\\/g, '');
   const fb_dtsg = getFrom(html, '["DTSGInitData",[],{"token":"', '","') || "";
+  const lsd =
+    getFrom(html, '["LSD",[],{"token":"', '"}') ||
+    html.match(/name="lsd"\s+value="([^"]+)"/)?.[1] ||
+    "";
+  const jazoest =
+    getFrom(html, 'name="jazoest" value="', '"') ||
+    getFrom(html, "jazoest=", '",') ||
+    html.match(/name="jazoest"\s+value="([^"]+)"/)?.[1] ||
+    "";
+  const __dyn = html.match(/"__dyn":"((?:\\.|[^"\\])*)"/)?.[1]?.replace(/\\"/g, '"') || undefined;
+  const __csr = html.match(/"__csr":"((?:\\.|[^"\\])*)"/)?.[1]?.replace(/\\"/g, '"') || undefined;
 
   let lastSeqId: string | undefined = undefined;
   try {
@@ -55,7 +63,13 @@ export function buildContext(
     jar,
     clientID,
     options: opts,
+    globalOptions: opts,
     fb_dtsg,
+    lsd: lsd || undefined,
+    fb_lsd: lsd || undefined,
+    jazoest: jazoest || undefined,
+    __dyn,
+    __csr,
     access_token: "NONE",
     clientMutationId: 0,
     loggedIn: true,
@@ -82,7 +96,7 @@ export function buildClient(
   userID: string,
   jar: Context["jar"],
   opts: GlobalOptions,
-  def: DefaultFuncs,
+  _def: DefaultFuncs,
   ctx: Context,
   utils: Utils
 ): {

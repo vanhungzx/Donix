@@ -1,26 +1,42 @@
 import log from "@log";
+
+function humanPauseMs(min: number, max: number): number {
+  const lo = Math.min(min, max);
+  const hi = Math.max(min, max);
+  return lo + Math.floor(Math.random() * (hi - lo + 1));
+}
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 import type { Cookie as ToughCookie } from "tough-cookie";
-import type { FBResponse } from "../../types/request.js";
+import type { DefaultFuncsHttpResponse, FBResponse, FbNetworkResponse } from "../../types/request.js";
+import { setCheckpointCooldown } from "../request/checkpointCooldown.js";
 import { saveCookies } from "../request/clients.js";
 import type { Context, GlobalOptions } from "../request/formatters/helpers.js";
 import { get, post } from "../request/index.js";
 import { getFrom } from "../utils/htmlParser.js";
 
 export async function bypassAutomation(
-  resp: FBResponse<string> | null | undefined,
+  resp: DefaultFuncsHttpResponse | null | undefined,
   jar: Context["jar"],
   options: GlobalOptions
-): Promise<FBResponse<string>> {
-  const s = (x: string | number | boolean | object | null | undefined): string =>
-    typeof x === "string" ? x : String(x ?? "");
+): Promise<DefaultFuncsHttpResponse> {
+  const s = (x: unknown): string => (typeof x === "string" ? x : String(x ?? ""));
 
-  const u = (r: FBResponse<string>): string =>
-    (r as FBResponse<string> & { request?: { res?: { responseUrl?: string } } })?.request?.res?.responseUrl ||
-    ((r as FBResponse<string> & { config?: { baseURL?: string; url?: string } })?.config?.baseURL
-      ? new URL((r.config?.url || "/"), r.config.baseURL).toString()
-      : (r.config?.url || ""));
+  type Resp = FBResponse<string> | FbNetworkResponse;
 
-  const isCp = (r: FBResponse<string>): boolean =>
+  const u = (r: Resp): string => {
+    const reqUrl = (r as { request?: { res?: { responseUrl?: string } } }).request?.res?.responseUrl;
+    if (reqUrl) return reqUrl;
+    const cfg = (r as { config?: { baseURL?: string; url?: string }; url?: string }).config;
+    if (cfg?.baseURL) {
+      return new URL(cfg.url || "/", cfg.baseURL).toString();
+    }
+    const topUrl = (r as { url?: string }).url;
+    return (typeof cfg?.url === "string" ? cfg.url : "") || (typeof topUrl === "string" ? topUrl : "");
+  };
+
+  const isCp = (r: Resp): boolean =>
     typeof u(r) === "string" && u(r).includes("checkpoint/601051028565049");
 
   const cookieUID = async (): Promise<string | undefined> => {
@@ -47,7 +63,7 @@ export async function bypassAutomation(
   const getUID = async (body: string | FBResponse<string>): Promise<string | undefined> =>
     (await cookieUID()) || htmlUID(body);
 
-  const refreshJar = async (): Promise<FBResponse<string>> =>
+  const refreshJar = async (): Promise<DefaultFuncsHttpResponse> =>
     get("https://www.facebook.com/", jar, undefined, options, undefined, undefined).then(
       saveCookies(jar)
     );
@@ -79,6 +95,7 @@ export async function bypassAutomation(
       doc_id: "24406519995698862",
     };
 
+    await sleep(humanPauseMs(450, 2200));
     await post(
       "https://www.facebook.com/api/graphql/",
       jar,
@@ -95,6 +112,10 @@ export async function bypassAutomation(
     if (resp) {
       if (isCp(resp)) {
         log.warn("Phát hiện checkpoint - Tài khoản đang bị kiểm tra");
+        setCheckpointCooldown(options, {
+          ms: 5 * 60_000,
+          reason: "checkpoint scraping warning",
+        });
         await bypass(s(resp.data));
 
         const refreshed = await refreshJar();
@@ -123,8 +144,13 @@ export async function bypassAutomation(
 
     if (isCp(res)) {
       log.warn("Phát hiện checkpoint - Tài khoản đang bị kiểm tra");
+      setCheckpointCooldown(options, {
+        ms: 8 * 60_000,
+        reason: "checkpoint scraping warning",
+      });
       await bypass(s(res.data));
 
+      await sleep(humanPauseMs(700, 2800));
       const refreshed = await refreshJar();
 
       if (!isCp(refreshed)) {

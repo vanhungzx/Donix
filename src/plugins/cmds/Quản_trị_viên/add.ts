@@ -5,7 +5,7 @@ import type { Command, CommandOnCallContext } from "@types";
 const addCommand: Command = {
   name: "add",
   alias: ["adduser"],
-  version: "1.1.3",
+  version: "1.1.4",
   role: 1,
   desc: "Thêm thành viên hoặc thêm QTV (chỉ tag/reply)",
   guide:
@@ -59,18 +59,17 @@ const addCommand: Command = {
         return;
       }
 
-      const setAdminStatus = client.setAdminStatus as ((threadID: string, userID: string, admin: boolean, callback: (err: Error | null) => void) => void) | undefined;
+      const setAdminStatus = client.setAdminStatus;
       if (!setAdminStatus) {
         await reply("❌ Không thể thực hiện thao tác này");
         return;
       }
-      setAdminStatus(String(threadID), target, true, async (err: Error | null) => {
-        if (err) {
-          await reply("❌ Bot không đủ quyền hạn để thay đổi QTV");
-          return;
-        }
+      try {
+        await setAdminStatus(String(threadID), target, true);
         await reply("✅ Đã thêm QTV");
-      });
+      } catch {
+        await reply("❌ Bot không đủ quyền hạn để thay đổi QTV");
+      }
       return;
     }
 

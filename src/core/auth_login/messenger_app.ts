@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, URLSearchParams } from "node:url";
 
 type JsonPrimitive = string | number | boolean | null;
 type JsonValue = JsonPrimitive | JsonObject | JsonArray;
@@ -84,12 +84,477 @@ const FETCH_OPTS = {
   redirect: "follow",
 } as const satisfies RequestInit;
 
+/** UA Orca — đồng bộ với pwd_key_fetch / auth/login */
+const ORCA_UA =
+  "Dalvik/2.1.0 (Linux; U; Android 9; 23113RKC6C Build/PQ3A.190605.06171036) [FBAN/Orca-Android;FBAV/536.0.0.46.216;FBPN/com.facebook.orca;FBLC/vi_VN;FBBV/840054738;FBCR/MobiFone;FBMF/Redmi;FBBD/Redmi;FBDV/23113RKC6C;FBSV/9;FBCA/x86_64:arm64-v8a;FBDM/{density=3.0,width=1080,height=1920};FB_FW/1;]";
+
+const DEFAULT_API_KEY = "256002347743983";
+const DEFAULT_ACCESS_TOKEN = "256002347743983|374e60f8b9bb6b8cbb30f78030438895";
+const SIG_SECRET = "62f8ce9f74b12f84c123cc23437a4a32";
+
 function fail(message: string): LoginFailure {
   return { success: false, message };
 }
 
 function ok(data: Omit<LoginSuccess, "success">): LoginSuccess {
   return { success: true, ...data };
+}
+
+function generateMachineId(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < 22; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+function generateJazoest(): string {
+  return String(Math.floor(10000 + Math.random() * 90000));
+}
+
+function sortObject(obj: Record<string, string>): Record<string, string> {
+  const sortedKeys = Object.keys(obj).sort();
+  const sorted: Record<string, string> = {};
+  for (const key of sortedKeys) {
+    sorted[key] = obj[key];
+  }
+  return sorted;
+}
+
+function encodesig(form: Record<string, string>, secret: string = SIG_SECRET): string {
+  let data = "";
+  const sorted = sortObject(form);
+  for (const key in sorted) {
+    data += `${key}=${sorted[key]}`;
+  }
+  data += secret;
+  return crypto.createHash("md5").update(data).digest("hex");
+}
+
+function generateZeroEh(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  let result = "2,,";
+  for (let i = 0; i < 64; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+function generateConnUuid(): string {
+  const chars = "0123456789abcdef";
+  let result = "";
+  for (let i = 0; i < 32; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+function isPasswordEncrypted(password: string): boolean {
+  return password.startsWith("#PWD_MSGR:");
+}
+
+function totpFromBase32(secret: string): string {
+  try {
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    const cleaned = secret.replace(/\s+/g, "").toUpperCase();
+    let bits = "";
+    for (const char of cleaned) {
+      const val = alphabet.indexOf(char);
+      if (val === -1) continue;
+      bits += val.toString(2).padStart(5, "0");
+    }
+    const bytes: number[] = [];
+    for (let i = 0; i + 8 <= bits.length; i += 8) {
+      bytes.push(Number.parseInt(bits.slice(i, i + 8), 2));
+    }
+    const key = Buffer.from(bytes);
+    const step = 30;
+    const counter = Math.floor(Date.now() / 1000 / step);
+    const buf = Buffer.alloc(8);
+    buf.writeUInt32BE(Math.floor(counter / 0x100000000), 0);
+    buf.writeUInt32BE(counter % 0x100000000, 4);
+    const hmac = crypto.createHmac("sha1", key).update(buf).digest();
+    const offset = hmac[hmac.length - 1] & 0x0f;
+    const codeInt =
+      ((hmac[offset] & 0x7f) << 24) |
+      ((hmac[offset + 1] & 0xff) << 16) |
+      ((hmac[offset + 2] & 0xff) << 8) |
+      (hmac[offset + 3] & 0xff);
+    return String(codeInt % 1_000_000).padStart(6, "0");
+  } catch (err) {
+    console.log(`❌ Lỗi tạo mã TOTP: ${String(err)}`);
+    return "";
+  }
+}
+
+async function encryptPasswordForRest(
+  plainPassword: string,
+  deviceId: string,
+  apiKey: string = DEFAULT_API_KEY,
+  accessToken: string = DEFAULT_ACCESS_TOKEN
+): Promise<string> {
+  console.log("🔐 Đang mã hóa mật khẩu (REST)...");
+  const pwdKeyFetch = "https://b-graph.facebook.com//pwd_key_fetch";
+
+  const pwdKeyFetchData = new URLSearchParams({
+    device_id: deviceId,
+    version: "2",
+    flow: "CONTROLLER_INITIALIZATION",
+    locale: "vi_VN",
+    client_country_code: "VN",
+    method: "GET",
+    fb_api_req_friendly_name: "pwdKeyFetch",
+    fb_api_caller_class: "AuthOperations",
+    access_token: accessToken,
+  });
+
+  const keyHeaders: Record<string, string> = {
+    "User-Agent": ORCA_UA,
+    "Accept-Encoding": "gzip, deflate",
+    "Content-Type": "application/x-www-form-urlencoded",
+    "x-fb-request-analytics-tags": JSON.stringify({
+      network_tags: {
+        product: apiKey,
+        purpose: "none",
+        retry_attempt: "0",
+      },
+      application_tags: "unknown",
+    }),
+    authorization: "OAuth",
+    "x-zero-eh": generateZeroEh(),
+    "x-fb-rmd": "state=URL_ELIGIBLE",
+    "x-fb-connection-quality": "EXCELLENT",
+    "x-zero-state": "unknown",
+    "x-fb-friendly-name": "pwdKeyFetch",
+    "x-zero-f-device-id": deviceId,
+    "x-fb-integrity-machine-id": "QkQjaaPYXqr7elYbhXm9k25K",
+    "x-fb-net-hni": "45201",
+    "x-fb-sim-hni": "45201",
+    "app-scope-id-header": deviceId,
+    "x-fb-connection-type": "WIFI",
+    priority: "u=3, i",
+    "x-fb-network-properties": "Wifi;Validated;",
+    "x-tigon-is-retry": "False",
+    "x-fb-http-engine": "Tigon/Liger",
+    "x-fb-client-ip": "True",
+    "x-fb-server-cluster": "True",
+    "x-fb-conn-uuid-client": generateConnUuid(),
+  };
+
+  const keyResp = await fetch(pwdKeyFetch, {
+    ...FETCH_OPTS,
+    headers: keyHeaders,
+    body: pwdKeyFetchData,
+  });
+
+  const keyJson = (await keyResp.json()) as { public_key?: string; key_id?: string | number };
+  const publicKey = keyJson.public_key;
+  if (!publicKey) {
+    throw new Error("Không thể lấy public key từ Facebook");
+  }
+
+  const keyId = String(keyJson.key_id ?? "25");
+  const randKey = crypto.randomBytes(32);
+  const iv = crypto.randomBytes(12);
+  const encryptedRandKey = crypto.publicEncrypt(
+    {
+      key: publicKey,
+      padding: crypto.constants.RSA_PKCS1_PADDING,
+    },
+    randKey
+  );
+
+  const cipher = crypto.createCipheriv("aes-256-gcm", randKey, iv);
+  const currentTime = Math.floor(Date.now() / 1000);
+  cipher.setAAD(Buffer.from(String(currentTime), "utf8"));
+  const encryptedPass = Buffer.concat([cipher.update(plainPassword, "utf8"), cipher.final()]);
+  const authTag = cipher.getAuthTag();
+
+  const bufParts: Buffer[] = [
+    Buffer.from([1, Number(keyId)]),
+    iv,
+    Buffer.from(Int16Array.of(encryptedRandKey.length).buffer),
+    encryptedRandKey,
+    authTag,
+    encryptedPass,
+  ];
+  const encoded = Buffer.concat(bufParts).toString("base64");
+  console.log("✅ Mã hóa mật khẩu (REST) xong.");
+  return `#PWD_MSGR:2:${currentTime}:${encoded}`;
+}
+
+function sessionCookiesToString(cookies: unknown): string {
+  if (!Array.isArray(cookies)) return "";
+  const valid = new Set(["c_user", "xs", "fr", "datr", "sb"]);
+  const parts: string[] = [];
+  for (const c of cookies) {
+    if (c && typeof c === "object") {
+      const o = c as { name?: unknown; value?: unknown };
+      const name = typeof o.name === "string" ? o.name : "";
+      const value = typeof o.value === "string" ? o.value : "";
+      if (valid.has(name) && value) parts.push(`${name}=${value}`);
+    }
+  }
+  return parts.join("; ");
+}
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+function parseAuthLoginJson(text: string): unknown {
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+function loginSuccessFromAuthPayload(data: Record<string, unknown>): LoginSuccess | null {
+  const access_token = typeof data.access_token === "string" ? data.access_token : "";
+  if (!access_token) return null;
+  const cookies = sessionCookiesToString(data.session_cookies);
+  if (!cookies.includes("c_user=")) return null;
+  return ok({
+    access_token,
+    cookies,
+    message: "Đăng nhập thành công",
+    user_id: data.uid != null ? String(data.uid) : "",
+    session_key: typeof data.session_key === "string" ? data.session_key : "",
+    machine_id: typeof data.machine_id === "string" ? data.machine_id : "",
+    secret: typeof data.secret === "string" ? data.secret : "",
+  });
+}
+
+interface AuthLoginAttemptOptions {
+  email: string;
+  encryptedPassword: string;
+  device_id: string;
+  family_device_id: string;
+  machine_id: string;
+  adid: string;
+  api_key: string;
+  access_token: string;
+  locale: string;
+  country_code: string;
+  currently_logged_in_userid: string;
+  twoFactorCode?: string;
+  errorData?: Record<string, unknown>;
+}
+
+async function postAuthLoginOnce(opts: AuthLoginAttemptOptions): Promise<{ status: number; body: unknown }> {
+  const {
+    email,
+    encryptedPassword,
+    device_id,
+    family_device_id,
+    machine_id,
+    adid,
+    api_key,
+    access_token,
+    locale,
+    country_code,
+    currently_logged_in_userid,
+    twoFactorCode,
+    errorData,
+  } = opts;
+
+  const form: Record<string, string> = {
+    adid,
+    format: "json",
+    device_id,
+    email,
+    password: encryptedPassword,
+    generate_analytics_claim: "1",
+    community_id: "",
+    cpl: "true",
+    family_device_id,
+    secure_family_device_id: "",
+    generate_session_cookies: "1",
+    source: "logged_in_account_switcher",
+    machine_id,
+    jazoest: generateJazoest(),
+    meta_inf_fbmeta: "NO_FILE",
+    advertiser_id: adid,
+    is_switcher: "1",
+    locale,
+    client_country_code: country_code,
+    fb_api_req_friendly_name: "authenticate",
+    fb_api_caller_class: "AuthOperations$PasswordAuthOperation",
+    api_key,
+    access_token,
+  };
+
+  if (twoFactorCode && errorData) {
+    form.twofactor_code = twoFactorCode;
+    form.encrypted_msisdn = "";
+    form.userid = typeof errorData.uid === "string" || typeof errorData.uid === "number" ? String(errorData.uid) : "";
+    form.machine_id =
+      typeof errorData.machine_id === "string" && errorData.machine_id
+        ? errorData.machine_id
+        : machine_id;
+    form.first_factor = typeof errorData.login_first_factor === "string" ? errorData.login_first_factor : "";
+    form.credentials_type = "two_factor";
+  } else {
+    form.credentials_type = "password";
+  }
+
+  if (currently_logged_in_userid) {
+    form.currently_logged_in_userid = currently_logged_in_userid;
+  }
+
+  form.sig = encodesig(form);
+
+  const formData = new URLSearchParams();
+  for (const [key, value] of Object.entries(form)) {
+    formData.append(key, value);
+  }
+
+  const headers: Record<string, string> = {
+    "User-Agent": ORCA_UA,
+    "Accept-Encoding": "gzip, deflate",
+    "Content-Type": "application/x-www-form-urlencoded",
+    "x-fb-request-analytics-tags": JSON.stringify({
+      network_tags: {
+        product: api_key,
+        purpose: "none",
+        retry_attempt: "0",
+      },
+      application_tags: "unknown",
+    }),
+    authorization: `OAuth ${access_token}`,
+    "x-fb-rmd": "state=URL_ELIGIBLE",
+    "x-fb-connection-quality": "EXCELLENT",
+    "x-fb-friendly-name": "authenticate",
+    "x-zero-f-device-id": device_id,
+    "x-fb-net-hni": "45201",
+    "x-fb-sim-hni": "45201",
+    "x-zero-eh": generateZeroEh(),
+    "app-scope-id-header": device_id,
+    "x-fb-connection-type": "WIFI",
+    priority: "u=3, i",
+    "x-fb-network-properties": "Wifi;Validated;",
+    "x-tigon-is-retry": "False",
+    "x-fb-http-engine": "Tigon/Liger",
+    "x-fb-client-ip": "True",
+    "x-fb-server-cluster": "True",
+    "x-fb-conn-uuid-client": generateConnUuid(),
+  };
+
+  console.log("📡 REST auth/login …");
+  const response = await fetch("https://b-graph.facebook.com/auth/login", {
+    ...FETCH_OPTS,
+    headers,
+    body: formData.toString(),
+  });
+
+  const responseText = await response.text();
+  const parsed = parseAuthLoginJson(responseText);
+  return { status: response.status, body: parsed ?? responseText };
+}
+
+/**
+ * Đăng nhập qua b-graph auth/login (sig MD5 + mật khẩu đã mã hóa), hỗ trợ 2FA TOTP.
+ */
+async function loginViaAuthRest(
+  email: string,
+  password: string,
+  twoFaSecret: string
+): Promise<LoginResult> {
+  const device_id = crypto.randomUUID();
+  const family_device_id = crypto.randomUUID();
+  const machine_id = generateMachineId();
+  const adid = family_device_id;
+  const api_key = DEFAULT_API_KEY;
+  const access_token = DEFAULT_ACCESS_TOKEN;
+  const locale = "vi_VN";
+  const country_code = "VN";
+  const currently_logged_in_userid = "";
+
+  let encryptedPassword = password;
+  if (!isPasswordEncrypted(password)) {
+    try {
+      encryptedPassword = await encryptPasswordForRest(password, device_id, api_key, access_token);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return fail(`REST: không mã hóa được mật khẩu: ${msg}`);
+    }
+  }
+
+  const baseOpts: Omit<AuthLoginAttemptOptions, "twoFactorCode" | "errorData"> = {
+    email,
+    encryptedPassword,
+    device_id,
+    family_device_id,
+    machine_id,
+    adid,
+    api_key,
+    access_token,
+    locale,
+    country_code,
+    currently_logged_in_userid,
+  };
+
+  let { status, body } = await postAuthLoginOnce(baseOpts);
+
+  if (status === 200 && isRecord(body)) {
+    const win = loginSuccessFromAuthPayload(body);
+    if (win) {
+      console.log("✅ REST auth/login thành công.");
+      return win;
+    }
+  }
+
+  if (isRecord(body) && isRecord(body.error)) {
+    const errObj = body.error as Record<string, unknown>;
+    const errData = isRecord(errObj.error_data) ? (errObj.error_data as Record<string, unknown>) : null;
+    const need2fa =
+      errData &&
+      (errData.uid != null || typeof errData.login_first_factor === "string");
+
+    if (need2fa) {
+      console.log("🔐 REST: yêu cầu 2FA.");
+      if (!twoFaSecret?.trim()) {
+        return fail("Tài khoản bật 2FA — cần secret TOTP (config fbSecret2FA / secret2FA).");
+      }
+      const code = totpFromBase32(twoFaSecret.replace(/\s+/g, ""));
+      if (!code) {
+        return fail("Không tạo được mã TOTP từ secret.");
+      }
+      ({ status, body } = await postAuthLoginOnce({
+        ...baseOpts,
+        twoFactorCode: code,
+        errorData: errData,
+      }));
+
+      if (status === 200 && isRecord(body)) {
+        const win2 = loginSuccessFromAuthPayload(body);
+        if (win2) {
+          console.log("✅ REST auth/login thành công (2FA).");
+          return win2;
+        }
+      }
+      if (isRecord(body) && isRecord(body.error)) {
+        const e2 = body.error as Record<string, unknown>;
+        const m2 = typeof e2.message === "string" ? e2.message : "Mã 2FA không hợp lệ hoặc đã hết hạn";
+        return fail(m2);
+      }
+      return fail(`REST auth/login 2FA thất bại (HTTP ${status})`);
+    }
+
+    const msg =
+      typeof errObj.message === "string"
+        ? errObj.message
+        : `REST auth/login thất bại (HTTP ${status})`;
+    return fail(msg);
+  }
+
+  return fail(
+    typeof body === "string"
+      ? `REST auth/login: phản hồi không parse được (HTTP ${status})`
+      : `REST auth/login thất bại (HTTP ${status})`
+  );
 }
 
 export async function login(username: string, password: string, twoFaSecret: string): Promise<LoginResult> {
@@ -99,12 +564,22 @@ export async function login(username: string, password: string, twoFaSecret: str
       return fail("Tên đăng nhập và mật khẩu không được để trống");
     }
 
-    const response = await sendLoginRequest(username, password);
-    if (!response) {
-      return fail("Không thể kết nối đến máy chủ Facebook");
+    const restResult = await loginViaAuthRest(username, password, twoFaSecret);
+    if (restResult.success) {
+      return restResult;
     }
 
-    return await parseLoginResponse(response, twoFaSecret);
+    console.log(`REST: ${restResult.message} — thử GraphQL (Bloks)…`);
+    const response = await sendLoginRequest(username, password);
+    if (!response) {
+      return restResult.message ? restResult : fail("Không thể kết nối đến máy chủ Facebook");
+    }
+
+    const gqlResult = await parseLoginResponse(response, twoFaSecret);
+    if (gqlResult.success) {
+      return gqlResult;
+    }
+    return fail(`REST: ${restResult.message} | GraphQL: ${gqlResult.message}`);
   } catch (err) {
     console.log(`Lỗi: ${String(err)}`);
     return fail(`Lỗi máy chủ: ${String(err)}`);
@@ -129,8 +604,7 @@ async function sendLoginRequest(username: string, password: string): Promise<str
     });
 
     const keyHeaders: Record<string, string> = {
-      "User-Agent":
-        "Dalvik/2.1.0 (Linux; U; Android 9; 23113RKC6C Build/PQ3A.190605.06171036) [FBAN/Orca-Android;FBAV/535.0.0.89.107;FBPN/com.facebook.orca;FBLC/vi_VN;FBBV/835027694;FBCR/MobiFone;FBMF/Redmi;FBBD/Redmi;FBDV/23113RKC6C;FBSV/9;FBCA/x86_64:arm64-v8a;FBDM/{density=3.0,width=1080,height=1920};FB_FW/1;]",
+      "User-Agent": ORCA_UA,
       "Accept-Encoding": "gzip, deflate",
       "Content-Type": "application/x-www-form-urlencoded",
       "x-fb-request-analytics-tags":
@@ -249,8 +723,7 @@ async function sendLoginRequest(username: string, password: string): Promise<str
     });
 
     const headers: Record<string, string> = {
-      "User-Agent":
-        "Dalvik/2.1.0 (Linux; U; Android 9; 23113RKC6C Build/PQ3A.190605.06171036) [FBAN/Orca-Android;FBAV/535.0.0.89.107;FBPN/com.facebook.orca;FBLC/vi_VN;FBBV/835027694;FBCR/MobiFone;FBMF/Redmi;FBBD/Redmi;FBDV/23113RKC6C;FBSV/9;FBCA/x86_64:arm64-v8a;FBDM/{density=3.0,width=1080,height=1920};FB_FW/1;]",
+      "User-Agent": ORCA_UA,
       "Accept-Encoding": "gzip, deflate",
       "Content-Type": "application/x-www-form-urlencoded",
       "x-fb-request-analytics-tags":
@@ -422,42 +895,8 @@ async function handle2Fa(actionString: string, twoFaSecret: string): Promise<Log
   return await verify2FaCode(twoFaCode, twoFaContext);
 }
 
-function base32Decode(secret: string): Buffer {
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-  const cleaned = secret.replace(/\s+/g, "").toUpperCase();
-  let bits = "";
-  for (const char of cleaned) {
-    const val = alphabet.indexOf(char);
-    if (val === -1) continue;
-    bits += val.toString(2).padStart(5, "0");
-  }
-  const bytes: number[] = [];
-  for (let i = 0; i + 8 <= bits.length; i += 8) {
-    bytes.push(Number.parseInt(bits.slice(i, i + 8), 2));
-  }
-  return Buffer.from(bytes);
-}
-
 function generateTwoFactorCode(twoFaSecret: string): string {
-  try {
-    const key = base32Decode(twoFaSecret);
-    const step = 30;
-    const counter = Math.floor(Date.now() / 1000 / step);
-    const buf = Buffer.alloc(8);
-    buf.writeUInt32BE(Math.floor(counter / 0x100000000), 0);
-    buf.writeUInt32BE(counter % 0x100000000, 4);
-    const hmac = crypto.createHmac("sha1", key).update(buf).digest();
-    const offset = hmac[hmac.length - 1] & 0x0f;
-    const codeInt =
-      ((hmac[offset] & 0x7f) << 24) |
-      ((hmac[offset + 1] & 0xff) << 16) |
-      ((hmac[offset + 2] & 0xff) << 8) |
-      (hmac[offset + 3] & 0xff);
-    return String(codeInt % 1_000_000).padStart(6, "0");
-  } catch (err) {
-    console.log(`❌ Lỗi tạo mã 2FA: ${String(err)}`);
-    return "";
-  }
+  return totpFromBase32(twoFaSecret);
 }
 
 function extractTwoFaContext(actionString: string): string {

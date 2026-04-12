@@ -26,7 +26,7 @@ const hashCommand: Command = {
   cd: 3,
   prefix: true,
   async onCall(ctx: CommandOnCallContext): Promise<void> {
-    const { event, args, reply } = ctx;
+    const { args, reply } = ctx;
 
     try {
       if (!args[0]) {

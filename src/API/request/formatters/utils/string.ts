@@ -1,4 +1,4 @@
-export function cleanXssi(t: any): string {
+export function cleanXssi(t: unknown): string {
   if (t == null) return "";
   let s = String(t);
   s = s.replace(/^[\uFEFF\xEF\xBB\xBF]+/, "");
@@ -7,7 +7,7 @@ export function cleanXssi(t: any): string {
   return s;
 }
 
-export function makeParsable(html: any): string {
+export function makeParsable(html: unknown): string {
   const raw = cleanXssi(String(html || ""));
   const split = raw.split(/\}\r?\n\s*\{/);
   if (split.length === 1) return raw;

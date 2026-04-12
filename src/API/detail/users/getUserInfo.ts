@@ -48,7 +48,7 @@ function formatUserData(actors: any[]): Record<string, UserInfo> {
   return result;
 }
 
-function buildForm(ctx: Context, queriesJson: string): any {
+function buildForm(_ctx: Context, queriesJson: string): any {
   const form: any = {
     batch_name: "MessengerParticipantsFetcher",
     queries: queriesJson,
@@ -60,7 +60,7 @@ function buildForm(ctx: Context, queriesJson: string): any {
 
 export default function getUserInfoGraphQL(
   defaultFuncs: DefaultFuncs,
-  client: any,
+  _client: any,
   ctx: Context
 ): (idOrIds: string | string[], callback?: (err: any, data?: Record<string, UserInfo>) => void) => Promise<Record<string, UserInfo>> {
   return function getUserInfo(idOrIds: string | string[], callback?: (err: any, data?: Record<string, UserInfo>) => void): Promise<Record<string, UserInfo>> {

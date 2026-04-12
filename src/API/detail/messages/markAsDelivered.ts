@@ -5,8 +5,8 @@ interface MarkAsDeliveredCallback {
 }
 
 export default function (
-  defaultFuncs: DefaultFuncs,
-  client: any,
+  _defaultFuncs: DefaultFuncs,
+  _client: unknown,
   ctx: MQTTContext
 ): (
   threadID: string | number,
@@ -15,7 +15,7 @@ export default function (
 ) => Promise<Error | void> {
   return async function markAsDelivered(
     threadID: string | number,
-    messageID: string,
+    _messageID: string,
     callback: MarkAsDeliveredCallback = () => { }
   ): Promise<Error | void> {
     try {

@@ -1,6 +1,6 @@
 import fs from "fs-extra";
 import path from "path";
-import type { Bot, Logger, ThreadDataStore, Config } from "../types";
+import type { Logger, ThreadDataStore, Config } from "../types";
 import { slp, remDays, nicknameFor } from "../utils";
 import type { FacebookClient } from "../../../../types/client";
 import { RENT_JSON_PATH } from "../../../storagePath";

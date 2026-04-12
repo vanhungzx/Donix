@@ -33,6 +33,7 @@ export function createAutoReconnectTimer(options: AutoReconnectOptions): AutoRec
   let reconnectTimer: NodeJS.Timeout | null = null;
   let configWatcher: NodeJS.Timeout | null = null;
   let mqttEmitter: any = null;
+  let isPeriodicRestartRunning = false;
 
   const getCurrentEmitter = () => {
     if (getEmitter) {
@@ -47,6 +48,8 @@ export function createAutoReconnectTimer(options: AutoReconnectOptions): AutoRec
     }
     mqttEmitter = emitter;
   };
+
+  const getClientCtx = () => client?.ctx;
 
   // Khoảng thời gian tối thiểu (ms) giữa các lần reconnect
   const MIN_RECONNECT_INTERVAL = 10 * 60 * 1000; // 10 phút
@@ -70,6 +73,17 @@ export function createAutoReconnectTimer(options: AutoReconnectOptions): AutoRec
     }
 
     reconnectTimer = setInterval(async () => {
+      const clientCtx = getClientCtx();
+      if (clientCtx?.isReconnecting) {
+        log.info("Bỏ qua reconnect listenMqtt định kỳ vì MQTT đang reconnect nội bộ.");
+        return;
+      }
+
+      if (isPeriodicRestartRunning) {
+        return;
+      }
+
+      isPeriodicRestartRunning = true;
       try {
         log.warn(`Đang tiến hành reconnect listenMqtt định kỳ...`);
 
@@ -89,33 +103,16 @@ export function createAutoReconnectTimer(options: AutoReconnectOptions): AutoRec
           }
         }
 
-        // Force cleanup MQTT client cũ để tránh kết nối zombie
-        const ctx = (client as any).ctx || (client as any)._ctx;
-        if (ctx) {
-          if (ctx.mqttClient) {
-            try {
-              ctx.mqttClient.removeAllListeners();
-              ctx.mqttClient.end(true);
-            } catch {
-              // ignore
-            }
-            ctx.mqttClient = undefined;
-          }
-          // Reset sync state - BẮT BUỘC lấy seqID mới khi reconnect
-          ctx.syncToken = undefined;
-          ctx.lastSeqId = undefined;
-          ctx.t_mqttCalled = false;
-          delete ctx.tmsWait;
-        }
-
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         const newEmitter = client.listenMqtt(messageHandler);
         updateEmitter(newEmitter);
 
-        log.success("Đã reconnect listenMqtt định kỳ thành công (seqID sẽ được lấy mới)");
+        log.info("Đã khởi động lại listenMqtt, đang chờ /t_ms...");
       } catch (reconnectError: any) {
         log.error(`Lỗi khi reconnect listenMqtt: ${formatError(reconnectError)}`);
+      } finally {
+        isPeriodicRestartRunning = false;
       }
     }, interval);
 

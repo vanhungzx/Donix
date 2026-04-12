@@ -1,4 +1,4 @@
-import type { Command, CommandOnCallContext } from '@types';
+import type { Command, CommandOnCallContext } from "@types";
 import { promises as dns } from "node:dns";
 import https from "node:https";
 import os from "node:os";
@@ -35,9 +35,12 @@ const uptCommand: Command = {
         const isConnected = global.mqttClient.connected === true;
         const isDisconnected = global.mqttClient.disconnected === true;
         const isReconnecting = global.mqttClient.reconnecting === true;
+        const isReady = global.mqttClient._donixReady === true;
 
-        if (isConnected) {
+        if (isConnected && isReady) {
           botStatus = "Ổn định";
+        } else if (isConnected) {
+          botStatus = "Đã mở kết nối, chờ /t_ms";
         } else if (isReconnecting) {
           botStatus = "Đang kết nối lại";
         } else if (isDisconnected) {
@@ -48,7 +51,7 @@ const uptCommand: Command = {
       } else {
         botStatus = "Chưa khởi tạo";
       }
-    } catch (error: any) {
+    } catch {
       botStatus = "Lỗi kiểm tra";
     }
 
@@ -59,16 +62,18 @@ const uptCommand: Command = {
       const d = Date.now();
       await dns.lookup("google.com");
       dnsPing = Date.now() - d;
-    } catch {}
+    } catch {
+      // ignore dns errors
+    }
 
     try {
-      const h1 = Date.now();
+      const startedAt = Date.now();
 
       await new Promise<void>((resolve) => {
         const req = https.get("https://www.google.com", (res) => {
-          res.on("data", () => {});
+          res.on("data", () => { });
           res.on("end", () => {
-            ping = Date.now() - h1;
+            ping = Date.now() - startedAt;
             resolve();
           });
         });
@@ -86,7 +91,6 @@ const uptCommand: Command = {
 
         req.setTimeout(5000);
       });
-
     } catch {
       ping = "N/A";
     }

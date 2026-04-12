@@ -334,7 +334,7 @@ async function reactViaGraphql(
 
     const cfg = getConfig() as any;
     const cookieRaw = typeof cfg?.cookie === "string" ? cfg.cookie : "";
-    if (!cookieRaw) return { ok: false, error: "missing config.cookie" };
+    if (!cookieRaw) return { ok: false, error: "missing session cookie (cookie.txt / config)" };
 
     const ctxAny = (client as any)?.ctx as
       | { fb_dtsg?: string; jazoest?: string; lsd?: string }
@@ -444,7 +444,7 @@ async function createCommentViaGraphql(
 
     const cfg = getConfig() as any;
     const cookieRaw = typeof cfg?.cookie === "string" ? cfg.cookie : "";
-    if (!cookieRaw) return { ok: false, error: "missing config.cookie" };
+    if (!cookieRaw) return { ok: false, error: "missing session cookie (cookie.txt / config)" };
 
     const ctxAny = (client as any)?.ctx as
       | { fb_dtsg?: string; jazoest?: string; lsd?: string }

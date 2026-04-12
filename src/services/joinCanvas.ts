@@ -530,7 +530,7 @@ class CyberpunkInterface {
     return this.canvas;
   }
 
-  getBuffer(format: "image/png" | "image/jpeg" | "image/webp" = "image/png") {
+  getBuffer(_format: "image/png" | "image/jpeg" | "image/webp" = "image/png") {
     return this.canvas.toBuffer((err: any, result: Buffer<ArrayBufferLike>) => {
       if (err) {
         throw err;

@@ -1,8 +1,6 @@
 "use strict";
 
 import type { Command, CommandOnCallContext, CommandOnReplyContext, FacebookClient } from "@types";
-import fs from "fs";
-import path from "path";
 import { stream } from "../../../utils/index";
 const postVideoCommand: Command = {
   name: "postvideo",

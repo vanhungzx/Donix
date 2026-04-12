@@ -1,0 +1,21 @@
+{
+  "summary": "",
+  "history": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "gemini"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "I am Gemini, a large language model, trained by Google."
+        }
+      ]
+    }
+  ]
+}

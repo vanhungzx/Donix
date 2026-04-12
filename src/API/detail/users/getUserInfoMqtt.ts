@@ -1,6 +1,5 @@
 "use strict";
 
-import fs from "node:fs";
 import type { MQTTContext } from "@types";
 import { generateOfflineThreadingID, getType } from "../../request/formatters";
 
@@ -239,16 +238,6 @@ export default function (
       if (json.request_id !== reqID) return;
 
       ctx.mqttClient?.removeListener("message", handleResponse);
-
-      try {
-        const payloadString = JSON.stringify(
-          (json.payload as { step?: unknown })?.step,
-          null,
-          2
-        );
-      } catch {
-        
-      }
 
       const profile = parseContactProfile(json.payload, contactId);
       if (!profile) {

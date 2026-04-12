@@ -42,8 +42,8 @@ type SetThreadNameCallback = (
 ) => void;
 
 export default function (
-  defaultFuncs: DefaultFuncs,
-  api: any,
+  _defaultFuncs: DefaultFuncs,
+  _api: any,
   ctx: MQTTContext
 ): (
   newTitle: string,

@@ -1,7 +1,7 @@
 "use strict";
 
 interface NodeRequire {
-  cache: NodeJS.RequireCache;
+  cache: Record<string, NodeModule>;
 }
 
 declare const require: NodeRequire;

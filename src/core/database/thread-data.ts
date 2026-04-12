@@ -474,10 +474,8 @@ class ThreadDataModel {
   async getAllMessageCount(): Promise<Array<{ threadID: string; messageCount: any }>> {
     try {
       const db = getDbPromisified();
-      // Chỉ select threads có messageCount và giới hạn số lượng
-      const rows = await db.all(
-        "SELECT threadID, messageCount FROM Thread WHERE messageCount IS NOT NULL LIMIT 1000"
-      ) as any[];
+      // Toàn bộ nhóm trong DB (kể cả chưa có messageCount) — LIMIT 1000 + IS NOT NULL từng khiến Top 00h bỏ sót nhóm.
+      const rows = await db.all("SELECT threadID, messageCount FROM Thread") as any[];
       return rows.map((r: any) => ({
         threadID: String(r.threadID),
         messageCount: r.messageCount ? parseMaybeJSON(r.messageCount) : {

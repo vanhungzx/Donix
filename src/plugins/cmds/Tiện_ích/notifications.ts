@@ -42,7 +42,7 @@ const notificationsCommand: Command = {
   cd: 10,
   prefix: true,
   async onCall(ctx: CommandOnCallContext): Promise<void> {
-    const { client, event, args, reply } = ctx;
+    const { client, args, reply } = ctx;
 
     try {
       const firstArg = (args[0] || "").toString().toLowerCase();

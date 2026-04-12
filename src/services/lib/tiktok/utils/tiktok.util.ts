@@ -10,7 +10,6 @@ import type {
   TikTokStats,
   TikTokAwemeType
 } from '../types/index.js'
-import fs from 'fs';
 
 const getHighestQualityVideoUri = (bitRateArr: TikTokBitRate[]): string => {
   if (!Array.isArray(bitRateArr) || bitRateArr.length === 0) return ''

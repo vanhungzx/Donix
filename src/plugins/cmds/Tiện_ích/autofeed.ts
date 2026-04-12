@@ -1,6 +1,5 @@
 import type { Command, CommandOnCallContext } from "@types";
 import fs from "fs-extra";
-import path from "node:path";
 import { FEED_STATE_PATH } from "../../../core/storagePath";
 import { getConfig, updateConfigKey } from "../../../core/configManager";
 

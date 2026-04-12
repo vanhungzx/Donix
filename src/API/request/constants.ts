@@ -197,9 +197,7 @@ const arrayToObject = <T, K extends string, V>(
     return acc;
   }, {} as Record<K, V>);
 
-const arrToForm = <
-  T extends { name: string; val: any }
->(form: T[]): Record<string, any> =>
+const arrToForm = <T extends { name: string; val: unknown }>(form: T[]): Record<string, unknown> =>
   arrayToObject(
     form,
     (v) => v.name,
@@ -214,7 +212,7 @@ const generateTimestampRelative = (): string => {
   return `${d.getHours()}:${padZeros(d.getMinutes())}`;
 };
 
-const getType = (obj: any): string =>
+const getType = (obj: unknown): string =>
   Object.prototype.toString.call(obj).slice(8, -1);
 
 const constants = {

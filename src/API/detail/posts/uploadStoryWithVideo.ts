@@ -5,7 +5,7 @@ import { Readable } from "node:stream";
 import logger from "@log";
 import type { Context } from "@types";
 import { v4 as uuidv4 } from "uuid";
-import { parseAndCheckLogin, type DefaultFuncs } from "../../request/formatters/helpers";
+import { type DefaultFuncs } from "../../request/formatters/helpers";
 
 interface UploadStoryWithVideoOptions {
   videoPath: string | Buffer | Readable;
@@ -23,7 +23,7 @@ interface UploadStoryWithVideoResult {
 type UploadStoryWithVideoCallback = (err: Error | null, data?: UploadStoryWithVideoResult) => void;
 
 export default function (
-  defaultFuncs: DefaultFuncs,
+  _defaultFuncs: DefaultFuncs,
   api: any,
   ctx: Context
 ): (options: UploadStoryWithVideoOptions | UploadStoryWithVideoCallback, callback?: UploadStoryWithVideoCallback) => Promise<UploadStoryWithVideoResult> {

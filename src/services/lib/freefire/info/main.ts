@@ -240,7 +240,7 @@ export async function getAccountInformation(
   region: string,
   endpoint: string,
   root: protobuf.Root,
-  useCache: boolean = false
+  _useCache: boolean = false
 ): Promise<any> {
   const r = region.toUpperCase();
   if (!SUPPORTED_REGIONS.has(r)) {

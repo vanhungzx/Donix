@@ -24,13 +24,6 @@ interface GetStoryMusicListResult {
   cursor: string | null;
 }
 
-interface GetStoryMusicListOptions {
-  limit?: number;
-  cursor?: string | null;
-  searchText?: string;
-  getAll?: boolean;
-}
-
 function tempRoot(): string {
   const p = TEMP_DIR();
   if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });

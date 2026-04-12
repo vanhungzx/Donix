@@ -13,7 +13,7 @@ const CHANGE_THREAD_EMOJI = {
 
 const CONSTANTS = {
   MQTT_TOPIC: "/ls_req",
-  MQTT_QOS: 1
+  MQTT_QOS: 1 as const
 };
 
 const mqttOk = (ctx: MQTTContext): boolean => {

@@ -65,6 +65,26 @@ const formatTime = (timestamp?: number): string => {
   return moment(timestamp).tz(TZ).format("HH:mm:ss | DD/MM/YYYY");
 };
 
+/** joinedThreads lưu Date → JSON thành chuỗi ISO; parseInt chỉ đọc 2026 → ms gần epoch 1970. */
+const parseJoinedAtMs = (raw: unknown): number => {
+  const fallback = Date.now();
+  if (raw == null || raw === "") return fallback;
+  if (typeof raw === "number") {
+    return Number.isFinite(raw) && raw > 0 ? raw : fallback;
+  }
+  if (typeof raw === "string") {
+    const s = raw.trim();
+    if (!s) return fallback;
+    if (/^\d+$/.test(s)) {
+      const n = Number(s);
+      return Number.isFinite(n) && n > 0 ? n : fallback;
+    }
+    const t = Date.parse(s);
+    return Number.isNaN(t) ? fallback : t;
+  }
+  return fallback;
+};
+
 const mapSectionArg = (input?: string): { key: SectionKey; label: string } => {
   if (!input) return { key: "total", label: SECTION_LABEL.total };
   const value = input.toLowerCase();
@@ -893,12 +913,7 @@ const checkCommand = {
           }
 
           const joinedRaw = userStore?.joinedThreads?.[threadID];
-          const joinedAt =
-            typeof joinedRaw === "number"
-              ? joinedRaw
-              : typeof joinedRaw === "string"
-                ? Number.parseInt(joinedRaw, 10) || Date.now()
-                : Date.now();
+          const joinedAt = parseJoinedAtMs(joinedRaw);
           const joinMoment = moment.tz(joinedAt, TZ);
           const now = moment.tz(TZ);
           const diff = {

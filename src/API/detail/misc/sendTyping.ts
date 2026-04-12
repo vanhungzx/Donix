@@ -36,8 +36,8 @@ interface TypingRequestForm {
 type SendTypingCallback = (error: Error | null, result?: boolean) => void;
 
 export default function (
-  defaultFuncs: DefaultFuncs,
-  client: any,
+  _defaultFuncs: DefaultFuncs,
+  _client: any,
   ctx: MQTTContext
 ): (
   threadID: string | number | (string | number)[],

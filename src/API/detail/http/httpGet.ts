@@ -40,6 +40,12 @@ export default function httpGetFactory(
 
     const normalizedForm: Record<string, unknown> =
       form && typeof form === "object" ? (form as Record<string, unknown>) : {};
+    const qsForDefault = Object.keys(normalizedForm).length
+      ? (normalizedForm as Record<
+          string,
+          string | number | boolean | null | undefined
+        >)
+      : null;
 
     const cb: HttpGetCallback =
       callback ||
@@ -52,7 +58,7 @@ export default function httpGetFactory(
       defaultFuncs.get(
         url,
         ctx.jar,
-        Object.keys(normalizedForm).length ? normalizedForm : null,
+        qsForDefault,
         ctx
       );
 

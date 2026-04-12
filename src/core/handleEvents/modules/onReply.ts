@@ -1,4 +1,4 @@
-import type { Command, CommandContextBase, CommandMessenger, CommandOnReplyContext, EditMessenger, ExtendedMessageEvent, MessageForm, ReplyData, UnsendMessenger } from "@types";
+import type { CommandContextBase, CommandMessenger, CommandOnReplyContext, EditMessenger, ExtendedMessageEvent, MessageForm, ReplyData, UnsendMessenger } from "@types";
 import { checkAdminBox } from "../../../utils/admin";
 import { checkBanned } from "../../../utils/banned";
 import { rent } from "../../../utils/rent";
@@ -31,6 +31,19 @@ export const createOnReply =
       ]);
 
       if (r1 || r2 || r3) return;
+
+      const cfgAny = config as Record<string, unknown>;
+      if (cfgAny.botInteractionEnabled === false) {
+        const OWNER = config.OWNER;
+        const ADMIN = config.ADMIN;
+        const adminListRp: string[] = Array.isArray(ADMIN)
+          ? ADMIN.map((id) => String(id))
+          : ADMIN != null
+            ? [String(ADMIN)]
+            : [];
+        const isOwnerRp = Array.isArray(OWNER) ? OWNER.includes(sid) : String(OWNER) === sid;
+        if (!isOwnerRp && !adminListRp.includes(sid)) return;
+      }
 
       const Rep = main.onReply.get(replyMessageID);
       if (!Rep || typeof Rep === "function" || !Rep.commandName) return;

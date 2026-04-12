@@ -209,7 +209,7 @@ export default function (
 
     // Try uploadFb first
     try {
-      const uploadFb = uploadFbFactory(defaultFuncs, undefined, ctx);
+      const uploadFb = uploadFbFactory(defaultFuncs, client, ctx);
       const result = await uploadFb(files, { mode: "parallel", concurrency: 3 });
 
       if (result && result.ids && Array.isArray(result.ids) && result.ids.length > 0) {

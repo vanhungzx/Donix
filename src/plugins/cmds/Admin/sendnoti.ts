@@ -36,6 +36,7 @@ interface SendNotiReply {
   threadID: string;
   messID?: string;
   originalSender?: string;
+  adminGroupID?: string;
 }
 
 interface MessageInfo {
@@ -161,16 +162,17 @@ const sendNotiCommand: Command = {
     const { threadID, messageID, senderID, body } = event;
 
     const ADMIN_GROUP_ID = config.BOX_ADMIN;
+    const targetAdminGroupID = Reply.adminGroupID || ADMIN_GROUP_ID;
 
     try {
       // Keep reply flow direction stable:
       // - "sendnoti": user/group -> admin box
       // - "reply": admin box -> original group
       if (Reply.type === "sendnoti") {
-        if (String(threadID) === String(ADMIN_GROUP_ID)) return;
+        if (Reply.threadID && String(threadID) !== String(Reply.threadID)) return;
         if (Reply.originalSender && String(senderID) !== String(Reply.originalSender)) return;
       }
-      if (Reply.type === "reply" && String(threadID) !== String(ADMIN_GROUP_ID)) return;
+      if (Reply.type === "reply" && String(threadID) !== String(targetAdminGroupID)) return;
 
       const name = (await userData.getName(senderID)) || "Người dùng";
       const thread = await threadData.get(threadID);
@@ -187,7 +189,7 @@ const sendNotiCommand: Command = {
             : { body: text }) as MessageForm;
 
           await new Promise<void>((resolve) => {
-            client.sendMessage(msgData, ADMIN_GROUP_ID, async (err?: Error, infoMsg?: MessageInfo) => {
+            client.sendMessage(msgData, targetAdminGroupID, async (err?: Error, infoMsg?: MessageInfo) => {
               try {
                 for (const p of atmDir) if (fs.existsSync(p)) await fs.promises.unlink(p);
               } catch {
@@ -204,6 +206,7 @@ const sendNotiCommand: Command = {
                   messID: messageID,
                   threadID,
                   originalSender: senderID,
+                  adminGroupID: targetAdminGroupID,
                 });
               }
 

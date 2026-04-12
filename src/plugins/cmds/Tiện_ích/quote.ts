@@ -55,8 +55,6 @@ const builtInQuotes: Record<string, string[]> = {
   ]
 };
 
-
-import path from "path";
 import { storagePath } from "../../../core/storagePath";
 
 const quoteStoragePath = storagePath("other", "daily_quotes.json");

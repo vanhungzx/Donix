@@ -79,8 +79,14 @@ export function createRefreshDataHandler(params: RefreshDataHandlerOptions) {
             break;
           }
 
+          // Graph/Messenger gửi admin_event / target_id (snake_case); bản cũ dùng ADMIN_EVENT / TARGET_ID
+          const adminEvent = String(
+            logMessageData.ADMIN_EVENT ?? logMessageData.admin_event ?? ""
+          ).toLowerCase();
           const add =
-            logMessageData.ADMIN_EVENT === "add_admin" || logMessageData.action === "add";
+            adminEvent === "add_admin" ||
+            adminEvent === "add" ||
+            logMessageData.action === "add";
           const target = String(
             logMessageData.TARGET_ID ||
             logMessageData.target_id ||
@@ -174,8 +180,24 @@ export function createRefreshDataHandler(params: RefreshDataHandlerOptions) {
           const name = (await userData.getName(uid)) || uid;
 
           if (uid === String(client.id)) {
-            await threadData.del(threadID);
-            logger.success(`Bot rời nhóm ${info.threadName || threadID}, đã xoá dữ liệu`);
+            const label = info.threadName || threadID;
+            try {
+              await threadData.update(threadID, {
+                threadName: null,
+                threadInfo: null,
+                banned: null,
+                settings: null,
+                data: null,
+                lastActive: null,
+              } as Record<string, unknown>);
+              logger.success(
+                `Bot rời nhóm ${label}, đã xoá dữ liệu nhóm, giữ thống kê tương tác (xoá tt bằng check reset)`
+              );
+            } catch (e: any) {
+              logger.error(
+                `Bot rời nhóm ${label}, lỗi khi xoá dữ liệu nhóm (tương tác vẫn giữ trong DB): ${e?.message || e}`
+              );
+            }
             return;
           }
 

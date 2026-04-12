@@ -1,6 +1,7 @@
 "use strict";
 import FormData from "form-data";
 import got from "got";
+import type { Options } from "got";
 import { CookieJar } from "tough-cookie";
 
 import HttpsProxyAgent from "https-proxy-agent";
@@ -10,31 +11,128 @@ import http from "http";
 import HttpProxyAgent from "http-proxy-agent";
 import https from "https";
 import path from "path";
+import type { Readable as NodeReadable } from "stream";
 import zlib from "zlib";
+import type { Context, GlobalOptions } from "../../types/request.js";
 import { getType } from "./constants.js";
 import { getHeaders } from "./headers.js";
+import { gateRequest } from "./requestGuard.js";
 
 type JarLike = CookieJar & { cookieString?: () => string };
 
+/** Options từ login + tùy chọn từng request (vd. customHeader) */
+type NetworkOptions = GlobalOptions & { customHeader?: Record<string, string> };
+
+export type FormRecord = Record<string, string | number | boolean | null | undefined>;
+
+/** Body POST (có thể có mảng giống client FB) */
+export type PostBodyRecord = Record<string, unknown>;
+
+/** got.stream.* yêu cầu isStream (theo typings của got 11). */
+type GotStreamOptions = Options & { isStream: true };
+
+type ProxyAgentCtor = new (uri: string, opts?: Record<string, unknown>) => unknown;
+
+interface FormDataFilePart {
+  value?: string | Buffer | NodeJS.ReadableStream;
+  data?: string | Buffer | NodeJS.ReadableStream;
+  filename?: string;
+  contentType?: string;
+}
+
+type FormDataAppendOptions = { filename?: string; contentType?: string };
+
+interface StreamResponseMeta {
+  url?: string;
+  requestUrl?: string;
+  statusCode?: number;
+  statusMessage?: string;
+  headers?: Record<string, string | string[] | undefined>;
+  httpVersion?: string;
+  socket?: { remoteAddress?: string; remotePort?: number };
+}
+
+interface RequestMeta {
+  url?: string;
+  method?: string;
+  headers?: Record<string, string>;
+  params?: unknown;
+  data?: unknown;
+  responseType?: string;
+  timeout?: number;
+}
+
+export interface FbGotResponse {
+  data: unknown;
+  status: number | undefined;
+  statusText: string;
+  headers: Record<string, string | string[] | undefined>;
+  config: Record<string, unknown>;
+  request: Record<string, unknown>;
+  url: string | undefined;
+  body: unknown;
+  statusCode: number | undefined;
+}
+
+interface AxiosCompatibleError extends Error {
+  name: string;
+  code?: string;
+  config: Record<string, unknown>;
+  isAxiosError: boolean;
+  response?: FbGotResponse;
+  toJSON: () => {
+    message: string;
+    name: string;
+    code?: string | undefined;
+    config: Record<string, unknown>;
+    status: number | undefined;
+  };
+}
+
+function errorMessageFromUnknown(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  return String(err);
+}
+
+function errorCodeFromUnknown(err: unknown): string | undefined {
+  if (err !== null && typeof err === "object" && "code" in err) {
+    const c = (err as { code?: unknown }).code;
+    return typeof c === "string" ? c : undefined;
+  }
+  return undefined;
+}
+
+function errResponse429(
+  err: unknown
+): { retryAfter: number; headers?: Record<string, string | string[] | undefined> } | null {
+  if (err === null || typeof err !== "object" || !("response" in err)) return null;
+  const r = (err as { response?: { statusCode?: number; headers?: Record<string, string | string[] | undefined> } })
+    .response;
+  if (r?.statusCode !== 429) return null;
+  const ra = r.headers?.["retry-after"];
+  const retryAfter = parseInt(Array.isArray(ra) ? ra[0] : ra || "0", 10);
+  return { retryAfter, headers: r.headers };
+}
+
 const defaultJar = new CookieJar();
-let proxyAgents: { http?: any; https?: any } = {};
+let proxyAgents: { http?: http.Agent; https?: https.Agent } = {};
 
 const httpAgent = new http.Agent({
   keepAlive: true,
   keepAliveMsecs: 30000,
-  maxSockets: 50,
+  maxSockets: 32,
   maxFreeSockets: 10,
   timeout: 60000,
-  scheduling: 'fifo' as any,
+  scheduling: "fifo",
 });
 
 const httpsAgent = new https.Agent({
   keepAlive: true,
   keepAliveMsecs: 30000,
-  maxSockets: 50,
+  maxSockets: 32,
   maxFreeSockets: 10,
   timeout: 60000,
-  scheduling: 'fifo' as any,
+  scheduling: "fifo",
 
   // Browser-like TLS cipher suite order (Chrome/Edge)
   ciphers: [
@@ -65,21 +163,30 @@ const httpsAgent = new https.Agent({
 
 const delay = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
-// Request throttling to mimic human behavior and avoid 429 errors
+// Giãn cách + jitter: đủ để không dồn burst kiểu bot, vẫn cho nhiều nhóm qua nhanh.
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 50; // Minimum 50ms between requests
-const MAX_REQUEST_INTERVAL = 200; // Maximum 200ms between requests for GraphQL
+const MIN_REQUEST_INTERVAL = 130;
+const MAX_REQUEST_INTERVAL = 480;
+const MIN_GRAPHQL_INTERVAL = 300;
+const MAX_GRAPHQL_INTERVAL = 1050;
 
 async function throttleRequest(isGraphQL = false): Promise<void> {
   const now = Date.now();
   const timeSinceLastRequest = now - lastRequestTime;
-  const minInterval = isGraphQL ? MAX_REQUEST_INTERVAL : MIN_REQUEST_INTERVAL;
-  const maxInterval = isGraphQL ? MAX_REQUEST_INTERVAL * 2 : MAX_REQUEST_INTERVAL;
+  const minInterval = isGraphQL ? MIN_GRAPHQL_INTERVAL : MIN_REQUEST_INTERVAL;
+  const maxInterval = isGraphQL ? MAX_GRAPHQL_INTERVAL : MAX_REQUEST_INTERVAL;
 
   if (timeSinceLastRequest < minInterval) {
-    // Add random delay to mimic human behavior
-    const randomDelay = Math.floor(Math.random() * (maxInterval - minInterval)) + minInterval - timeSinceLastRequest;
-    await delay(randomDelay);
+    const span = Math.max(1, maxInterval - minInterval);
+    const randomDelay =
+      minInterval + Math.floor(Math.random() * span) - timeSinceLastRequest;
+    if (randomDelay > 0) {
+      await delay(randomDelay);
+    }
+  }
+
+  if (Math.random() < 0.025) {
+    await delay(80 + Math.floor(Math.random() * 520));
   }
 
   lastRequestTime = Date.now();
@@ -118,36 +225,33 @@ function setProxy(proxyUrl?: string): void {
   }
   try {
     const u = new URL(proxyUrl);
-    const HttpAgent = HttpProxyAgent as any;
-    const HttpsAgent = HttpsProxyAgent as any;
-
+    const HttpCtor = HttpProxyAgent as unknown as ProxyAgentCtor;
+    const HttpsCtor = HttpsProxyAgent as unknown as ProxyAgentCtor;
+    const agentOpts = {
+      keepAlive: true,
+      keepAliveMsecs: 30000,
+      maxSockets: 32,
+      maxFreeSockets: 10,
+    };
     proxyAgents = {
-      http: new HttpAgent(u.toString(), {
-        keepAlive: true,
-        keepAliveMsecs: 30000,
-        maxSockets: 50,
-        maxFreeSockets: 10,
-      }),
-      https: new HttpsAgent(u.toString(), {
-        keepAlive: true,
-        keepAliveMsecs: 30000,
-        maxSockets: 50,
-        maxFreeSockets: 10,
-      }),
+      http: new HttpCtor(u.toString(), agentOpts) as http.Agent,
+      https: new HttpsCtor(u.toString(), agentOpts) as https.Agent,
     };
   } catch {
     proxyAgents = {};
   }
 }
 
-function baseConfig(extra: any = {}, jar?: JarLike): any {
-
+function baseConfig(
+  extra: Partial<GotStreamOptions> = {} as Partial<GotStreamOptions>,
+  jar?: JarLike
+): GotStreamOptions {
   const agent = proxyAgents.http || proxyAgents.https
     ? { http: proxyAgents.http, https: proxyAgents.https }
     : { http: httpAgent, https: httpsAgent };
 
   const defaultTimeout = 120000;
-  const timeout = extra.timeout || { request: defaultTimeout };
+  const timeout = extra.timeout ?? { request: defaultTimeout };
 
   return {
     cookieJar: jar || defaultJar,
@@ -155,7 +259,7 @@ function baseConfig(extra: any = {}, jar?: JarLike): any {
     followRedirect: true,
     maxRedirects: 20,
     http2: true,
-    timeout: typeof timeout === 'number' ? { request: timeout } : timeout,
+    timeout: typeof timeout === "number" ? { request: timeout } : timeout,
     decompress: true,
     agent,
     retry: {
@@ -165,10 +269,11 @@ function baseConfig(extra: any = {}, jar?: JarLike): any {
     dnsCache: true,
     lookup: undefined,
     ...extra,
-  };
+    isStream: true,
+  } as GotStreamOptions;
 }
 
-function buildAxiosConfig(meta?: any): any {
+function buildAxiosConfig(meta?: RequestMeta): Record<string, unknown> {
   const u = safeURL(meta?.url);
   return {
     url: meta?.url,
@@ -194,7 +299,11 @@ function safeURL(u?: string): URL | null {
   }
 }
 
-function buildAxiosRequestShape(finalUrl: string, resMeta?: any, meta?: any): any {
+function buildAxiosRequestShape(
+  finalUrl: string,
+  resMeta?: StreamResponseMeta | null,
+  meta?: RequestMeta
+): Record<string, unknown> {
   const u = safeURL(finalUrl) || safeURL(meta?.url);
   const reqRes = {
     responseUrl: finalUrl,
@@ -220,17 +329,20 @@ function buildAxiosRequestShape(finalUrl: string, resMeta?: any, meta?: any): an
   };
 }
 
-function normalizeFromStream(resMeta: any, raw: Buffer[] | null, meta?: any, asBuffer = false): any {
+function normalizeFromStream(
+  resMeta: StreamResponseMeta | null,
+  raw: Buffer[] | null,
+  meta?: RequestMeta,
+  asBuffer = false
+): FbGotResponse {
   let buf = raw && raw.length > 0 ? Buffer.concat(raw) : Buffer.alloc(0);
 
   if (raw && raw.length > 0) {
     raw.length = 0;
-
-    (raw as any) = null;
   }
 
-  const contentEncoding = resMeta?.headers?.["content-encoding"] ||
-    resMeta?.headers?.["Content-Encoding"];
+  const rawEnc = resMeta?.headers?.["content-encoding"] ?? resMeta?.headers?.["Content-Encoding"];
+  const contentEncoding = Array.isArray(rawEnc) ? rawEnc[0] : rawEnc;
 
   if (contentEncoding && buf.length > 0) {
     try {
@@ -268,15 +380,15 @@ function normalizeFromStream(resMeta: any, raw: Buffer[] | null, meta?: any, asB
     if (ct && (ct.includes("application/json") || ct.includes("text/json"))) {
 
       const trimmed = data.trim();
-      const firstChar = trimmed[0];
+      const firstChar = trimmed.length > 0 ? trimmed[0] : "";
 
       if (firstChar === "{" || firstChar === "[") {
         try {
           data = JSON.parse(trimmed);
-        } catch (parseErr: any) {
-
+        } catch (parseErr: unknown) {
           if (process.env.DEBUG_JSON_PARSE) {
-            console.warn(`JSON parse failed: ${parseErr?.message}, first 100 chars: ${trimmed.substring(0, 100)}`);
+            const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+            console.warn(`JSON parse failed: ${msg}, first 100 chars: ${trimmed.substring(0, 100)}`);
           }
         }
       } else {
@@ -287,7 +399,7 @@ function normalizeFromStream(resMeta: any, raw: Buffer[] | null, meta?: any, asB
       }
     }
   }
-  const finalUrl = resMeta?.url || resMeta?.requestUrl || meta?.url;
+  const finalUrl = resMeta?.url || resMeta?.requestUrl || meta?.url || "";
   const config = buildAxiosConfig(meta);
   const request = buildAxiosRequestShape(finalUrl, resMeta, meta);
   return {
@@ -303,10 +415,16 @@ function normalizeFromStream(resMeta: any, raw: Buffer[] | null, meta?: any, asB
   };
 }
 
-function wrapAxiosError(err: any, meta?: any, resMeta?: any, raw?: Buffer[], asBuffer = false): Error {
-  const ax = new Error(err?.message || "Network Error") as any;
+function wrapAxiosError(
+  err: unknown,
+  meta?: RequestMeta,
+  resMeta?: StreamResponseMeta | null,
+  raw?: Buffer[],
+  asBuffer = false
+): Error {
+  const ax = new Error(errorMessageFromUnknown(err)) as AxiosCompatibleError;
   ax.name = "AxiosError";
-  ax.code = err?.code;
+  ax.code = errorCodeFromUnknown(err);
   ax.config = buildAxiosConfig(meta);
   ax.isAxiosError = true;
   if (resMeta) ax.response = normalizeFromStream(resMeta, raw || [], meta, asBuffer);
@@ -320,21 +438,31 @@ function wrapAxiosError(err: any, meta?: any, resMeta?: any, raw?: Buffer[], asB
   return ax;
 }
 
+function openGotStream(method: string, url: string, cfg: GotStreamOptions): NodeReadable {
+  const m = method.toUpperCase();
+  if (m === "GET") return got.stream.get(url, cfg);
+  if (m === "POST") return got.stream.post(url, cfg);
+  if (m === "PUT") return got.stream.put(url, cfg);
+  if (m === "DELETE") return got.stream.delete(url, cfg);
+  if (m === "HEAD") return got.stream.head(url, cfg);
+  throw new Error(`Unsupported stream method: ${method}`);
+}
+
 function streamRequest(
   method: string,
   url: string,
-  cfg: any,
-  meta?: any,
+  cfg: GotStreamOptions,
+  meta?: RequestMeta,
   asBuffer = false
-): Promise<any> {
+): Promise<FbGotResponse> {
   return new Promise((resolve, reject) => {
-    const s = (got.stream as any)[method.toLowerCase()](url, cfg);
-    let resMeta: any = null;
+    const s = openGotStream(method, url, cfg);
+    let resMeta: StreamResponseMeta | null = null;
     const chunks: Buffer[] = [];
     const MAX_BYTES = 50 * 1024 * 1024;
     let totalSize = 0;
 
-    s.on("response", (res: any) => {
+    s.on("response", (res: StreamResponseMeta) => {
       resMeta = res;
 
       const contentLength = Number(res.headers?.["content-length"] || 0);
@@ -371,28 +499,32 @@ function streamRequest(
       chunks.push(chunk);
     });
 
-    s.on("error", (e: any) => reject(wrapAxiosError(e, meta, resMeta, chunks, asBuffer)));
+    s.on("error", (e: unknown) => reject(wrapAxiosError(e, meta, resMeta, chunks, asBuffer)));
     s.on("end", () => resolve(normalizeFromStream(resMeta, chunks, meta, asBuffer)));
   });
 }
 
-async function requestWithRetry<T>(fn: () => Promise<T>, retries = 0): Promise<T> {
+async function requestWithRetry<T>(fn: () => Promise<T>, retries = 2): Promise<T> {
   for (let i = 0; i <= retries; i++) {
     try {
       const result = await fn();
+      const res = result as { statusCode?: number; headers?: Record<string, string | string[] | undefined> };
       // Handle 429 rate limit errors with exponential backoff
-      if (result?.statusCode === 429) {
-        const retryAfter = parseInt(result.headers?.['retry-after'] || '0', 10) || Math.min(16000, 1000 * Math.pow(2, i));
+      if (res?.statusCode === 429) {
+        const ra = res.headers?.["retry-after"];
+        const retryAfter =
+          parseInt(Array.isArray(ra) ? ra[0] : ra || "0", 10) || Math.min(16000, 1000 * Math.pow(2, i));
         if (i < retries) {
           await delay(retryAfter);
           continue;
         }
       }
       return result;
-    } catch (err: any) {
-      // Check if it's a 429 error in the response
-      if (err?.response?.statusCode === 429 && i < retries) {
-        const retryAfter = parseInt(err.response?.headers?.['retry-after'] || '0', 10) || Math.min(16000, 1000 * Math.pow(2, i));
+    } catch (err: unknown) {
+      const r429 = errResponse429(err);
+      if (r429 && i < retries) {
+        const retryAfter =
+          r429.retryAfter || Math.min(16000, 1000 * Math.pow(2, i));
         await delay(retryAfter);
         continue;
       }
@@ -403,7 +535,7 @@ async function requestWithRetry<T>(fn: () => Promise<T>, retries = 0): Promise<T
   throw new Error("Request failed");
 }
 
-function cleanGet(url: string, jar?: JarLike): Promise<any> {
+function cleanGet(url: string, jar?: JarLike): Promise<FbGotResponse> {
   const meta = { url, method: "GET" };
   const cfg = baseConfig({}, jar);
   const fn = async () => streamRequest("GET", url, cfg, meta, false);
@@ -413,39 +545,51 @@ function cleanGet(url: string, jar?: JarLike): Promise<any> {
 function get(
   url: string,
   reqJar: JarLike,
-  qs?: Record<string, any> | null,
-  options?: Record<string, any>,
-  ctx?: any,
+  qs?: FormRecord | null,
+  options?: NetworkOptions | null,
+  ctx?: Context | null,
   customHeader?: Record<string, string>
-): Promise<any> {
+): Promise<FbGotResponse> {
   const isGraphQL = url.includes("/api/graphql/") || url.includes("/graphql");
-  const fn = async () => {
-    await throttleRequest(isGraphQL);
-    const headers = getHeaders(url, options, ctx, customHeader, "GET") || {};
-    const extra: any = { headers };
-    if (qs !== undefined && qs !== null) extra.searchParams = qs;
-    const cfg = baseConfig(extra, reqJar);
-    const meta = { url, method: "GET", headers, params: qs };
-    return streamRequest("GET", url, cfg, meta, false);
-  };
+  const fn = async () =>
+    gateRequest(ctx ?? undefined, url, "get", async () => {
+      await throttleRequest(isGraphQL);
+      const headers = getHeaders(url, options ?? undefined, ctx ?? undefined, customHeader, "GET") || {};
+      const extra: Partial<GotStreamOptions> = { headers };
+      if (qs !== undefined && qs !== null) extra.searchParams = qs;
+      const cfg = baseConfig(extra, reqJar);
+      const meta: RequestMeta = { url, method: "GET", headers, params: qs };
+      return streamRequest("GET", url, cfg, meta, false);
+    }, options ?? undefined);
   return requestWithRetry(fn);
 }
 
 function post(
   url: string,
   reqJar: JarLike,
-  form: Record<string, any> = {},
-  options?: Record<string, any>,
-  ctx?: any,
+  form: PostBodyRecord = {},
+  options?: NetworkOptions | null,
+  ctx?: Context | null,
   customHeader?: Record<string, string>
-): Promise<any> {
+): Promise<FbGotResponse> {
   const isGraphQL = url.includes("/api/graphql/") || url.includes("/graphql");
-  const fn = async () => {
-    await throttleRequest(isGraphQL);
-    const headers = getHeaders(url, options, ctx, customHeader, "POST") || {};
+  const fn = async () =>
+    gateRequest(ctx ?? undefined, url, "post", async () => {
+      await throttleRequest(isGraphQL);
+      const headers = getHeaders(url, options ?? undefined, ctx ?? undefined, customHeader, "POST") || {};
+      const lsdField = form.lsd;
+      if (
+        isGraphQL &&
+        typeof lsdField === "string" &&
+        lsdField &&
+        !headers["x-fb-lsd"] &&
+        !headers["X-Fb-Lsd"]
+      ) {
+        headers["x-fb-lsd"] = lsdField;
+      }
     let contentType =
       headers["Content-Type"] || headers["content-type"] || "application/x-www-form-urlencoded";
-    let body: any;
+    let body: string | null;
 
     if (/json/i.test(contentType)) {
       contentType = "application/json";
@@ -467,45 +611,54 @@ function post(
     }
 
     headers["Content-Type"] = contentType;
-    const cfg = baseConfig({ method: "POST", headers, body }, reqJar);
-    const meta = { url, method: "POST", headers, data: form };
+    const cfg = baseConfig(
+      { method: "POST", headers, body: body === null ? undefined : body },
+      reqJar
+    );
+    const meta: RequestMeta = { url, method: "POST", headers, data: form };
     return streamRequest("POST", url, cfg, meta, false);
-  };
+    }, options ?? undefined);
   return requestWithRetry(fn);
 }
 
 function postJSON(
   url: string,
   reqJar: JarLike,
-  jsonBody: any,
-  options?: Record<string, any>,
-  ctx?: any,
+  jsonBody: unknown,
+  options?: NetworkOptions | null,
+  ctx?: Context | null,
   customHeader?: Record<string, string>
-): Promise<any> {
+): Promise<FbGotResponse> {
   const isGraphQL = url.includes("/api/graphql/") || url.includes("/graphql");
-  const fn = async () => {
-    await throttleRequest(isGraphQL);
-    const headers = getHeaders(url, options, ctx, customHeader, "POST") || {};
-    headers["Content-Type"] = "application/json";
-    const body = jsonBody == null ? null : JSON.stringify(jsonBody);
-    const cfg = baseConfig({ method: "POST", headers, body }, reqJar);
-    const meta = { url, method: "POST", headers, data: jsonBody };
-    return streamRequest("POST", url, cfg, meta, false);
-  };
+  const fn = async () =>
+    gateRequest(ctx ?? undefined, url, "postJSON", async () => {
+      await throttleRequest(isGraphQL);
+      const headers = getHeaders(url, options ?? undefined, ctx ?? undefined, customHeader, "POST") || {};
+      headers["Content-Type"] = "application/json";
+      const body = jsonBody == null ? undefined : JSON.stringify(jsonBody);
+      const cfg = baseConfig({ method: "POST", headers, body }, reqJar);
+      const meta: RequestMeta = { url, method: "POST", headers, data: jsonBody };
+      return streamRequest("POST", url, cfg, meta, false);
+    }, options ?? undefined);
   return requestWithRetry(fn);
+}
+
+function isFormDataFilePart(v: unknown): v is FormDataFilePart {
+  return typeof v === "object" && v !== null && ("value" in v || "data" in v);
 }
 
 function postFormData(
   url: string,
   reqJar: JarLike,
-  form: Record<string, any> = {},
-  qs?: Record<string, any>,
-  options?: Record<string, any>,
-  ctx?: any
-): Promise<any> {
+  form: Record<string, unknown> = {},
+  qs?: FormRecord | null,
+  options?: NetworkOptions | null,
+  ctx?: Context | null
+): Promise<FbGotResponse> {
   const isGraphQL = url.includes("/api/graphql/") || url.includes("/graphql");
-  const fn = async () => {
-    await throttleRequest(isGraphQL);
+  const fn = async () =>
+    gateRequest(ctx ?? undefined, url, "postFormData", async () => {
+      await throttleRequest(isGraphQL);
     const fd = new FormData();
     for (const key in form || {}) {
       if (!Object.prototype.hasOwnProperty.call(form, key)) continue;
@@ -513,139 +666,158 @@ function postFormData(
       if (Array.isArray(val)) {
         for (const it of val) {
 
-          if (it && typeof it === "object" && (it.value !== undefined || it.data !== undefined)) {
+          if (isFormDataFilePart(it)) {
             const fileData = it.value !== undefined ? it.value : it.data;
-            const fileOptions: any = {};
+            const fileOptions: FormDataAppendOptions = {};
             if (it.filename) fileOptions.filename = it.filename;
             if (it.contentType) fileOptions.contentType = it.contentType;
-            fd.append(key, fileData, Object.keys(fileOptions).length > 0 ? fileOptions : undefined);
+            fd.append(
+              key,
+              fileData as string | Buffer,
+              Object.keys(fileOptions).length > 0 ? fileOptions : undefined
+            );
           } else {
-            fd.append(key, it);
+            fd.append(key, it as string | Buffer);
           }
         }
       } else {
 
-        if (val && typeof val === "object" && (val.value !== undefined || val.data !== undefined)) {
+        if (isFormDataFilePart(val)) {
           const fileData = val.value !== undefined ? val.value : val.data;
-          const fileOptions: any = {};
+          const fileOptions: FormDataAppendOptions = {};
           if (val.filename) fileOptions.filename = val.filename;
           if (val.contentType) fileOptions.contentType = val.contentType;
-          fd.append(key, fileData, Object.keys(fileOptions).length > 0 ? fileOptions : undefined);
+          fd.append(
+            key,
+            fileData as string | Buffer,
+            Object.keys(fileOptions).length > 0 ? fileOptions : undefined
+          );
         } else {
-          fd.append(key, val);
+          fd.append(key, val as string | Buffer);
         }
       }
     }
 
     const fdHeaders = fd.getHeaders();
-    // Extract customHeader from options if present
-    const customHeader = (options as any)?.customHeader;
-    const mergedHeaders = {
-      ...(getHeaders(url, options, ctx, fdHeaders, "POST") || {}),
-      ...fdHeaders,
+    const customHeader = options?.customHeader;
+    const fdAsStrings: Record<string, string> = Object.fromEntries(
+      Object.entries(fdHeaders).map(([k, v]) => [k, Array.isArray(v) ? v.join(", ") : String(v ?? "")])
+    );
+    const mergedHeaders: Record<string, string> = {
+      ...(getHeaders(url, options ?? undefined, ctx ?? undefined, fdAsStrings, "POST") || {}),
+      ...fdAsStrings,
       ...(customHeader || {}),
     };
 
-    const extra: any = { method: "POST", headers: mergedHeaders, body: fd };
+    const extra: Partial<GotStreamOptions> = { method: "POST", headers: mergedHeaders, body: fd };
     if (qs !== undefined && qs !== null) extra.searchParams = qs;
     const cfg = baseConfig(extra, reqJar);
-    const meta = { url, method: "POST", headers: mergedHeaders, params: qs, data: form };
+    const meta: RequestMeta = { url, method: "POST", headers: mergedHeaders, params: qs, data: form };
     return streamRequest("POST", url, cfg, meta, false);
-  };
+    }, options ?? undefined);
   return requestWithRetry(fn);
 }
 
 function head(
   url: string,
   reqJar: JarLike,
-  qs?: Record<string, any> | null,
-  options?: Record<string, any>,
-  ctx?: any,
+  qs?: FormRecord | null,
+  options?: NetworkOptions | null,
+  ctx?: Context | null,
   customHeader?: Record<string, string>
-): Promise<any> {
+): Promise<FbGotResponse> {
   const isGraphQL = url.includes("/api/graphql/") || url.includes("/graphql");
-  const fn = async () => {
-    await throttleRequest(isGraphQL);
-    const headers = getHeaders(url, options, ctx, customHeader, "HEAD") || {};
-    const extra: any = { method: "HEAD", headers };
-    if (qs !== undefined && qs !== null) extra.searchParams = qs;
-    const cfg = baseConfig(extra, reqJar);
-    const meta = { url, method: "HEAD", headers, params: qs };
-    return new Promise((resolve, reject) => {
-      const s = got.stream.head(url, cfg);
-      let resMeta: any = null;
-      s.on("response", (res: any) => (resMeta = res));
-      s.on("error", (e: any) => reject(wrapAxiosError(e, meta, resMeta)));
-      s.on("end", () => resolve(normalizeFromStream(resMeta, [], meta, false)));
-    });
-  };
+  const fn = async () =>
+    gateRequest(ctx ?? undefined, url, "head", async () => {
+      await throttleRequest(isGraphQL);
+      const headers = getHeaders(url, options ?? undefined, ctx ?? undefined, customHeader, "HEAD") || {};
+      const extra: Partial<GotStreamOptions> = { method: "HEAD", headers };
+      if (qs !== undefined && qs !== null) extra.searchParams = qs;
+      const cfg = baseConfig(extra, reqJar);
+      const meta: RequestMeta = { url, method: "HEAD", headers, params: qs };
+      return new Promise<FbGotResponse>((resolve, reject) => {
+        const s = got.stream.head(url, cfg);
+        let resMeta: StreamResponseMeta | null = null;
+        s.on("response", (res: StreamResponseMeta) => (resMeta = res));
+        s.on("error", (e: unknown) => reject(wrapAxiosError(e, meta, resMeta)));
+        s.on("end", () => resolve(normalizeFromStream(resMeta, [], meta, false)));
+      });
+    }, options ?? undefined);
   return requestWithRetry(fn);
 }
 
 function put(
   url: string,
   reqJar: JarLike,
-  bodyData: any,
-  options?: Record<string, any>,
-  ctx?: any,
+  bodyData: unknown,
+  options?: NetworkOptions | null,
+  ctx?: Context | null,
   customHeader?: Record<string, string>
-): Promise<any> {
+): Promise<FbGotResponse> {
   const isGraphQL = url.includes("/api/graphql/") || url.includes("/graphql");
-  const fn = async () => {
-    await throttleRequest(isGraphQL);
-    const headers = getHeaders(url, options, ctx, customHeader, "PUT") || {};
-    let body = bodyData;
-    if (getType(bodyData) === "Object") {
-      headers["Content-Type"] =
-        headers["Content-Type"] || headers["content-type"] || "application/json";
-      if (/json/i.test(headers["Content-Type"])) body = JSON.stringify(bodyData);
-    }
-    const cfg = baseConfig({ method: "PUT", headers, body }, reqJar);
-    const meta = { url, method: "PUT", headers, data: bodyData };
-    return streamRequest("PUT", url, cfg, meta, false);
-  };
+  const fn = async () =>
+    gateRequest(ctx ?? undefined, url, "put", async () => {
+      await throttleRequest(isGraphQL);
+      const headers = getHeaders(url, options ?? undefined, ctx ?? undefined, customHeader, "PUT") || {};
+      let body: unknown = bodyData;
+      if (getType(bodyData) === "Object") {
+        headers["Content-Type"] =
+          headers["Content-Type"] || headers["content-type"] || "application/json";
+        if (/json/i.test(headers["Content-Type"])) {
+          body = JSON.stringify(bodyData) as string;
+        }
+      }
+      const cfg = baseConfig(
+        { method: "PUT", headers, body: body as string | Buffer | NodeReadable },
+        reqJar
+      );
+      const meta: RequestMeta = { url, method: "PUT", headers, data: bodyData };
+      return streamRequest("PUT", url, cfg, meta, false);
+    }, options ?? undefined);
   return requestWithRetry(fn);
 }
 
 function del(
   url: string,
   reqJar: JarLike,
-  qs?: Record<string, any> | null,
-  options?: Record<string, any>,
-  ctx?: any,
+  qs?: FormRecord | null,
+  options?: NetworkOptions | null,
+  ctx?: Context | null,
   customHeader?: Record<string, string>
-): Promise<any> {
+): Promise<FbGotResponse> {
   const isGraphQL = url.includes("/api/graphql/") || url.includes("/graphql");
-  const fn = async () => {
-    await throttleRequest(isGraphQL);
-    const headers = getHeaders(url, options, ctx, customHeader, "DELETE") || {};
-    const extra: any = { method: "DELETE", headers };
-    if (qs !== undefined && qs !== null) extra.searchParams = qs;
-    const cfg = baseConfig(extra, reqJar);
-    const meta = { url, method: "DELETE", headers, params: qs };
-    return streamRequest("DELETE", url, cfg, meta, false);
-  };
+  const fn = async () =>
+    gateRequest(ctx ?? undefined, url, "delete", async () => {
+      await throttleRequest(isGraphQL);
+      const headers = getHeaders(url, options ?? undefined, ctx ?? undefined, customHeader, "DELETE") || {};
+      const extra: Partial<GotStreamOptions> = { method: "DELETE", headers };
+      if (qs !== undefined && qs !== null) extra.searchParams = qs;
+      const cfg = baseConfig(extra, reqJar);
+      const meta: RequestMeta = { url, method: "DELETE", headers, params: qs };
+      return streamRequest("DELETE", url, cfg, meta, false);
+    }, options ?? undefined);
   return requestWithRetry(fn);
 }
 
 function getBuffer(
   url: string,
   reqJar: JarLike,
-  qs?: Record<string, any> | null,
-  options?: Record<string, any>,
-  ctx?: any,
+  qs?: FormRecord | null,
+  options?: NetworkOptions | null,
+  ctx?: Context | null,
   customHeader?: Record<string, string>
-): Promise<any> {
+): Promise<FbGotResponse> {
   const isGraphQL = url.includes("/api/graphql/") || url.includes("/graphql");
-  const fn = async () => {
-    await throttleRequest(isGraphQL);
-    const headers = getHeaders(url, options, ctx, customHeader, "GET") || {};
-    const extra: any = {};
-    if (qs !== undefined && qs !== null) extra.searchParams = qs;
-    const cfg = baseConfig(extra, reqJar);
-    const meta = { url, method: "GET", headers, params: qs, responseType: "arraybuffer" };
-    return streamRequest("GET", url, cfg, meta, true);
-  };
+  const fn = async () =>
+    gateRequest(ctx ?? undefined, url, "getBuffer", async () => {
+      await throttleRequest(isGraphQL);
+      const headers = getHeaders(url, options ?? undefined, ctx ?? undefined, customHeader, "GET") || {};
+      const extra: Partial<GotStreamOptions> = { headers };
+      if (qs !== undefined && qs !== null) extra.searchParams = qs;
+      const cfg = baseConfig(extra, reqJar);
+      const meta: RequestMeta = { url, method: "GET", headers, params: qs, responseType: "arraybuffer" };
+      return streamRequest("GET", url, cfg, meta, true);
+    }, options ?? undefined);
   return requestWithRetry(fn);
 }
 
@@ -653,37 +825,38 @@ function download(
   url: string,
   filePath: string,
   reqJar: JarLike,
-  qs?: Record<string, any> | null,
-  options?: Record<string, any>,
-  ctx?: any,
+  qs?: FormRecord | null,
+  options?: NetworkOptions | null,
+  ctx?: Context | null,
   customHeader?: Record<string, string>
-): Promise<any> {
+): Promise<FbGotResponse> {
   const isGraphQL = url.includes("/api/graphql/") || url.includes("/graphql");
   return requestWithRetry(
-    async () => {
-      await throttleRequest(isGraphQL);
-      const headers = getHeaders(url, options, ctx, customHeader, "GET") || {};
-      const extra: any = { headers };
-      if (qs !== undefined && qs !== null) extra.searchParams = qs;
-      const cfg = baseConfig(extra, reqJar);
-      const meta = { url, method: "GET", headers, params: qs };
+    async () =>
+      gateRequest(ctx ?? undefined, url, "download", async () => {
+        await throttleRequest(isGraphQL);
+        const headers = getHeaders(url, options ?? undefined, ctx ?? undefined, customHeader, "GET") || {};
+        const extra: Partial<GotStreamOptions> = { headers };
+        if (qs !== undefined && qs !== null) extra.searchParams = qs;
+        const cfg = baseConfig(extra, reqJar);
+        const meta: RequestMeta = { url, method: "GET", headers, params: qs };
 
-      return new Promise((resolve, reject) => {
-        const dest = path.resolve(filePath);
-        const ws = fs.createWriteStream(dest);
-        const stream = got.stream.get(url, cfg);
-        let resMeta: any = null;
+        return new Promise<FbGotResponse>((resolve, reject) => {
+          const dest = path.resolve(filePath);
+          const ws = fs.createWriteStream(dest);
+          const stream = got.stream.get(url, cfg as GotStreamOptions);
+          let resMeta: StreamResponseMeta | null = null;
 
-        stream.on("response", (res: any) => (resMeta = res));
-        stream.on("error", (e: any) => {
-          ws.destroy();
-          reject(wrapAxiosError(e, meta, resMeta));
+          stream.on("response", (res: StreamResponseMeta) => (resMeta = res));
+          stream.on("error", (e: unknown) => {
+            ws.destroy();
+            reject(wrapAxiosError(e, meta, resMeta));
+          });
+          ws.on("error", (e: unknown) => reject(wrapAxiosError(e, meta, resMeta)));
+          ws.on("finish", () => resolve(normalizeFromStream(resMeta, [], meta, false)));
+          stream.pipe(ws);
         });
-        ws.on("error", (e: any) => reject(wrapAxiosError(e, meta, resMeta)));
-        ws.on("finish", () => resolve(normalizeFromStream(resMeta, [], meta, false)));
-        stream.pipe(ws);
-      });
-    }
+      }, options ?? undefined)
   );
 }
 

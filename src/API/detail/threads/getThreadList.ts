@@ -233,7 +233,7 @@ const formatParticipants = (participants: ParticipantWrapper): FormattedParticip
 
     const baseFields: FormattedParticipant = {
       accountType: p?.__typename,
-      userID: formatID(String(p?.id ?? "")),
+      userID: formatID(String(p?.id ?? "")) ?? "",
       name: p?.name,
       url:
         p?.__typename === "ReducedMessagingActor" ||
@@ -318,7 +318,7 @@ const getThreadName = (t: ThreadNode): string | null | undefined => {
 const mapNicknames = (customizationInfo?: CustomizationInfo | null) =>
   (customizationInfo?.participant_customizations || []).map(
     ({ participant_id, nickname }) => ({
-      userID: formatID(String(participant_id)),
+      userID: formatID(String(participant_id)) ?? "",
       nickname,
     })
   );
@@ -333,9 +333,9 @@ const formatThreadList = (data: ThreadNode[]): FormattedThread[] =>
     const deliveryReceipts = t.delivery_receipts?.nodes || [];
 
     const threadID = t.thread_key
-      ? formatID(
-        String(t.thread_key.thread_fbid || t.thread_key.other_user_id || "")
-      )
+      ? (formatID(
+          String(t.thread_key.thread_fbid || t.thread_key.other_user_id || "")
+        ) ?? null)
       : null;
 
     return {
@@ -351,9 +351,7 @@ const formatThreadList = (data: ThreadNode[]): FormattedThread[] =>
       nicknames: mapNicknames(t.customization_info),
       muteUntil: t.mute_until || -1,
       participants,
-      adminIDs: (t.thread_admins || []).map((a) =>
-        formatID(String(a.id))
-      ),
+      adminIDs: (t.thread_admins || []).map((a) => formatID(String(a.id)) ?? ""),
       folder: t.folder || "INBOX",
       isGroup: t.thread_type === "GROUP",
       customizationEnabled: t.customization_enabled !== false,
@@ -369,11 +367,11 @@ const formatThreadList = (data: ThreadNode[]): FormattedThread[] =>
       snippet: lastMessageNode?.snippet || null,
       snippetAttachments: lastMessageNode?.extensible_attachment || null,
       snippetSender: lastMessageNode
-        ? formatID(
-          String(
-            lastMessageNode.message_sender?.messaging_actor?.id || ""
-          )
-        )
+        ? (formatID(
+            String(
+              lastMessageNode.message_sender?.messaging_actor?.id || ""
+            )
+          ) ?? null)
         : null,
       lastMessageTimestamp: lastMessageNode?.timestamp_precise || null,
       lastReadTimestamp:
@@ -389,7 +387,7 @@ const formatThreadList = (data: ThreadNode[]): FormattedThread[] =>
       readReceipts: readReceipts.map((receipt) => ({
         watermark: receipt.watermark,
         action: receipt.action,
-        actorID: formatID(String(receipt.actor?.id || "")),
+        actorID: formatID(String(receipt.actor?.id || "")) ?? "",
       })),
       deliveryReceipts: deliveryReceipts.map((receipt) => ({
         timestamp: receipt.timestamp_precise,

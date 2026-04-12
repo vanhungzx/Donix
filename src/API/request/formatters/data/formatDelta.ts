@@ -1,6 +1,49 @@
 import formatID from "../value/formatID.js";
 import { _formatAttachment } from "./formatAttachment.js";
 
+type JsonObject = Record<string, unknown>;
+
+interface ThreadKeyShape {
+  threadFbId?: string | number;
+  otherUserFbId?: string | number;
+}
+
+interface MessageMetadataShape {
+  actorFbId: string | number;
+  threadKey: ThreadKeyShape;
+  messageId: string | number;
+  offlineThreadingId?: unknown;
+  timestamp?: number;
+  adminText?: string;
+}
+
+interface MessageReplyShape {
+  messageID?: unknown;
+  senderID?: unknown;
+  body?: string;
+  attachments?: unknown;
+  timestamp?: number;
+}
+
+interface DeltaMessageShape {
+  body?: string;
+  data?: { prng?: string };
+  messageMetadata: MessageMetadataShape;
+  messageReply?: MessageReplyShape;
+  attachments?: unknown[];
+  participants?: unknown;
+}
+
+interface DeltaMessageEnvelope {
+  delta: DeltaMessageShape;
+}
+
+interface PrngMention {
+  i?: string | number;
+  o?: number;
+  l?: number;
+}
+
 const getAdminTextMessageType = (type: string): string => {
   switch (type) {
     case "unpin_messages_v2":
@@ -28,87 +71,157 @@ const getAdminTextMessageType = (type: string): string => {
   }
 };
 
-const formatDeltaMessage = (m: any) => {
-  const md = m.delta.messageMetadata;
-  const mdata = m.delta.data?.prng ? JSON.parse(m.delta.data.prng) : [];
+export interface FormattedDeltaMessage {
+  type: "message";
+  senderID: ReturnType<typeof formatID>;
+  body: string;
+  threadID: ReturnType<typeof formatID>;
+  messageID: string | number;
+  offlineThreadingId: unknown;
+  attachments: ReturnType<typeof _formatAttachment>[];
+  mentions: Record<string, string>;
+  timestamp: number | undefined;
+  isGroup: boolean;
+  participantIDs: unknown;
+  messageReply: {
+    messageID: unknown;
+    senderID: ReturnType<typeof formatID>;
+    body: string | undefined;
+    attachments: unknown;
+    timestamp: number | undefined;
+    isReply: true;
+  } | null;
+}
+
+const formatDeltaMessage = (m: unknown): FormattedDeltaMessage => {
+  const env = m as DeltaMessageEnvelope;
+  const md = env.delta.messageMetadata;
+  const parsedPrng = env.delta.data?.prng ? (JSON.parse(env.delta.data.prng) as unknown) : [];
+  const mdata: PrngMention[] = Array.isArray(parsedPrng) ? parsedPrng : [];
   const mentions: Record<string, string> = {};
+  const bodyStr = env.delta.body ?? "";
   for (const mention of mdata) {
-    mentions[mention.i] = m.delta.body.substring(mention.o, mention.o + mention.l);
+    if (mention?.i == null || mention.o == null || mention.l == null) continue;
+    const key = String(mention.i);
+    mentions[key] = bodyStr.substring(mention.o, mention.o + mention.l);
   }
 
-  const messageReply = m.delta.messageReply
+  const messageReply = env.delta.messageReply
     ? {
-      messageID: m.delta.messageReply.messageID,
-      senderID: formatID(m.delta.messageReply.senderID),
-      body: m.delta.messageReply.body,
-      attachments: m.delta.messageReply.attachments,
-      timestamp: m.delta.messageReply.timestamp,
-      isReply: true,
-    }
+        messageID: env.delta.messageReply.messageID,
+        senderID: formatID(String(env.delta.messageReply.senderID)),
+        body: env.delta.messageReply.body,
+        attachments: env.delta.messageReply.attachments,
+        timestamp: env.delta.messageReply.timestamp,
+        isReply: true as const,
+      }
     : null;
+
+  const tid = md.threadKey.threadFbId ?? md.threadKey.otherUserFbId;
 
   return {
     type: "message",
-    senderID: formatID(md.actorFbId.toString()),
-    body: m.delta.body || "",
-    threadID: formatID((md.threadKey.threadFbId || md.threadKey.otherUserFbId).toString()),
+    senderID: formatID(String(md.actorFbId)),
+    body: bodyStr,
+    threadID: formatID(String(tid)),
     messageID: md.messageId,
     offlineThreadingId: md.offlineThreadingId,
-    attachments: (m.delta.attachments || []).map((v: any) => _formatAttachment(v)),
+    attachments: (env.delta.attachments ?? []).map((v) => _formatAttachment(v as JsonObject)),
     mentions,
     timestamp: md.timestamp,
     isGroup: !!md.threadKey.threadFbId,
-    participantIDs: m.delta.participants,
+    participantIDs: env.delta.participants,
     messageReply,
   };
 };
 
-const formatDeltaEvent = (m: any) => {
-  let logMessageType: string;
-  let logMessageData: any;
+export interface FormattedDeltaEvent {
+  type: "event";
+  threadID: ReturnType<typeof formatID>;
+  messageID: string;
+  logMessageType: string;
+  logMessageData: unknown;
+  logMessageBody: string | undefined;
+  timestamp: number | undefined;
+  author: string | number | undefined;
+  participantIDs: unknown;
+}
 
-  switch (m.class) {
+interface DeltaEventEnvelope {
+  class: string;
+  type?: string;
+  untypedData?: unknown;
+  name?: string;
+  addedParticipants?: unknown;
+  leftParticipantFbId?: string | number;
+  messageMetadata: MessageMetadataShape;
+  participants?: unknown;
+}
+
+const formatDeltaEvent = (m: unknown): FormattedDeltaEvent => {
+  const ev = m as DeltaEventEnvelope;
+  let logMessageType: string;
+  let logMessageData: unknown;
+
+  switch (ev.class) {
     case "AdminTextMessage":
-      logMessageData = m.untypedData;
-      logMessageType = getAdminTextMessageType(m.type);
+      logMessageData = ev.untypedData;
+      logMessageType = getAdminTextMessageType(ev.type ?? "");
       break;
     case "ThreadName":
       logMessageType = "log:thread-name";
-      logMessageData = { name: m.name };
+      logMessageData = { name: ev.name };
       break;
     case "ParticipantsAddedToGroupThread":
       logMessageType = "log:subscribe";
-      logMessageData = { addedParticipants: m.addedParticipants };
+      logMessageData = { addedParticipants: ev.addedParticipants };
       break;
     case "ParticipantLeftGroupThread":
       logMessageType = "log:unsubscribe";
-      logMessageData = { leftParticipantFbId: m.leftParticipantFbId };
+      logMessageData = { leftParticipantFbId: ev.leftParticipantFbId };
       break;
     default:
-      logMessageType = m.class;
-      logMessageData = m;
+      logMessageType = ev.class;
+      logMessageData = ev;
   }
+
+  const mk = ev.messageMetadata.threadKey;
+  const evTid = mk.threadFbId ?? mk.otherUserFbId;
 
   return {
     type: "event",
-    threadID: formatID(
-      (m.messageMetadata.threadKey.threadFbId || m.messageMetadata.threadKey.otherUserFbId).toString()
-    ),
-    messageID: m.messageMetadata.messageId.toString(),
+    threadID: formatID(String(evTid)),
+    messageID: String(ev.messageMetadata.messageId),
     logMessageType,
     logMessageData,
-    logMessageBody: m.messageMetadata.adminText,
-    timestamp: m.messageMetadata.timestamp,
-    author: m.messageMetadata.actorFbId,
-    participantIDs: m.participants,
+    logMessageBody: ev.messageMetadata.adminText,
+    timestamp: ev.messageMetadata.timestamp,
+    author: ev.messageMetadata.actorFbId,
+    participantIDs: ev.participants,
   };
 };
 
-const formatDeltaReadReceipt = (delta: any) => ({
-  reader: (delta.threadKey.otherUserFbId || delta.actorFbId).toString(),
-  time: delta.actionTimestampMs,
-  threadID: formatID((delta.threadKey.otherUserFbId || delta.threadKey.threadFbId).toString()),
-  type: "read_receipt",
-});
+interface ReadReceiptDelta {
+  threadKey: ThreadKeyShape;
+  actorFbId?: string | number;
+  actionTimestampMs?: number;
+}
+
+export interface FormattedDeltaReadReceipt {
+  reader: string;
+  time: number | undefined;
+  threadID: ReturnType<typeof formatID>;
+  type: "read_receipt";
+}
+
+const formatDeltaReadReceipt = (delta: unknown): FormattedDeltaReadReceipt => {
+  const d = delta as ReadReceiptDelta;
+  return {
+    reader: String(d.threadKey.otherUserFbId ?? d.actorFbId ?? ""),
+    time: d.actionTimestampMs,
+    threadID: formatID(String(d.threadKey.otherUserFbId ?? d.threadKey.threadFbId ?? "")),
+    type: "read_receipt",
+  };
+};
 
 export { formatDeltaEvent, formatDeltaMessage, formatDeltaReadReceipt, getAdminTextMessageType };

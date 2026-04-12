@@ -3,24 +3,6 @@
 import type { Command, CommandOnCallContext, FacebookClient, UserDataModel } from "@types";
 import fs from "fs-extra";
 import path from "path";
-import { getCleanupManager } from "../../../core/managers/cleanupManager";
-
-interface Countdown {
-  id: string;
-  threadID: string;
-  userID: string;
-  userName: string;
-  eventName: string;
-  targetDate: number;
-  createdAt: number;
-  active: boolean;
-}
-
-"use strict";
-
-import type { Command, CommandOnCallContext, FacebookClient, UserDataModel } from "@types";
-import fs from "fs-extra";
-import path from "path";
 import { storagePath } from "../../../core/storagePath";
 import { getCleanupManager } from "../../../core/managers/cleanupManager";
 

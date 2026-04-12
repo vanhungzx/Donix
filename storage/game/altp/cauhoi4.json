@@ -1,0 +1,124 @@
+{
+    "allquestion": [
+        {
+            "question": "Câu nào sau đây khác nghĩa với các câu còn lại?",
+            "a": "Có công mài sắt, có ngày nên kim",
+            "b": "Kiến tha lâu cũng đầy tổ",
+            "c": "Nước chảy đá mòn",
+            "d": "Ăn xổi ở thì",
+            "dapan": "D",
+            "helpone": ["A", "D"],
+            "helptwo": [25, 10, 15, 50],
+            "helpthree": ["D"],
+            "giaithich": "Ba câu A, B, C đều nhấn mạnh sự kiên trì sẽ đem lại thành công, trong khi 'Ăn xổi ở thì' chỉ sự làm việc tạm bợ, không có kế hoạch lâu dài."
+        },
+        {
+            "question": "Theo kiểu gõ Telex thì phím 'S' dùng để gõ dấu gì?",
+            "a": "Huyền",
+            "b": "Sắc",
+            "c": "Nặng",
+            "d": "Hỏi",
+            "dapan": "B",
+            "helpone": ["A", "B"],
+            "helptwo": [20, 50, 15, 5],
+            "helpthree": ["B"],
+            "giaithich": "Trong kiểu gõ Telex, phím 'S' dùng để tạo dấu Sắc."
+        },
+        {
+            "question": "Cúc hoạ mi nở báo hiệu mùa nào đang tới?",
+            "a": "Xuân",
+            "b": "Hạ",
+            "c": "Thu",
+            "d": "Đông",
+            "dapan": "D",
+            "helpone": ["C", "D"],
+            "helptwo": [15, 10, 20, 50],
+            "helpthree": ["D"],
+            "giaithich": "Cúc hoạ mi thường nở vào mùa đông, báo hiệu mùa đông đang đến."
+        },
+        {
+            "question": "Trong tổ ong mật, thường chỉ có 1 cá thể nào sau đây?",
+            "a": "Ong chúa",
+            "b": "Ong thợ",
+            "c": "Ong đực",
+            "d": "Ong vò vẽ",
+            "dapan": "A",
+            "helpone": ["A", "B"],
+            "helptwo": [50, 20, 15, 10],
+            "helpthree": ["A"],
+            "giaithich": "Tổ ong mật chỉ có một ong chúa để duy trì tổ ong."
+        },
+        {
+            "question": "Đâu là loại trái cây có múi?",
+            "a": "Bưởi",
+            "b": "Táo",
+            "c": "Dưa hấu",
+            "d": "Nho",
+            "dapan": "A",
+            "helpone": ["A", "C"],
+            "helptwo": [50, 15, 40, 20],
+            "helpthree": ["A"],
+            "giaithich": "Bưởi là loại trái cây có múi, còn các loại khác thì không."
+        },
+        {
+            "question": "Ngày 1/6 hằng năm là ngày Quốc tế của lứa tuổi nào?",
+            "a": "Người cao tuổi",
+            "b": "Thanh niên",
+            "c": "Trung niên",
+            "d": "Thiếu nhi",
+            "dapan": "D",
+            "helpone": ["C", "D"],
+            "helptwo": [15, 10, 20, 50],
+            "helpthree": ["D"],
+            "giaithich": "Ngày 1/6 là ngày Quốc tế Thiếu nhi, kỷ niệm dành cho trẻ em."
+        },
+        {
+            "question": "Nơi máy bay cất, hạ cánh trong sân bay được gọi là gì?",
+            "a": "Đường sắt",
+            "b": "Đường phèn",
+            "c": "Đường lối",
+            "d": "Đường băng",
+            "dapan": "D",
+            "helpone": ["C", "D"],
+            "helptwo": [15, 10, 20, 50],
+            "helpthree": ["D"],
+            "giaithich": "Máy bay cất và hạ cánh trên đường băng, không phải các loại đường khác."
+        },
+        {
+            "question": "Chi tiết 'rạch mặt ăn vạ' gắn với nhân vật văn học nào của nhà văn Nam Cao?",
+            "a": "Ông giáo Thứ",
+            "b": "Lão Hạc",
+            "c": "Chí Phèo",
+            "d": "Chị Dậu",
+            "dapan": "C",
+            "helpone": ["B", "C"],
+            "helptwo": [15, 20, 50, 10],
+            "helpthree": ["C"],
+            "giaithich": "'Rạch mặt ăn vạ' là chi tiết đặc trưng của nhân vật Chí Phèo trong tác phẩm cùng tên của Nam Cao."
+        },
+        {
+            "question": "Đâu là loại bò sát không chân?",
+            "a": "Rắn",
+            "b": "Thạch sùng",
+            "c": "Thằn lằn",
+            "d": "Bọ cạp",
+            "dapan": "A",
+            "helpone": ["A", "C"],
+            "helptwo": [50, 15, 20, 10],
+            "helpthree": ["A"],
+            "giaithich": "Rắn là loài bò sát không có chân, các loài khác đều có chân."
+        },
+        {
+            "question": "Một hình thoi có mấy cạnh bằng nhau?",
+            "a": "2",
+            "b": "3",
+            "c": "4",
+            "d": "5",
+            "dapan": "C",
+            "helpone": ["B", "C"],
+            "helptwo": [15, 25, 50, 5],
+            "helpthree": ["C"],
+            "giaithich": "Hình thoi là hình tứ giác có 4 cạnh bằng nhau."
+        }
+    ]
+}

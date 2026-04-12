@@ -333,7 +333,7 @@ const QUERY_TEMPLATE = Object.freeze({
   }),
 });
 
-function buildForm(ctx: Context, queriesJson: string): any {
+function buildForm(_ctx: Context, queriesJson: string): any {
   const form: any = {
     batch_name: "MessengerGraphQLThreadFetcher",
     queries: queriesJson,
@@ -345,7 +345,7 @@ function buildForm(ctx: Context, queriesJson: string): any {
 
 export default function getThreadInfoGraphQL(
   defaultFuncs: DefaultFuncs,
-  client: any,
+  _client: any,
   ctx: Context
 ): (threadID: string, callback?: (err: any, data?: ThreadInfo) => void) => Promise<ThreadInfo> {
   return function getThreadInfo(threadID: string, callback?: (err: any, data?: ThreadInfo) => void): Promise<ThreadInfo> {

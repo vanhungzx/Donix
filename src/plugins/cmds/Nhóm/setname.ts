@@ -6,7 +6,6 @@ import type {
   CommandOnReactContext,
 } from "@types";
 import fs from "fs-extra";
-import path from "path";
 import { storagePath } from "../../../core/storagePath";
 
 const setn = storagePath("other", "setname.json");

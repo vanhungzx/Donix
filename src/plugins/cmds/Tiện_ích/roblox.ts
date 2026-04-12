@@ -2,25 +2,22 @@ import axios from "axios";
 import type { Command, CommandOnCallContext } from "@types";
 
 const robloxCommand: Command = {
-  config: {
-    name: "roblox",
-    alias: ["rb", "robloxinfo"],
-    version: "1.3.1",
-    role: 0,
-    author: "DongDev + AI Support",
-    info: "Check profile Roblox kèm avatar",
-    category: "Tiện_ích",
-    guides: "{pn}roblox <username>",
-    cd: 5,
-    prefix: true
-  },
+  name: "roblox",
+  alias: ["rb", "robloxinfo"],
+  version: "1.2.2",
+  role: 0,
+  desc: "Check profile Roblox kèm avatar",
+  category: "Game",
+  guide: "{pn}roblox <username>",
+  cd: 5,
+  prefix: true,
 
-  async onCall(ctx: CommandOnCallContext) {
-
+  async onCall(ctx: CommandOnCallContext): Promise<void> {
     const { args, reply, react } = ctx;
 
     if (!args[0]) {
-      return reply("⚠️ Vui lòng nhập username Roblox!");
+      await reply("⚠️ Vui lòng nhập username Roblox!");
+      return;
     }
 
     const username = args[0];
@@ -47,7 +44,8 @@ const robloxCommand: Command = {
 
       if (!user) {
         if (react) react("❌");
-        return reply("❌ Không tìm thấy username này!");
+        await reply("❌ Không tìm thấy username này!");
+        return;
       }
 
       const userId = user.id;
@@ -97,8 +95,8 @@ const robloxCommand: Command = {
         ).data.data.length;
       } catch {}
 
-      // ===== STATUS (CHUẨN 100% TÊN GAME) =====
-      let status = "💬 Online";
+      // ===== STATUS =====
+      let status = "⭕ Offline";
 
       try {
         const prs = await axios.post(
@@ -106,46 +104,10 @@ const robloxCommand: Command = {
           { userIds: [userId] }
         );
 
-        const data = prs.data.userPresences[0];
-        const state = data.userPresenceType;
+        const state = prs.data.userPresences[0].userPresenceType;
 
-        if (state === 2) {
-
-          let gameName = "";
-
-          if (data.placeId) {
-            try {
-              // B1: placeId → universeId
-              const uniRes = await axios.get(
-                `https://apis.roblox.com/universes/v1/places/${data.placeId}/universe`
-              );
-
-              const universeId = uniRes.data.universeId;
-
-              // B2: universeId → game name
-              const gameRes = await axios.get(
-                `https://games.roblox.com/v1/games?universeIds=${universeId}`
-              );
-
-              gameName = gameRes?.data?.data?.[0]?.name || "";
-
-            } catch {}
-          }
-
-          // fallback cực hiếm
-          if (!gameName) {
-            gameName = data.lastLocation || "Game Roblox";
-          }
-
-          status = `🎮 Đang chơi: ${gameName}`;
-
-        } 
-        else if (state === 3) {
-          status = "💬 Online";
-        } 
-        else {
-          status = "⭕ Offline";
-        }
+        if (state === 2) status = "🎮 Đang chơi game";
+        else if (state === 3) status = "💬 Online";
 
       } catch {}
 
@@ -189,11 +151,13 @@ const robloxCommand: Command = {
         `https://thumbnails.roblox.com/v1/users/avatar?userIds=${userId}&size=420x420&format=Png&isCircular=false`;
 
       const imgRes = await axios.get(imgAPI);
+
       const imgUrl = imgRes?.data?.data?.[0]?.imageUrl;
 
       if (!imgUrl) {
         if (react) react("❌");
-        return reply("❌ Không lấy được avatar Roblox.");
+        await reply("❌ Không lấy được avatar Roblox.");
+        return;
       }
 
       const img = await axios.get(imgUrl, {
@@ -216,9 +180,9 @@ const robloxCommand: Command = {
 
       if (react) react("❌");
 
-      return reply("❌ Lỗi lấy dữ liệu Roblox!");
+      await reply("❌ Lỗi lấy dữ liệu Roblox!");
     }
-  }
+  },
 };
 
 export default robloxCommand;

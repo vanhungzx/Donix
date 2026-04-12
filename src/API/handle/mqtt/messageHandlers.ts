@@ -1,6 +1,7 @@
 import utils from "../../request/index";
 import parseDelta from "../parse";
 import { getTaskResponseData } from "./taskHandlers";
+import { markMqttReady } from "./connection";
 const { formatDeltaReadReceipt, formatID } = utils;
 
 // Pre-compile skip classes Set at module level (realtime optimization - avoid recreating per call)
@@ -12,6 +13,8 @@ const DELTA_CLASS_READ_RECEIPT = "ReadReceipt";
 export function handleTmsMessage(jsonMessage: any, ctx: any, defaultFuncs: any, api: any, globalCallback: any): void {
   if (ctx.tmsWait && typeof ctx.tmsWait === "function") {
     ctx.tmsWait();
+  } else {
+    markMqttReady(ctx, globalCallback);
   }
   if (jsonMessage.firstDeltaSeqId && jsonMessage.syncToken) {
     ctx.lastSeqId = jsonMessage.firstDeltaSeqId;

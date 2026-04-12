@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import * as v8 from "v8";
 import * as vm from "vm";
 import log from "../utils/log";
+import { readSessionCookieSync, writeSessionCookieSync } from "./sessionCookieFile";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const CONFIG_PATH = join(__dirname, "config", "config.json");
@@ -54,6 +55,11 @@ export const loadConfig = async (): Promise<Record<string, any>> => {
 
     const processLoadedConfig = async (loaded: any, oldConfig: Record<string, any> | null = null): Promise<Record<string, any>> => {
       currentConfig = v8.deserialize(v8.serialize(loaded));
+
+      const fromFile = readSessionCookieSync();
+      const jsonFallback =
+        typeof currentConfig.cookie === "string" ? currentConfig.cookie.trim() : "";
+      currentConfig.cookie = fromFile || jsonFallback;
 
       const globalAny = global as typeof globalThis & { account?: { cookie?: string; token?: any } };
       const tokenSource = currentConfig.token;
@@ -158,6 +164,24 @@ export const loadConfig = async (): Promise<Record<string, any>> => {
 
 export function getConfig(): Readonly<Record<string, any>> {
   return currentConfig;
+}
+
+/** Đồng bộ cookie phiên trong RAM (sau khi ghi `cookie.txt`). */
+export function applySessionCookieToRuntime(cookie: string): void {
+  const v = typeof cookie === "string" ? cookie.trim() : "";
+  (currentConfig as Record<string, unknown>).cookie = v;
+  const globalAny = global as typeof globalThis & { account?: { cookie?: string; token?: any } };
+  const tokenSource = currentConfig.token;
+  const tokenValue =
+    tokenSource && typeof tokenSource === "object" && !Array.isArray(tokenSource)
+      ? { ...tokenSource }
+      : tokenSource?.EAAAAU
+        ? { EAAAAU: tokenSource.EAAAAU }
+        : null;
+  globalAny.account = {
+    cookie: v,
+    token: tokenValue,
+  };
 }
 
 function formatValue(value: any, maxLength: number = 50): string {
@@ -282,7 +306,12 @@ export async function writeConfig(newConfig: Record<string, any>, merge: boolean
 
     const finalConfig = merge ? { ...currentConfig, ...newConfig } : newConfig;
 
-    writeFileSync(CONFIG_PATH, JSON.stringify(finalConfig, null, 2), "utf-8");
+    if (typeof finalConfig.cookie === "string" && finalConfig.cookie.trim()) {
+      writeSessionCookieSync(finalConfig.cookie.trim());
+    }
+    const { cookie: _omitSessionCookie, ...persisted } = finalConfig;
+
+    writeFileSync(CONFIG_PATH, JSON.stringify(persisted, null, 2), "utf-8");
 
     const reloadResult = await reloadConfig();
 

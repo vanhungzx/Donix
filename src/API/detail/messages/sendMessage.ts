@@ -107,10 +107,11 @@ const CONSTANTS = {
   }
 };
 
+/** Gửi tin: ưu tiên nhiều nhóm song song (RR), vẫn giới hạn burst mỗi nhóm + toàn cục. */
 const CONFIG = {
-  MAX_CONCURRENT_REQUESTS: 60,
-  PER_THREAD_MIN_GAP_MS: 30,
-  GLOBAL_MIN_GAP_MS: 10,
+  MAX_CONCURRENT_REQUESTS: 18,
+  PER_THREAD_MIN_GAP_MS: 95,
+  GLOBAL_MIN_GAP_MS: 38,
   RETRIES: 1,
   RETRY_BACKOFF: 1.2,
   TIMEOUT_BASE: 8000,
@@ -225,7 +226,14 @@ const buildNavigationChain = (variant: "minimal" | "settings" | "default" | stri
 const mqttOk = (ctx: any): boolean => {
   try {
     const c = ctx && ctx.mqttClient;
-    return !!(c && c.connected && !c.reconnecting && !c.disconnecting && !c.disconnected);
+    return !!(
+      c &&
+      c.connected &&
+      ctx?.mqttReady === true &&
+      !c.reconnecting &&
+      !c.disconnecting &&
+      !c.disconnected
+    );
   } catch {
     return false;
   }
@@ -247,7 +255,6 @@ const safePublish = (mqttClient: any, topic: string, message: string | Buffer, o
     const readyState = mqttClient.readyState;
 
     // WebSocket ready states: 0=CONNECTING, 1=OPEN, 2=CLOSING, 3=CLOSED
-    const isOpen = readyState === 1 || readyState === undefined; // undefined for some MQTT clients
     const isClosing = readyState === 2;
     const isClosed = readyState === 3;
 
@@ -1162,7 +1169,11 @@ const uploadAttachment = async (
 
   // Try uploadFb second (www upload)
   try {
-    const uploadFb = uploadFbFactory(defaultFuncs, undefined, ctx);
+    const uploadFb = uploadFbFactory(
+      defaultFuncs,
+      ruploader ? { ruploadAttachment: ruploader } : undefined,
+      ctx
+    );
     const result = await uploadFb(arr, { mode: "parallel", concurrency: 3 });
 
     if (result && result.ids && Array.isArray(result.ids) && result.ids.length > 0) {

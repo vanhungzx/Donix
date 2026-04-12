@@ -15,7 +15,7 @@ import { createReadStream } from "fs";
 import fs from "fs-extra";
 import Jimp from "jimp";
 import path from "path";
-import { STORAGE_GAME, STORAGE_FONT } from "../../../core/storagePath";
+import { storagePath, TEMP_DIR } from "../../../core/storagePath";
 import { txiuAddHistory, txiuGetHistory, txiuGetJackpot, txiuSetJackpot } from "../../../services/taixiu-db";
 
 const TIME_CREATE_COOLDOWN_MS = 5 * 60 * 1000;
@@ -26,7 +26,55 @@ const BET_MONEY_MIN = 50n;
 const JACKPOT_CONTRIBUTION_PERCENT = 5;
 const SELECT_VALUES: Record<string, string> = { t: "Tài", x: "Xỉu" };
 
-const dataDir = path.join(STORAGE_GAME(), "taixiu");
+function txiuJackpotCut(bet: bigint): bigint {
+  return (bet * BigInt(JACKPOT_CONTRIBUTION_PERCENT)) / BigInt(100);
+}
+
+/** Cược tối đa sao cho bet + cut(bet) <= balance (integer, an toàn khi thua trừ hũ). */
+function txiuMaxBetAffordable(balance: bigint): bigint {
+  if (balance <= 0n) return 0n;
+  return (balance * BigInt(100)) / BigInt(100 + JACKPOT_CONTRIBUTION_PERCENT);
+}
+
+/** Mặc định toàn bot: có ảnh. Chỉ OWNER: !txiu noimg | !txiu imgdefault (một cấu hình cho mọi nhóm) */
+
+function isConfigOwner(config: { OWNER?: string | string[] } | null | undefined, senderId: string): boolean {
+  const o = config?.OWNER;
+  if (o == null) return false;
+  return Array.isArray(o) ? o.map(String).includes(String(senderId)) : String(o) === String(senderId);
+}
+
+const dataDir = storagePath("game", "taixiu");
+const globalTxiuJsonPath = path.join(dataDir, "global.json");
+
+type GlobalTxiuFile = { diceImage?: boolean };
+
+async function txiuShowDiceImageGlobal(): Promise<boolean> {
+  try {
+    if (!(await fs.pathExists(globalTxiuJsonPath))) return true;
+    const j = (await fs.readJson(globalTxiuJsonPath)) as GlobalTxiuFile;
+    return j.diceImage !== false;
+  } catch {
+    return true;
+  }
+}
+
+async function persistGlobalTxiuDiceImage(mode: "off" | "on" | "default"): Promise<void> {
+  await fs.ensureDir(dataDir);
+  if (mode === "default") {
+    if (!(await fs.pathExists(globalTxiuJsonPath))) return;
+    const j = (await fs.readJson(globalTxiuJsonPath).catch(() => ({}))) as GlobalTxiuFile;
+    delete j.diceImage;
+    if (Object.keys(j).length === 0) await fs.remove(globalTxiuJsonPath);
+    else await fs.writeJson(globalTxiuJsonPath, j, { spaces: 2 });
+    return;
+  }
+  const j = ((await fs.pathExists(globalTxiuJsonPath))
+    ? await fs.readJson(globalTxiuJsonPath).catch(() => ({}))
+    : {}) as GlobalTxiuFile;
+  j.diceImage = mode === "on";
+  await fs.writeJson(globalTxiuJsonPath, j, { spaces: 2 });
+}
 const diceImgDir = path.join(dataDir, "img");
 
 interface TxiuPlayer {
@@ -73,7 +121,7 @@ if (!d.t) {
 }
 
 function dicesSumMinMax(sMin: number, sMax: number): number[] {
-  for (;;) {
+  for (; ;) {
     const i = [0, 0, 0].map(() => Math.floor(Math.random() * 6) + 1);
     const s = i[0] + i[1] + i[2];
     if (s >= sMin && s <= sMax) return i;
@@ -146,7 +194,7 @@ async function compositeDices(dices: number[]): Promise<string> {
     composite.composite(img, x, 0);
     x += img.getWidth();
   }
-  const outPath = path.join(process.cwd(), "src", "temp", `txiu_${Date.now()}.png`);
+  const outPath = path.join(TEMP_DIR(), `txiu_${Date.now()}.png`);
   await fs.ensureDir(path.dirname(outPath));
   await composite.writeAsync(outPath);
   return outPath;
@@ -180,6 +228,11 @@ const txiuCommand: Command = {
     4️⃣ Đơn vị tiền tệ:
        • tr = triệu | b = tỷ
 
+    5️⃣ OWNER bot — ảnh xúc xắc (một cấu hình cho toàn bot, mọi nhóm):
+       • {pn} noimg | tat-anh | tắt ảnh — tắt ảnh (chỉ chữ)
+       • {pn} imgdefault | mac-dinh | mặc định — về mặc định (có ảnh)
+       • {pn} imgon | bat-anh | bật ảnh — bật ảnh
+
     💡 Chủ bàn có 5 phút để xổ, sau đó bàn sẽ tự hủy`,
   cd: 3,
   prefix: true,
@@ -189,10 +242,18 @@ const txiuCommand: Command = {
     const { threadID: tid, messageID: mid, senderID: sid } = event;
     const prf = (ctx.config?.PREFIX as string) || "!";
 
-    const send = (msg: unknown): Promise<{ messageID?: string }> => {
-      return new Promise((resolve) => {
-        client.sendMessage(msg as string | object, tid, (_err: Error | null, res: { messageID?: string }) => resolve(res || {}), mid);
+    const sendWithId = (msg: unknown): Promise<{ messageID?: string }> =>
+      new Promise((resolve) => {
+        client.sendMessage(
+          msg as string | object,
+          tid,
+          (_err: Error | null, res: { messageID?: string }) => resolve(res || {}),
+          mid
+        );
       });
+
+    const send = async (msg: unknown): Promise<void> => {
+      await sendWithId(msg);
     };
 
     const p = gameData[tid]?.players;
@@ -226,7 +287,7 @@ const txiuCommand: Command = {
       const getName = ctx.userData.getName as ((id: string) => Promise<string | null | undefined>) | undefined;
       const playerLines = await Promise.all(p.map(async (pl, i) => `${i + 1}. ${getName ? await getName(pl.id) : pl.id}`));
       const required = Math.ceil((p.length * 50) / 100);
-      const sent = await send({
+      const sent = await sendWithId({
         body: `📌 QTV đã yêu cầu kết thúc bàn tài xỉu. Những người đặt cược sau thả cảm xúc để xác nhận.\n\n${playerLines.join("\n")}\n\nTổng cảm xúc đạt ${required}/${p.length} người bàn tài xỉu sẽ kết thúc.`,
       });
       const res = sent as { messageID?: string; commandName?: string; p?: TxiuPlayer[]; r?: number };
@@ -249,7 +310,7 @@ const txiuCommand: Command = {
         const taiPercent = totalGames ? ((taiCount / totalGames) * 100).toFixed(1) : "0";
         const xiuPercent = totalGames ? ((xiuCount / totalGames) * 100).toFixed(1) : "0";
 
-        const fontPath = path.join(STORAGE_FONT(), "TUVBenchmark.ttf");
+        const fontPath = storagePath("font", "TUVBenchmark.ttf");
         async function ensureFont() {
           if (fs.existsSync(fontPath)) return;
           try {
@@ -361,7 +422,7 @@ const txiuCommand: Command = {
         ctx.fillStyle = "#ffffff";
         ctx.fillText("Xỉu (<11)", legendX + 180, legendY + 25);
 
-        const chartPath = path.join(process.cwd(), "src", "temp", `txiu_chart_${tid}.png`);
+        const chartPath = path.join(TEMP_DIR(), `txiu_chart_${tid}.png`);
         await fs.ensureDir(path.dirname(chartPath));
         const out = fs.createWriteStream(chartPath);
         const stream = canvas.createPNGStream();
@@ -382,8 +443,45 @@ const txiuCommand: Command = {
       return;
     }
 
+    const arg0 = (args[0] || "").trim().toLowerCase().normalize("NFC");
+    const joined2 = [args[0], args[1]]
+      .filter(Boolean)
+      .join(" ")
+      .trim()
+      .toLowerCase()
+      .normalize("NFC")
+      .replace(/\s+/g, "");
+    const isNoImg =
+      /^(noimg|tat-anh|tat_anh|tatanh|tắt-ảnh|tắtảnh)$/.test(arg0) ||
+      joined2 === "tắtảnh" ||
+      joined2 === "tatanh";
+    const isImgOn =
+      /^(imgon|img|bat-anh|bat_anh|batanh|bật-ảnh|bậtảnh)$/.test(arg0) ||
+      joined2 === "bậtảnh" ||
+      joined2 === "batanh";
+    const isImgDefault =
+      /^(imgdefault|mac-dinh|mac_dinh|macdinh|mặc-định|mặcđịnh)$/.test(arg0) ||
+      joined2 === "mặcđịnh" ||
+      joined2 === "macdinh" ||
+      joined2 === "imgdefault";
+    if (isNoImg || isImgOn || isImgDefault) {
+      if (!isConfigOwner(ctx.config as { OWNER?: string | string[] } | undefined, sid)) {
+        return send("❎ Chỉ OWNER bot mới có thể chỉnh cấu hình ảnh tài xỉu.");
+      }
+      if (isNoImg) {
+        await persistGlobalTxiuDiceImage("off");
+        return send("✅ Đã tắt ảnh xúc xắc toàn bot. Kết quả chỉ gửi chữ.");
+      }
+      if (isImgOn) {
+        await persistGlobalTxiuDiceImage("on");
+        return send("✅ Đã bật ảnh xúc xắc toàn bot.");
+      }
+      await persistGlobalTxiuDiceImage("default");
+      return send("✅ Đã đặt mặc định toàn bot: có ảnh xúc xắc.");
+    }
+
     return send(
-      `✏️ Để tạo bàn tài xỉu:\n𖢨 ${prf}txiu create | -c | c\n🔰 Để tham gia cược hãy chat:\ntài/xỉu [số_tiền/allin/%/tr/tỷ]\n🔎 Để xem thông tin bàn hãy chat: infotx\n🔗 Để rời bàn hãy chat: rời\n🎰 Bắt đầu xổ chat: xổ`
+      `✏️ Để tạo bàn tài xỉu:\n𖢨 ${prf}txiu create | -c | c\n🔰 Để tham gia cược hãy chat:\ntài/xỉu [số_tiền/allin/%/tr/tỷ]\n🔎 Để xem thông tin bàn hãy chat: infotx\n🔗 Để rời bàn hãy chat: rời\n🎰 Bắt đầu xổ chat: xổ\n🖼 OWNER — toàn bot: ${prf}txiu noimg | ${prf}txiu imgdefault | ${prf}txiu imgon`
     );
   },
 
@@ -391,21 +489,29 @@ const txiuCommand: Command = {
     const { client, event, userData, threadData, main, commandName } = ctx;
     const { args = [], threadID: tid, messageID: mid, senderID: sid } = event;
 
-    const send = (msg: unknown): Promise<{ messageID?: string }> => {
-      return new Promise((resolve) => {
-        client.sendMessage(msg as string | object, tid, (_err: Error | null, res: { messageID?: string }) => resolve(res || {}), mid);
+    const sendWithId = (msg: unknown): Promise<{ messageID?: string }> =>
+      new Promise((resolve) => {
+        client.sendMessage(
+          msg as string | object,
+          tid,
+          (_err: Error | null, res: { messageID?: string }) => resolve(res || {}),
+          mid
+        );
       });
+
+    const send = async (msg: unknown): Promise<void> => {
+      await sendWithId(msg);
     };
 
     const rawSelect = (args[0] || "").toLowerCase();
     const select =
       /^(tài|tai|t)$/.test(rawSelect) ? "t"
-      : /^(xỉu|xiu|x)$/.test(rawSelect) ? "x"
-      : /^(rời|leave)$/.test(rawSelect) ? "l"
-      : /^infotx$/.test(rawSelect) ? "i"
-      : /^xổ$/.test(rawSelect) ? "o"
-      : /^(end|remove|xóa)$/.test(rawSelect) ? "r"
-      : null;
+        : /^(xỉu|xiu|x)$/.test(rawSelect) ? "x"
+          : /^(rời|leave)$/.test(rawSelect) ? "l"
+            : /^infotx$/.test(rawSelect) ? "i"
+              : /^xổ$/.test(rawSelect) ? "o"
+                : /^(end|remove|xóa)$/.test(rawSelect) ? "r"
+                  : null;
 
     const checkMoney = userData.checkMoney as ((id: string) => Promise<bigint | number>) | undefined;
     const money = async (id: string) => (checkMoney ? await checkMoney(id) : 0);
@@ -418,19 +524,34 @@ const txiuCommand: Command = {
 
     if (select === "t" || select === "x") {
       let betMoney: bigint;
+      const balanceNow = BigInt(await money(sid));
+      const maxAffordable = txiuMaxBetAffordable(balanceNow);
+
       if (/^(allin|all)$/.test(betMoneyInput || "")) {
-        betMoney = BigInt(await money(sid));
+        betMoney = maxAffordable;
       } else if (/^[0-9]+%$/.test(betMoneyInput || "")) {
         const match = betMoneyInput?.match(/^([0-9]+)/);
         if (!match) return send("❎ Tiền cược không hợp lệ");
-        betMoney = (BigInt(await money(sid)) * BigInt(match[1])) / BigInt(100);
+        betMoney = (balanceNow * BigInt(match[1])) / BigInt(100);
+        if (betMoney > maxAffordable) betMoney = maxAffordable;
       } else {
         const parsed = parseAmount(betMoneyInput);
         if (typeof parsed === "number" && isNaN(parsed)) return send("❎ Tiền cược không hợp lệ");
         betMoney = typeof parsed === "bigint" ? parsed : BigInt(parsed);
       }
       if (betMoney < BET_MONEY_MIN) return send(`❎ Vui lòng đặt ít nhất ${formatCurrency(BET_MONEY_MIN)}`);
-      if (betMoney > BigInt(await money(sid))) return send("❎ Bạn không đủ tiền");
+      const balanceCheck = BigInt(await money(sid));
+      const maxAgain = txiuMaxBetAffordable(balanceCheck);
+      if (betMoney + txiuJackpotCut(betMoney) > balanceCheck) {
+        if (maxAgain < BET_MONEY_MIN) {
+          return send(
+            `❎ Không đủ tiền. Khi thua bot trừ thêm ${JACKPOT_CONTRIBUTION_PERCENT}% vào hũ (cược + hũ ≤ số dư).`
+          );
+        }
+        return send(
+          `❎ Không đủ tiền (thua sẽ trừ cược + ${JACKPOT_CONTRIBUTION_PERCENT}% hũ). Tối đa có thể cược: ${formatCurrency(maxAgain)}`
+        );
+      }
       const player = p.find((pl) => pl.id === sid);
       if (player) {
         player.select = select;
@@ -478,7 +599,7 @@ const txiuCommand: Command = {
       const jackpotData: JackpotThread = { amount: jackpotRow.amount, chance: jackpotRow.chance };
       if (!Number.isFinite(jackpotData.chance)) jackpotData.chance = 1;
 
-      const diing = await send("🎲 Bot đang lắc, Chờ xíu...");
+      const diing = await sendWithId("🎲 Bot đang lắc, Chờ xíu...");
       const dices = dicesSumMinMax(4, 17);
       const sum = dices.reduce((a, b) => a + b, 0);
       const winner = sum > 10 ? "t" : "x";
@@ -518,11 +639,14 @@ const txiuCommand: Command = {
       if (diing?.messageID) client.unsendMessage(diing.messageID, tid);
       await new Promise((r) => setTimeout(r, 1000 * TIME_DIING_SEC));
 
-      let imagePath: string;
-      try {
-        imagePath = await compositeDices(dices);
-      } catch {
-        imagePath = "";
+      const showDice = await txiuShowDiceImageGlobal();
+      let imagePath = "";
+      if (showDice) {
+        try {
+          imagePath = await compositeDices(dices);
+        } catch {
+          imagePath = "";
+        }
       }
 
       const addMoney = userData.addMoney as ((id: string, amount: bigint) => Promise<void>) | undefined;
@@ -533,7 +657,27 @@ const txiuCommand: Command = {
       for (const pl of losePlayers) {
         const loss = pl.bet_money;
         const contribution = (loss * BigInt(JACKPOT_CONTRIBUTION_PERCENT)) / BigInt(100);
-        if (delMoney) await delMoney(pl.id, loss + contribution);
+        const owed = loss + contribution;
+        if (delMoney) {
+          try {
+            await delMoney(pl.id, owed);
+          } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            if (msg.startsWith("Insufficient funds.")) {
+              const cur = BigInt(await money(pl.id));
+              if (cur > 0n) {
+                try {
+                  await delMoney(pl.id, cur);
+                } catch (e2) {
+                  console.error("txiu delMoney fallback failed:", pl.id, e2);
+                }
+              }
+              console.error("txiu insufficient at settle (balance changed after bet?):", pl.id, msg);
+            } else {
+              throw e;
+            }
+          }
+        }
         totalJackpotContribution += contribution;
       }
 
@@ -577,7 +721,7 @@ const txiuCommand: Command = {
       const getName = userData.getName as ((id: string) => Promise<string | null | undefined>) | undefined;
       const playerNames = await Promise.all(p.map(async (pl, i) => `${i + 1}. ${getName ? await getName(pl.id) : pl.id}`));
       const required = Math.ceil((p.length * 50) / 100);
-      const sent = await send(
+      const sent = await sendWithId(
         `📌 QTV đã yêu cầu kết thúc bàn tài xỉu. Những người đặt cược sau thả cảm xúc để xác nhận.\n\n${playerNames.join("\n")}\n\nTổng cảm xúc đạt ${required}/${p.length} người bàn tài xỉu sẽ kết thúc.`
       );
       const res = sent as { messageID?: string; commandName?: string; p?: TxiuPlayer[]; r?: number };
@@ -593,9 +737,9 @@ const txiuCommand: Command = {
   onReply: async (ctx: CommandOnReplyContext) => {
     const { client, event, Reply } = ctx;
     const { threadID: tid, messageID: mid } = event;
-    const send = (msg: unknown): Promise<unknown> =>
+    const send = (msg: unknown): Promise<void> =>
       new Promise((resolve) => {
-        client.sendMessage(msg as string | object, tid, (...params: unknown[]) => resolve(params[1]), mid);
+        client.sendMessage(msg as string | object, tid, () => resolve(), mid);
       });
     const replyData = Reply as ReplyData & { type?: string; cb?: (d: number[]) => void };
     if (replyData.type === "change.result.dices") {
@@ -613,14 +757,17 @@ const txiuCommand: Command = {
     }
   },
 
-  onReact: async (ctx: CommandOnReactContext) => {
+  onReact: async (ctx: CommandOnReactContext): Promise<void> => {
     const { client, event, Reaction } = ctx;
     const { threadID: tid } = event;
-    const send = (msg: unknown): Promise<unknown> =>
+    const send = (msg: unknown): Promise<void> =>
       new Promise((resolve) => {
-        client.sendMessage(msg as string | object, tid, (...params: unknown[]) => resolve(params[1]));
+        client.sendMessage(msg as string | object, tid, () => resolve());
       });
-    if (!(tid in gameData)) return send("❎ Bàn tài xỉu đã kết thúc không thể bỏ phiếu tiếp");
+    if (!(tid in gameData)) {
+      await send("❎ Bàn tài xỉu đã kết thúc không thể bỏ phiếu tiếp");
+      return;
+    }
     const reactData = Reaction as ReactData & { p?: TxiuPlayer[]; r?: number };
     if (reactData.p?.some((pl) => pl.id === event.senderID || pl.id === event.userID)) {
       reactData.r = (reactData.r || 0) + 1;
@@ -630,7 +777,7 @@ const txiuCommand: Command = {
         const room = gameData[tid];
         if (room?.set_timeout) clearTimeout(room.set_timeout);
         delete gameData[tid];
-        return send("✅ Đã hủy bàn tài xỉu thành công");
+        await send("✅ Đã hủy bàn tài xỉu thành công");
       }
     }
   },

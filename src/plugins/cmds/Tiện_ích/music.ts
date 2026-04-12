@@ -40,7 +40,7 @@ const sing2Command: Command = {
 
   async onCall(ctx: CommandOnCallContext): Promise<void> {
     const { event, args, reply, client, main, commandName } = ctx;
-    const { threadID, senderID } = event;
+    const { senderID } = event;
     const api = client as ClientWithMusicSticker;
 
     try {

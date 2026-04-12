@@ -84,7 +84,6 @@ export class Argus {
   }
 
   static encrypt(xargusBean: Record<number, unknown>): string {
-    const pb = new ProtoBuf(xargusBean as Parameters<typeof ProtoBuf['prototype']['parseDict']>[0]).toBuf()
     // Re-parse using ProtoBuf dict approach
     const pbInstance = new ProtoBuf(new Uint8Array(0))
     pbInstance.parseDict(xargusBean as Parameters<typeof pbInstance['parseDict']>[0])
@@ -142,7 +141,7 @@ export class Argus {
     timestamp,
     aid = 1233,
     licenseId = 1611921764,
-    platform = 0,
+    platform: _platform = 0,
     secDeviceId = '',
     sdkVersion = 'v05.00.03-ov-android',
     sdkVersionInt = 167773760

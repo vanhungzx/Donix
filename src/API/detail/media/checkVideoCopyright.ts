@@ -25,16 +25,6 @@ type CheckVideoCopyrightCallback = (err: Error | null, data?: CopyrightCheckResu
 const DEFAULT_MAX_WAIT_TIME = 60000; // 1 minute
 const DEFAULT_POLL_INTERVAL = 1000; // 1 second
 
-function cleanJSON(x: unknown): unknown {
-  if (typeof x !== "string") return x;
-  const s = x.replace(/^for\s*\(;;\);\s*/i, "");
-  try {
-    return JSON.parse(s);
-  } catch {
-    return s;
-  }
-}
-
 async function startCopyrightCheck(
   defaultFuncs: DefaultFuncs,
   ctx: Context,

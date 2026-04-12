@@ -3,6 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { login as loginMessengerApp } from "../../../core/auth_login/messenger_app";
 import { enrichTokensFromEaad } from "../../../core/auth_login/auto_relogin";
+import { applySessionCookieToRuntime } from "../../../core/configManager";
+import { writeSessionCookieSync } from "../../../core/sessionCookieFile";
 
 const configPath = path.resolve(process.cwd(), "src/core/config/config.json");
 
@@ -54,7 +56,8 @@ function loadFreshConfig(): DonixConfig {
 
 function saveConfig(config: DonixConfig): void {
   try {
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), "utf-8");
+    const { cookie: _omit, ...rest } = config;
+    fs.writeFileSync(configPath, JSON.stringify(rest, null, 2), "utf-8");
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
     throw new Error(`Không thể ghi config: ${message}`);
@@ -62,7 +65,10 @@ function saveConfig(config: DonixConfig): void {
 }
 
 function applyCookieToConfigAndGlobal(newCookie: string, accountIndex: number, cfg: DonixConfig): void {
-  const nextCfg: DonixConfig = { ...cfg, cookie: newCookie };
+  writeSessionCookieSync(newCookie);
+  applySessionCookieToRuntime(newCookie);
+  const nextCfg: DonixConfig = { ...cfg };
+  delete nextCfg.cookie;
   const accounts = Array.isArray(cfg.fbAccounts) ? [...cfg.fbAccounts] : [];
 
   if (Number.isInteger(accountIndex) && accountIndex >= 0 && accountIndex < accounts.length) {
@@ -160,7 +166,7 @@ async function performLoginWithMethod(
           account?: { cookie?: string; token?: AccountTokens | null };
         };
         globalState.account = {
-          cookie: nextCfg.cookie || cookie,
+          cookie,
           token: enriched,
         };
       } catch {
@@ -176,7 +182,7 @@ async function performLoginWithMethod(
   reply(
     `✅ Đăng nhập thành công bằng phương thức ${normalized}.\n` +
     (uid ? `➡️ UID: ${uid}\n` : "") +
-    "Cookie & acc active đã được cập nhật vào config."
+    "Cookie đã ghi vào cookie.txt; acc active đã cập nhật trong config."
   );
 }
 
@@ -207,7 +213,8 @@ const command: Command = {
         "- fbacc use <index>: đổi acc mặc định (chỉ ảnh hưởng các lần auto login tiếp theo)\n" +
         "- fbacc login <index>: đăng nhập ngay bằng acc index (đổi cookie + UID hiện tại)\n" +
         "- fbacc disable <index>: tắt acc (bỏ qua khi auto login)\n" +
-        "- fbacc enable <index>: bật lại acc"
+        "- fbacc enable <index>: bật lại acc\n" +
+        "- Tắt hẳn auto login: trong config.json đặt \"autoLogin\": false (lệnh acc login vẫn chạy tay được)"
       );
       return;
     }
