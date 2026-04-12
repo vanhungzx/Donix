@@ -140,7 +140,7 @@ export function setupMqttConnection(
   _defaultFuncs: any,
   _api: any,
   globalCallback: any,
-  getSeqID: () => Promise<void> | void
+  getSeqID: () => Promise<unknown> | unknown
 ): void {
   const chatOn = ctx.options.online;
 

@@ -1,32 +1,32 @@
 {
-  "lastDailyReset": "Sun Jan 01 2026",
+  "lastDailyReset": "Sun Apr 12 2026",
   "keys": [
     {
       "key": "AIzaSyBEJw3ne0IRHruP15QI5EdqIRKgTBn8xl8",
       "remaining": {
-        "flash": 20,
-        "lite": 20
+        "flash": 0,
+        "lite": 0
       }
     },
     {
       "key": "AIzaSyDgv4AsC-n7WigiVwYyxMKCADTC2PmVkE4",
       "remaining": {
-        "flash": 20,
-        "lite": 20
+        "flash": 0,
+        "lite": 0
       }
     },
     {
       "key": "AIzaSyDcgNa6ceY0GDiH60XJCZrkXzVjTcZEIB8",
       "remaining": {
-        "flash": 20,
-        "lite": 20
+        "flash": 0,
+        "lite": 0
       }
     },
     {
       "key": "AIzaSyAstceukN2TOMmeeSQjicrmPDSESYGkZ-4",
       "remaining": {
-        "flash": 20,
-        "lite": 20
+        "flash": 0,
+        "lite": 0
       }
     }
   ]

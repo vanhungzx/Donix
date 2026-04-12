@@ -51,6 +51,8 @@ Lưu ý: trong codebase có nơi dùng `PREFIX` (hoa) và có nơi type cũ dùn
 
 - `mqttAutoReconnect.enable`: bật/tắt cơ chế tự reconnect
 - `mqttAutoReconnect.interval`: thời gian (ms) để “kick reconnect” định kỳ
+- `mqttAutoReconnect.hangTimeout`: nếu MQTT im quá lâu (ms), bot sẽ chạy health probe để kiểm tra treo
+- `mqttAutoReconnect.probeTimeout`: timeout (ms) cho probe QoS1 trước khi coi MQTT bị treo và restart `listenMqtt`
 
 ### Scheduler (tác vụ định kỳ)
 

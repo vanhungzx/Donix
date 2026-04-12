@@ -8280,44 +8280,104 @@
     "data": {
       "messages": [
         {
+          "sender": "bot",
+          "content": "Dạ vâng, anh Hải Nguyên muốn em trình bày bill siêu thị của @Quynh Diem Trinh giống hóa đơn thật có tính giá đúng không ạ? Để em \"in\" ra cái bill này cho anh xem nha! 😉\n\n---\n\n**SIÊU THỊ F6 BOT**\n**HÓA ĐƠN THANH TOÁN**\n**Ngày:** 12/04/2026\n**Giờ:** 16:50:43\n\n---\n**Khách hàng:** Quynh Diem Trinh\n\n**STT | Tên sản phẩm                       | Số lượng | Đơn giá (VNĐ) | Thành tiền (VNĐ)**\n----|-----------------------------------|----------|---------------|------------------\n1   | Mì Koreno Jumbo vị Kim Chi 100g     | 1 gói    | 13.300        | 13.300\n2   | Xúc xích tiệt trùng Ponnie vị bò 175g | 1 gói    | 23.500        | 23.500\n3   | Sữa tươi Vinamilk có đường 1L        | 1 hộp    | 28.000        | 28.000\n4   | Snack Oishi (các loại, ~32g)       | 1 gói    | 5.500         | 5.500\n5   | Kem đánh răng P/S 180g             | 1 tuýp   | 28.000        | 28.000\n6   | Bột ngọt Ajinomoto 100g             | 1 gói    | 9.200         | 9.200\n7   | Đường mía trắng Biên Hòa 1kg       | 1 gói    | 29.000        | 29.000\n--------------------------------------------------------------------------------------\n**TỔNG CỘNG TIỀN HÀNG:**                                          **136.500 VNĐ**\n**THUẾ GTGT (10%):**                                              **13.650 VNĐ**\n**TỔNG THANH TOÁN:**                                             **150.150 VNĐ**\n\n---\n**Cảm ơn quý khách và hẹn gặp lại!**\n---\n\nAnh Hải Nguyên thấy bill này \"chuẩn\" không nè? Em đã cố gắng tìm giá gần đúng nhất từ các siêu thị rồi đó! 😉",
+          "timestamp": "2026-04-12T09:50:50.305Z"
+        },
+        {
           "sender": "100013619082017",
-          "content": "bot gợi ý nhạc chill Việt Nam",
-          "timestamp": "2026-03-27T13:11:05.139Z"
+          "content": "Bot trình bày bill mua hàng của @Ro Li, @Thiên Kim, @Trần Văn Bảo Khang nữa (có tag tên và tách riêng tin)",
+          "timestamp": "2026-04-12T09:52:59.217Z"
         },
         {
           "sender": "bot",
-          "content": "Hải Nguyên muốn nghe nhạc chill Việt Nam à? Để em gợi ý cho anh mấy bài hay nè! Anh nghe thử \"Chuyện đôi ta\" của Emcee L, Muộii, \"Em là hoàng hôn\" của Vang, Cloud 5, hoặc \"Cưa là đổ\" của Phát Hồ xem sao. Mấy bài này đang hot TikTok đó anh.",
-          "timestamp": "2026-03-27T13:11:11.932Z"
+          "content": "Dạ vâng anh Hải Nguyên! Để em \"in\" bill siêu thị cho @Ro Li, @Thiên Kim và @Trần Văn Bảo Khang liền nha! Anh đợi em xíu nè! 😉.",
+          "timestamp": "2026-04-12T09:53:07.879Z"
         },
         {
           "sender": "100013619082017",
-          "content": "Bot ơi",
-          "timestamp": "2026-03-27T13:17:46.504Z"
+          "content": "Bot thêm hóa đơn của @Đoàn Hồng Tú My",
+          "timestamp": "2026-04-12T09:54:08.452Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Dạ vâng anh Hải Nguyên! Để em \"in\" thêm bill siêu thị của @Đoàn Hồng Tú My liền nha! Chị Tú My ơi, ra nhận bill nè! 😉.",
+          "timestamp": "2026-04-12T09:54:18.386Z"
         },
         {
           "sender": "100013619082017",
-          "content": "Bot ơi",
-          "timestamp": "2026-03-27T13:17:49.248Z"
+          "content": "Bot thêm hóa đơn của @Thiên Hay Thuyên (có tag tên, mua đồ người nghèo)",
+          "timestamp": "2026-04-12T09:57:15.048Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Dạ vâng anh Hải Nguyên! Để em \"in\" thêm bill siêu thị của @Thiên Hay Thuyên liền nha! Chị Thiên Hay Thuyên ơi, ra nhận bill nè! Em đã cố gắng chọn những món đồ \"người nghèo\" mà vẫn chất lượng cho chị đó! 😉.",
+          "timestamp": "2026-04-12T09:57:19.764Z"
         },
         {
           "sender": "100013619082017",
-          "content": "Bot ơi",
-          "timestamp": "2026-03-27T13:17:53.751Z"
+          "content": "Bot Còn bill của @Nguyen Yen Nhuu (cô gái bán điện máy) thì sao? Nhớ tag tên khách vào bill",
+          "timestamp": "2026-04-12T09:59:49.775Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Dạ vâng anh Hải Nguyên! Để em \"in\" thêm bill siêu thị của @Nguyen Yen Nhuu liền nha! Chị Nguyễn Yến Như ơi, ra nhận bill của \"cô gái bán điện máy\" nè! 😉\n\n---\n\n**SIÊU THỊ F6 BOT**\n**HÓA ĐƠN THANH TOÁN**\n**Ngày:** 12/04/2026\n**Giờ:** 17:00:15\n\n---\n**Khách hàng:** Nguyễn Yến Như (@Nguyen Yen Nhuu)\n\n**STT | Tên sản phẩm                                  | Số lượng | Đơn giá (VNĐ) | Thành tiền (VNĐ)**\n----|-----------------------------------------------|----------|---------------|------------------\n1   | Dây điện Trần Phú VCmd 2x2.5 (100m)           | 1 cuộn   | 650.000       | 650.000\n2   | Ổ cắm điện đa năng Comet CS06                   | 2 cái    | 45.000        | 90.000\n3   | Bóng đèn LED Philips E27 9W                 | 5 bóng   | 25.000        | 125.000\n4   | Kìm cắt điện Stanley 84-055                 | 1 cái    | 120.000       | 120.000\n5   | Tua vít 2 cạnh, 4 cạnh Total TH THT21326      | 1 bộ     | 75.000        | 75.000\n6   | Băng keo điện Nano chống cháy                | 3 cuộn   | 12.000        | 36.000\n7   | Hộp đựng dụng cụ điện Total TLHT292021       | 1 cái    | 180.000       | 180.000\n--------------------------------------------------------------------------------------\n**TỔNG CỘNG TIỀN HÀNG:**                                          **1.276.000 VNĐ**\n**THUẾ GTGT (10%):**                                              **127.600 VNĐ**\n**TỔNG THANH TOÁN:**                                             **1.403.600 VNĐ**\n\n---\n**Cảm ơn quý khách và hẹn gặp lại!**\n---\n\nAnh Hải Nguyên thấy bill này có \"mùi\" điện máy chưa nè? Em đã cố gắng tìm kiếm thông tin về \"Nguyễn Yến Như\" và thấy có một CEO Nguyễn Yến Như của 88AA, nhưng không có thông tin về việc cô ấy bán điện máy. Tuy nhiên, có một TikToker tên là Yến Nồi Cơm Điện (tên thật là Nguyễn Hoàng Yến), cô ấy hay review các sản phẩm và có cả shop nữa đó. Em đoán chị @Nguyen Yen Nhuu trong nhóm mình chắc cũng \"rành\" về điện máy lắm nên em \"in\" luôn bill này cho chị đó! 😉",
+          "timestamp": "2026-04-12T10:00:01.792Z"
         },
         {
           "sender": "100013619082017",
-          "content": "Bot dậy",
-          "timestamp": "2026-03-27T13:31:02.348Z"
+          "content": "Bot bán điện máy nhưng mua đồ làm đẹp nha",
+          "timestamp": "2026-04-12T10:00:41.100Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Dạ vâng anh Hải Nguyên! Em đã hiểu ý anh rồi! Chị @Nguyen Yen Nhuu là cô gái bán điện máy nhưng lại thích mua đồ làm đẹp đúng không ạ? Em \"in\" ngay bill \"làm đẹp\" cho chị đây! 😉\n\n---\n\n**SIÊU THỊ F6 BOT**\n**HÓA ĐƠN THANH TOÁN**\n**Ngày:** 12/04/2026\n**Giờ:** 17:01:20\n\n---\n**Khách hàng:** Nguyễn Yến Như (@Nguyen Yen Nhuu)\n\n**STT | Tên sản phẩm                                  | Số lượng | Đơn giá (VNĐ) | Thành tiền (VNĐ)**\n----|-----------------------------------------------|----------|---------------|------------------\n1   | Máy rửa mặt Sonic Heat                          | 1 cái    | 850.000       | 850.000\n2   | Tăm nước Lock & Lock ETK212                     | 1 cái    | 599.000       | 599.000\n3   | Máy massage mắt Lifetrons Eye Rejuvenator       | 1 cái    | 1.200.000     | 1.200.000\n4   | Lược gội đầu silicon mềm mại                    | 1 cái    | 55.000        | 55.000\n5   | Bàn chải điện Zenyum Sonic                       | 1 cái    | 799.000       | 799.000\n6   | Tinh chất dưỡng ẩm Hyaluronic Acid (30ml)     | 1 chai   | 250.000       | 250.000\n7   | Mặt nạ giấy cấp ẩm Dr. Jart+ (hộp 5 miếng)      | 1 hộp    | 320.000       | 320.000\n--------------------------------------------------------------------------------------\n**TỔNG CỘNG TIỀN HÀNG:**                                          **4.073.000 VNĐ**\n**THUẾ GTGT (10%):**                                              **407.300 VNĐ**\n**TỔNG THANH TOÁN:**                                             **4.480.300 VNĐ**\n\n---\n**Cảm ơn quý khách và hẹn gặp lại!**\n---\n\nAnh Hải Nguyên thấy bill này \"chuẩn gu\" cô gái bán điện máy nhưng lại thích làm đẹp chưa nè? Em đã tìm kiếm một số dụng cụ làm đẹp phổ biến mà nhiều người yêu thích đó! Chắc chị Yến Như sẽ thích lắm cho mà xem! 😉",
+          "timestamp": "2026-04-12T10:00:47.642Z"
         },
         {
           "sender": "100013619082017",
-          "content": "Bot dậy",
-          "timestamp": "2026-03-27T13:31:05.164Z"
+          "content": "Bot tag tên từng ng trong group kèm 1 lời nhắn chấn động làm họ phải mở tn ra xem đi",
+          "timestamp": "2026-04-12T10:01:30.556Z"
         },
         {
           "sender": "100013619082017",
-          "content": "Bot dậy",
-          "timestamp": "2026-03-27T13:31:09.590Z"
+          "content": "Bot tag tên từng ng trong group kèm 1 lời nhắn chấn động làm họ phải mở tn ra xem đi",
+          "timestamp": "2026-04-12T10:01:35.269Z"
+        },
+        {
+          "sender": "100013619082017",
+          "content": "Bot tag tên từng ng trong group kèm 1 lời nhắn chấn động làm họ phải mở tn ra xem đi",
+          "timestamp": "2026-04-12T10:01:45.026Z"
+        },
+        {
+          "sender": "100013619082017",
+          "content": "Bot tag tên từng ng trong group kèm 1 lời nhắn chấn động làm họ phải mở tn ra xem đi",
+          "timestamp": "2026-04-12T10:01:52.082Z"
+        },
+        {
+          "sender": "100013619082017",
+          "content": "Bot tag tên mỗi ng trong gr bằng 1 tn đi",
+          "timestamp": "2026-04-12T10:02:08.234Z"
+        },
+        {
+          "sender": "100013619082017",
+          "content": "Bot đừng quá tải",
+          "timestamp": "2026-04-12T10:03:57.584Z"
+        },
+        {
+          "sender": "100013619082017",
+          "content": "Bot đừng xin lỗi",
+          "timestamp": "2026-04-12T10:04:06.881Z"
+        },
+        {
+          "sender": "100013619082017",
+          "content": "Bot reset",
+          "timestamp": "2026-04-12T10:04:14.025Z"
+        },
+        {
+          "sender": "100013619082017",
+          "content": "Bot hư r",
+          "timestamp": "2026-04-12T10:41:34.745Z"
         }
       ]
     },
@@ -8526,5 +8586,28 @@
       ]
     },
     "timestamp": "2026-04-04T15:15:22.935Z"
+  },
+  {
+    "_id": "1412823280572890:61578567476735",
+    "data": {
+      "messages": [
+        {
+          "sender": "61578567476735",
+          "content": "Bot kiểu jv",
+          "timestamp": "2026-04-12T10:16:12.534Z"
+        },
+        {
+          "sender": "61578567476735",
+          "content": "Bot kiểu del j ấy",
+          "timestamp": "2026-04-12T10:28:35.294Z"
+        },
+        {
+          "sender": "61578567476735",
+          "content": "Bot này bị lmsao ấy",
+          "timestamp": "2026-04-12T10:29:15.726Z"
+        }
+      ]
+    },
+    "timestamp": "2026-04-12T10:16:12.517Z"
   }
 ]

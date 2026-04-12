@@ -2,15 +2,55 @@ import log from "@log";
 import utils, { get } from "../../request/index";
 import { GRAPHQL_DOC_ID } from "./constants";
 import { getSequenceIdFromHtml } from "./htmlSequenceId";
-import { reconnectMqtt } from "./reconnect";
 const { parseAndCheckLogin } = utils;
 
-export async function handleAutoLogin(ctx: any, resData: any, retry = true, _defaultFuncs: any): Promise<void> {
-  const resStr = JSON.stringify(resData);
-  if (resStr.includes("XCheckpointFBScrapingWarningController") || resStr.includes("601051028565049")) {
-    throw { error: "Not logged in.", res: resData };
+export type GetSeqIdResult = "started" | "retry" | "fatal";
+
+function signalText(input: unknown): string {
+  if (typeof input === "string") return input;
+  if (input instanceof Error) {
+    const extra = (input as Error & { error?: string; res?: unknown }).error || "";
+    const res = (input as Error & { res?: unknown }).res;
+    return `${input.message || ""} ${extra} ${signalText(res)}`.trim();
   }
-  if (resStr.includes("https://www.facebook.com/login.php?")) {
+  if (input && typeof input === "object") {
+    try {
+      return JSON.stringify(input);
+    } catch {
+      return String(input);
+    }
+  }
+  return String(input ?? "");
+}
+
+function isScrapingWarningSignal(input: unknown): boolean {
+  const text = signalText(input);
+  return (
+    text.includes("XCheckpointFBScrapingWarningController") ||
+    text.includes("601051028565049") ||
+    text.includes("checkpoint/601051028565049") ||
+    text.includes("FBScrapingWarning")
+  );
+}
+
+function isLoggedOutSignal(input: unknown): boolean {
+  const text = signalText(input);
+  return (
+    text.includes("https://www.facebook.com/login.php?") ||
+    text.includes("/login.php") ||
+    text.includes("\"error\":\"Not logged in.\"") ||
+    text.includes("\"error\":\"Not logged in\"")
+  );
+}
+
+function formatSignalForLog(input: unknown): string {
+  const text = signalText(input).replace(/\s+/g, " ").trim();
+  return text.length > 280 ? `${text.slice(0, 277)}...` : text;
+}
+
+export async function handleAutoLogin(ctx: any, resData: any, retry = true, _defaultFuncs: any): Promise<void> {
+  const resStr = signalText(resData);
+  if (isLoggedOutSignal(resStr)) {
     if (!ctx.auto_login && retry) {
       ctx.auto_login = true;
       console.error("Phiên đăng nhập hết hạn");
@@ -115,6 +155,11 @@ export async function getSequenceIdFromHtmlOrGraphQL(ctx: any, defaultFuncs: any
         const rawRes = await defaultFuncs.post("https://www.facebook.com/api/graphqlbatch/", ctx.jar, postData, ctx);
         const resData = await parseAndCheckLogin(ctx, defaultFuncs)(rawRes);
 
+        if (isScrapingWarningSignal(resData)) {
+          log.warn("GraphQL trả về scraping warning 049 khi lấy sequence ID, sẽ xử lý ở vòng retry.");
+          return null;
+        }
+
         if (Array.isArray(resData) && resData.length > 0) {
           const syncSeqId = resData[0]?.o0?.data?.viewer?.message_threads?.sync_sequence_id;
           if (syncSeqId) {
@@ -124,7 +169,11 @@ export async function getSequenceIdFromHtmlOrGraphQL(ctx: any, defaultFuncs: any
           }
         }
       } catch (error: any) {
-        log.warn(`Lỗi khi lấy sequence ID từ GraphQL: ${error?.message || error}`);
+        if (isScrapingWarningSignal(error)) {
+          log.warn("GraphQL trả về scraping warning 049 khi lấy sequence ID, sẽ xử lý ở fallback.");
+        } else {
+          log.warn(`Lỗi khi lấy sequence ID từ GraphQL: ${formatSignalForLog(error)}`);
+        }
       }
     }
 
@@ -143,7 +192,7 @@ export function createGetSeqID(
   listenMqtt: any,
   globalCallback: any,
   messageCleanupInterval: NodeJS.Timeout | null
-): () => void {
+): () => Promise<GetSeqIdResult> {
   return async () => {
     ctx.t_mqttCalled = false;
 
@@ -152,7 +201,7 @@ export function createGetSeqID(
     if (seqIdFromHtml) {
       ctx.lastSeqId = seqIdFromHtml;
       listenMqtt(defaultFuncs, api, ctx, globalCallback);
-      return;
+      return "started";
     }
 
     // Fallback về GraphQL như cũ
@@ -164,77 +213,88 @@ export function createGetSeqID(
       .post("https://www.facebook.com/api/graphqlbatch/", ctx.jar, postData)
       .then(parseAndCheckLogin(ctx, defaultFuncs))
       .then(async (resData: any) => {
-        await handleAutoLogin(ctx, resData, false, defaultFuncs);
-        if (resData.includes("XCheckpointFBScrapingWarningController") || resData.includes("601051028565049")) {
-          handleFBWarning(api, ctx, messageCleanupInterval);
-          throw { error: "Not logged in.", res: resData };
+        if (isScrapingWarningSignal(resData)) {
+          const cleared = await handleFBWarning(api, ctx, messageCleanupInterval);
+          return cleared ? ("retry" as const) : ("fatal" as const);
         }
-        if (!Array.isArray(resData) || !resData.length) return;
+        await handleAutoLogin(ctx, resData, false, defaultFuncs);
+        if (!Array.isArray(resData) || !resData.length) {
+          log.warn("getSeqID: Không có dữ liệu GraphQL để khởi động lại MQTT");
+          return "retry" as const;
+        }
         const lastRes = resData[resData.length - 1];
         if (lastRes?.error_results > 0) {
           console.warn("getSeqID: Có lỗi trong kết quả", resData[0]?.o0?.errors);
         }
         if (lastRes?.successful_results === 0) {
           console.warn("getSeqID: Không có kết quả thành công", resData);
-          return;
+          return "retry" as const;
         }
         const syncSeqId = resData[0]?.o0?.data?.viewer?.message_threads?.sync_sequence_id;
         if (syncSeqId) {
           ctx.lastSeqId = syncSeqId;
           listenMqtt(defaultFuncs, api, ctx, globalCallback);
+          return "started" as const;
         } else {
           console.warn("getSeqID: Không tìm thấy sync_sequence_id", resData);
+          return "retry" as const;
         }
       })
       .catch((err: any) => handleGetSeqIDError(err, ctx, api, globalCallback, messageCleanupInterval));
   };
 }
 
-export function handleFBWarning(api: any, ctx: any, messageCleanupInterval: NodeJS.Timeout | null): void {
-  console.log("049");
-  api.httpPost(
-    "https://www.facebook.com/api/graphql/",
-    {
-      av: api.getCurrentUserID(),
-      fb_api_caller_class: "RelayModern",
-      fb_api_req_friendly_name: "FBScrapingWarningMutation",
-      variables: "{}",
-      server_timestamps: "true",
-      doc_id: "6339492849481770"
-    },
-    (err: any, response: any) => {
-      if (err) {
-        log.error(`HTTP error: ${err.message || err}`);
-        return;
+export function handleFBWarning(api: any, _ctx: any, _messageCleanupInterval: NodeJS.Timeout | null): Promise<boolean> {
+  log.warn("Phát hiện scraping warning 049, đang thử clear mềm trước khi retry MQTT...");
+  return new Promise<boolean>((resolve) => {
+    api.httpPost(
+      "https://www.facebook.com/api/graphql/",
+      {
+        av: api.getCurrentUserID(),
+        fb_api_caller_class: "RelayModern",
+        fb_api_req_friendly_name: "FBScrapingWarningMutation",
+        variables: "{}",
+        server_timestamps: "true",
+        doc_id: "6339492849481770"
+      },
+      (err: any, response: any) => {
+        if (err) {
+          log.error(`HTTP error khi clear FB warning 049: ${formatSignalForLog(err)}`);
+          resolve(false);
+          return;
+        }
+        let result;
+        try {
+          result = JSON.parse(response);
+        } catch (e: any) {
+          log.error(`Invalid JSON khi clear FB warning 049: ${e.message}`);
+          resolve(false);
+          return;
+        }
+        if (result.errors) {
+          log.error(`FB API error khi clear warning 049: ${result.errors[0]?.message || "Unknown"}`);
+          resolve(false);
+          return;
+        }
+        if (result.data?.fb_scraping_warning_clear?.success) {
+          log.success("FB warning 049 cleared");
+          resolve(true);
+        } else {
+          log.error("Failed to clear FB warning 049");
+          resolve(false);
+        }
       }
-      let result;
-      try {
-        result = JSON.parse(response);
-      } catch (e: any) {
-        log.error(`Invalid JSON response: ${e.message}`);
-        return;
-      }
-      if (result.errors) {
-        log.error(`FB API error: ${result.errors[0]?.message || "Unknown"}`);
-        return;
-      }
-      if (result.data?.fb_scraping_warning_clear?.success) {
-        log.success("FB warning 049 cleared");
-        reconnectMqtt(ctx, messageCleanupInterval);
-      } else {
-        log.error("Failed to clear FB warning");
-      }
-    }
-  );
+    );
+  });
 }
 
-export function handleGetSeqIDError(
+export async function handleGetSeqIDError(
   err: any,
   ctx: any,
   api: any,
   globalCallback: any,
   messageCleanupInterval: NodeJS.Timeout | null
-): void {
+): Promise<GetSeqIdResult> {
   const errCode = err?.code || err?.errno || '';
   const errMessage = String(err?.message || err || '').toLowerCase();
   const isNetworkErr =
@@ -251,21 +311,23 @@ export function handleGetSeqIDError(
     log.warn(`getSeqID error (lỗi mạng): ${err?.message || err}. Sẽ tự động thử lại khi có mạng...`);
     // Đối với lỗi mạng, không gọi globalCallback với error để tránh trigger các handlers khác
     // Reconnect logic sẽ tự động retry
-    return;
+    return "retry";
   }
 
-  log.error(`getSeqID error: ${err}`);
-  const errStr = JSON.stringify(err);
-  if (errStr.includes("XCheckpointFBScrapingWarningController") || errStr.includes("601051028565049")) {
-    console.log("049");
-    handleFBWarning(api, ctx, messageCleanupInterval);
-    throw { error: "Not logged in.", res: errStr };
+  if (isScrapingWarningSignal(err)) {
+    const cleared = await handleFBWarning(api, ctx, messageCleanupInterval);
+    return cleared ? "retry" : "fatal";
   }
+  log.error(`getSeqID error: ${formatSignalForLog(err)}`);
+  const errStr = signalText(err);
   if (errStr.includes("https://www.facebook.com/login.php?")) {
     console.error("Phiên đăng nhập hết hạn");
   }
-  if (typeof err === "object" && (err as any).error === "Not logged in") {
+  if (typeof err === "object" && (err as any).error === "Not logged in" && !isScrapingWarningSignal((err as any).res)) {
     ctx.loggedIn = false;
+    globalCallback(err);
+    return "fatal";
   }
   globalCallback(err);
+  return "retry";
 }

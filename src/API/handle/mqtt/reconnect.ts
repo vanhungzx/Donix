@@ -5,7 +5,7 @@ import { saveCookies } from "../../request/clients.js";
 import { parseAndCheckLogin } from "../../request/formatters/helpers";
 import { get, post } from "../../request/index";
 import { maxReconnectAttempts, reconnectBackoff, topics } from "./constants";
-import { buildQuery } from "./sequenceId";
+import { buildQuery, type GetSeqIdResult } from "./sequenceId";
 
 function responseFinalUrl(res: {
   request?: { res?: { responseUrl?: string } };
@@ -116,7 +116,7 @@ function isMqttClientReadyForTraffic(ctx: any, mqttClient: any): boolean {
 export async function reconnectMqttHandler(
   ctx: any,
   defaultFuncs: any,
-  getSeqID: () => Promise<void>,
+  getSeqID: () => Promise<GetSeqIdResult | unknown>,
   onReconnect?: () => void,
   forceReconnect: boolean = false
 ): Promise<boolean> {
@@ -520,7 +520,32 @@ export async function reconnectMqttHandler(
           onReconnect();
         }
 
-        await getSeqID();
+        const seqResult = await getSeqID();
+        if (seqResult === "retry") {
+          log.warn("Chưa lấy được sequence ID để dựng lại MQTT, sẽ tiếp tục retry với backoff...");
+          isReconnecting = false;
+          ctx.isReconnecting = false;
+          reconnectPromise = null;
+
+          const retryDelay = Math.min(
+            reconnectBackoff * Math.pow(1.3, Math.max(mqttReconnectCount, 1)),
+            8000
+          );
+
+          setTimeout(() => {
+            log.system("Đang thử kết nối lại sau khi chưa lấy được sequence ID...");
+            reconnectMqttHandler(ctx, defaultFuncs, getSeqID, onReconnect, true)
+              .catch((retryErr: any) => {
+                log.warn(`Lỗi khi retry sau getSeqID=retry: ${retryErr?.message || retryErr}`);
+              });
+          }, retryDelay);
+
+          resolve(false);
+          return;
+        }
+        if (seqResult !== "started") {
+          throw new Error(`MQTT reconnect chưa thể dựng lại listenMqtt (getSeqID=${String(seqResult)})`);
+        }
 
         // Reset counter khi reconnect thành công
         mqttReconnectCount = 0;

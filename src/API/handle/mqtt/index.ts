@@ -308,6 +308,19 @@ export default function (defaultFuncs: any, api: any, ctx: any) {
   let globalCallback: any = () => { };
 
   const getSeqID = createGetSeqID(ctx, defaultFuncs, api, listenMqtt, globalCallback, messageCleanupInterval);
+  const runGetSeqIDWithRecovery = () => {
+    void getSeqID()
+      .then((result) => {
+        if (result === "retry") {
+          log.warn("Khởi tạo listenMqtt chưa hoàn tất, sẽ chuyển sang luồng reconnect để thử lại.");
+          reconnectMqtt(ctx, messageCleanupInterval, getSeqID);
+        }
+      })
+      .catch((err: any) => {
+        log.error(`Lỗi không mong muốn khi khởi tạo sequence ID: ${err?.message || err}`);
+        reconnectMqtt(ctx, messageCleanupInterval, getSeqID);
+      });
+  };
 
   const createMessageEmitter = () => {
     class MessageEmitter extends NodeEventEmitter {
@@ -386,11 +399,11 @@ export default function (defaultFuncs: any, api: any, ctx: any) {
       ctx.lastSeqId = null;
       ctx.syncToken = undefined;
       ctx.t_mqttCalled = false;
-      getSeqID();
+      runGetSeqIDWithRecovery();
     } else {
       ctx.syncToken = undefined;
       ctx.t_mqttCalled = false;
-      getSeqID();
+      runGetSeqIDWithRecovery();
     }
 
     ctx.firstListen = false;

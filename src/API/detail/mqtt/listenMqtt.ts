@@ -32,8 +32,10 @@ export function createAutoReconnectTimer(options: AutoReconnectOptions): AutoRec
 
   let reconnectTimer: NodeJS.Timeout | null = null;
   let configWatcher: NodeJS.Timeout | null = null;
+  let healthCheckTimer: NodeJS.Timeout | null = null;
   let mqttEmitter: any = null;
   let isPeriodicRestartRunning = false;
+  let isHealthProbeRunning = false;
 
   const getCurrentEmitter = () => {
     if (getEmitter) {
@@ -53,6 +55,61 @@ export function createAutoReconnectTimer(options: AutoReconnectOptions): AutoRec
 
   // Khoảng thời gian tối thiểu (ms) giữa các lần reconnect
   const MIN_RECONNECT_INTERVAL = 10 * 60 * 1000; // 10 phút
+  const MIN_HANG_TIMEOUT = 90 * 1000; // 90 giây
+
+  const markHealthActivity = (clientCtx: any, mqttClient: any) => {
+    const now = Date.now();
+    if (clientCtx) {
+      clientCtx.lastMqttActivityAt = now;
+    }
+    if (mqttClient) {
+      mqttClient._donixLastActivityAt = now;
+    }
+  };
+
+  const restartListener = async (reason: string) => {
+    const clientCtx = getClientCtx();
+    if (clientCtx?.isReconnecting) {
+      log.info("Bỏ qua restart listenMqtt vì MQTT đang reconnect nội bộ.");
+      return;
+    }
+
+    if (isPeriodicRestartRunning) {
+      return;
+    }
+
+    isPeriodicRestartRunning = true;
+    try {
+      log.warn(reason);
+
+      const oldEmitter = getCurrentEmitter();
+      if (oldEmitter && typeof oldEmitter.stopListening === "function") {
+        try {
+          await Promise.race([
+            new Promise<void>((resolve) => {
+              oldEmitter.stopListening(() => {
+                resolve();
+              });
+            }),
+            new Promise<void>((resolve) => setTimeout(resolve, 3000))
+          ]);
+        } catch {
+          // Bỏ qua lỗi khi stop emitter cũ
+        }
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      const newEmitter = client.listenMqtt(messageHandler);
+      updateEmitter(newEmitter);
+
+      log.info("Đã khởi động lại listenMqtt, đang chờ /t_ms...");
+    } catch (reconnectError: any) {
+      log.error(`Lỗi khi reconnect listenMqtt: ${formatError(reconnectError)}`);
+    } finally {
+      isPeriodicRestartRunning = false;
+    }
+  };
 
   const startReconnectTimer = () => {
     if (reconnectTimer) {
@@ -73,47 +130,7 @@ export function createAutoReconnectTimer(options: AutoReconnectOptions): AutoRec
     }
 
     reconnectTimer = setInterval(async () => {
-      const clientCtx = getClientCtx();
-      if (clientCtx?.isReconnecting) {
-        log.info("Bỏ qua reconnect listenMqtt định kỳ vì MQTT đang reconnect nội bộ.");
-        return;
-      }
-
-      if (isPeriodicRestartRunning) {
-        return;
-      }
-
-      isPeriodicRestartRunning = true;
-      try {
-        log.warn(`Đang tiến hành reconnect listenMqtt định kỳ...`);
-
-        let oldEmitter = getCurrentEmitter();
-        if (oldEmitter && typeof oldEmitter.stopListening === "function") {
-          try {
-            await Promise.race([
-              new Promise<void>((resolve) => {
-                oldEmitter.stopListening(() => {
-                  resolve();
-                });
-              }),
-              new Promise<void>((resolve) => setTimeout(resolve, 3000))
-            ]);
-          } catch (e) {
-            // Bỏ qua lỗi khi stop emitter cũ
-          }
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        const newEmitter = client.listenMqtt(messageHandler);
-        updateEmitter(newEmitter);
-
-        log.info("Đã khởi động lại listenMqtt, đang chờ /t_ms...");
-      } catch (reconnectError: any) {
-        log.error(`Lỗi khi reconnect listenMqtt: ${formatError(reconnectError)}`);
-      } finally {
-        isPeriodicRestartRunning = false;
-      }
+      await restartListener("Đang tiến hành reconnect listenMqtt định kỳ...");
     }, interval);
 
     if (typeof reconnectTimer.unref === "function") {
@@ -121,6 +138,115 @@ export function createAutoReconnectTimer(options: AutoReconnectOptions): AutoRec
     }
 
     log.info(`Auto reconnect MQTT đã được bật (interval: ${interval / 1000 / 60} phút).`);
+  };
+
+  const startHealthCheckTimer = () => {
+    if (healthCheckTimer) {
+      clearInterval(healthCheckTimer);
+      healthCheckTimer = null;
+    }
+
+    const currentConfig = getConfig();
+    const mqttConfig = currentConfig.mqttAutoReconnect;
+    const enable = mqttConfig?.enable !== false;
+
+    if (!enable) {
+      return;
+    }
+
+    const configuredHangTimeout = Number(mqttConfig?.hangTimeout);
+    const hangTimeout = Number.isFinite(configuredHangTimeout)
+      ? Math.max(MIN_HANG_TIMEOUT, configuredHangTimeout)
+      : 8 * 60 * 1000;
+    const configuredProbeTimeout = Number(mqttConfig?.probeTimeout);
+    const probeTimeout = Number.isFinite(configuredProbeTimeout)
+      ? Math.max(3000, Math.min(configuredProbeTimeout, 20000))
+      : 8000;
+    const checkInterval = Math.max(30000, Math.min(Math.floor(hangTimeout / 3), 120000));
+
+    healthCheckTimer = setInterval(async () => {
+      const clientCtx = getClientCtx();
+      const mqttClient = clientCtx?.mqttClient;
+      if (!clientCtx || !mqttClient) {
+        return;
+      }
+
+      if (
+        clientCtx.isReconnecting ||
+        isPeriodicRestartRunning ||
+        isHealthProbeRunning
+      ) {
+        return;
+      }
+
+      const isReady = clientCtx.mqttReady === true || mqttClient._donixReady === true;
+      const isConnected = mqttClient.connected === true;
+      const isClosing = mqttClient.disconnecting === true || mqttClient.disconnected === true;
+
+      if (!isReady || !isConnected || isClosing) {
+        return;
+      }
+
+      const lastActivityAt = Number(
+        clientCtx.lastMqttActivityAt ||
+        mqttClient._donixLastActivityAt ||
+        clientCtx.mqttReadyAt ||
+        clientCtx.mqttConnectedAt ||
+        0
+      );
+      if (!lastActivityAt) {
+        return;
+      }
+
+      const idleFor = Date.now() - lastActivityAt;
+      if (idleFor < hangTimeout) {
+        return;
+      }
+
+      isHealthProbeRunning = true;
+      try {
+        const currentClient = mqttClient;
+        const probeOk = await Promise.race<boolean>([
+          new Promise<boolean>((resolve) => {
+            try {
+              currentClient.publish(
+                "/foreground_state",
+                JSON.stringify({ foreground: clientCtx.options?.online ?? false, health_probe: true }),
+                { qos: 1 },
+                (err: any) => resolve(!err)
+              );
+            } catch {
+              resolve(false);
+            }
+          }),
+          new Promise<boolean>((resolve) => {
+            const timeout = setTimeout(() => resolve(false), probeTimeout);
+            if (typeof timeout.unref === "function") {
+              timeout.unref();
+            }
+          })
+        ]);
+
+        if (getClientCtx()?.mqttClient !== currentClient) {
+          return;
+        }
+
+        if (probeOk) {
+          markHealthActivity(clientCtx, currentClient);
+          return;
+        }
+
+        await restartListener(
+          `MQTT có dấu hiệu đứng (${Math.floor(idleFor / 1000)}s không có hoạt động và probe timeout ${probeTimeout}ms), đang restart listenMqtt...`
+        );
+      } finally {
+        isHealthProbeRunning = false;
+      }
+    }, checkInterval);
+
+    if (typeof healthCheckTimer.unref === "function") {
+      healthCheckTimer.unref();
+    }
   };
 
   const startConfigWatcher = () => {
@@ -140,11 +266,12 @@ export function createAutoReconnectTimer(options: AutoReconnectOptions): AutoRec
       const mqttConfig = currentConfig.mqttAutoReconnect;
       const enable = mqttConfig?.enable !== false;
 
-      const shouldRestart = reconnectTimer === null && enable;
-      const shouldStop = reconnectTimer !== null && !enable;
+      const shouldRestart = (reconnectTimer === null || healthCheckTimer === null) && enable;
+      const shouldStop = (reconnectTimer !== null || healthCheckTimer !== null) && !enable;
 
       if (shouldRestart || shouldStop) {
         startReconnectTimer();
+        startHealthCheckTimer();
       }
     }, 120000);
 
@@ -156,6 +283,7 @@ export function createAutoReconnectTimer(options: AutoReconnectOptions): AutoRec
   const controller: AutoReconnectController & { getEmitter: () => any; setEmitter: (emitter: any) => void } = {
     start: () => {
       startReconnectTimer();
+      startHealthCheckTimer();
       startConfigWatcher();
     },
     stop: () => {
@@ -163,6 +291,10 @@ export function createAutoReconnectTimer(options: AutoReconnectOptions): AutoRec
       if (reconnectTimer) {
         clearInterval(reconnectTimer);
         reconnectTimer = null;
+      }
+      if (healthCheckTimer) {
+        clearInterval(healthCheckTimer);
+        healthCheckTimer = null;
       }
       if (configWatcher) {
         clearInterval(configWatcher);
@@ -174,6 +306,10 @@ export function createAutoReconnectTimer(options: AutoReconnectOptions): AutoRec
       if (reconnectTimer) {
         clearInterval(reconnectTimer);
         reconnectTimer = null;
+      }
+      if (healthCheckTimer) {
+        clearInterval(healthCheckTimer);
+        healthCheckTimer = null;
       }
       if (configWatcher) {
         clearInterval(configWatcher);
