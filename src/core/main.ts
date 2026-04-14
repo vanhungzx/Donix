@@ -92,6 +92,17 @@ const formatError = (err: unknown): string => {
   }
 };
 
+const containsLoggedOutSignal = (value: unknown): boolean => {
+  const text = String(value ?? "").toLowerCase();
+  return (
+    text.includes("logged out") ||
+    text.includes("account logged out") ||
+    text.includes("not logged in") ||
+    text.includes("facebook blocked the login") ||
+    text.includes("/login.php")
+  );
+};
+
 interface MessageHandlerDeps {
   client: FacebookClient;
   models?: {
@@ -992,8 +1003,12 @@ if (cleanupInterval) {
             };
             const errorCode = errorLike.code || errorLike.errno || "";
             const errorString = String(errorMessage || '').toLowerCase();
+            const isLoggedOutError =
+              containsLoggedOutSignal(errorLike.error) ||
+              containsLoggedOutSignal(errorLike.message) ||
+              containsLoggedOutSignal(errorMessage);
 
-            if (errorLike.error === "Account logged out" ||
+            if (isLoggedOutError || errorLike.error === "Account logged out" ||
               errorLike.message?.includes("logged out") ||
               errorLike.message?.includes("không còn đăng nhập")) {
               log.error(`⚠️ Tài khoản đã bị logout hoặc không còn đăng nhập. Vui lòng đăng nhập lại.`);

@@ -1,0 +1,39 @@
+{
+  "name": "Hải Nguyên",
+  "ID": "100013619082017",
+  "mainROD": "The Blessing From The Sea",
+  "accessory": null,
+  "GPS": {
+    "locate": null,
+    "area": null
+  },
+  "fishBag": [
+    {
+      "ID": 0,
+      "name": "Đừng bán con cá này ko là lỗi tao đéo chịu trách nhiệm đâu",
+      "size": 999999,
+      "sell": 0
+    }
+  ],
+  "item": [
+    {
+      "name": "The Blessing From The Sea",
+      "price": 15312350000,
+      "durability": 120000,
+      "countdown": 2,
+      "luck": 15000,
+      "countdownData": null,
+      "image": "https://i.imgur.com/S7eXgbY.png"
+    }
+  ],
+  "equipments": [],
+  "point": [
+    {
+      "ID": 0,
+      "name": "Đừng bán con cá này ko là lỗi tao đéo chịu trách nhiệm đâu",
+      "size": 999999,
+      "sell": 0
+    }
+  ],
+  "timeRegister": "15:52:02 13/4/2026"
+}

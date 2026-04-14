@@ -7,7 +7,7 @@ import type {
   CommandOnReactContext,
   CommandOnReplyContext,
   ReplyData,
-} from '@types';
+} from "@types";
 import axios from "axios";
 import { createReadStream } from "fs";
 import fs from "fs-extra";
@@ -46,9 +46,10 @@ interface CooldownData {
 
 const DICE_NAMES = ["gà", "tôm", "bầu", "cua", "cá", "nai"] as const;
 
+let data: GameData = {};
+
 function save(): void {
   fs.ensureDirSync(path.dirname(dataPath));
-  // Chỉ lưu dữ liệu thuần (không lưu Timeout, không lưu bigint trực tiếp)
   const plain: Record<string, any> = {};
 
   Object.entries(data).forEach(([threadID, room]) => {
@@ -57,7 +58,6 @@ function save(): void {
       players: room.players.map((player) => ({
         id: player.id,
         select: player.select,
-        // bigint -> string để JSON.stringify không lỗi
         bet_money: player.bet_money.toString(),
       })),
       playing: room.playing ?? false,
@@ -68,16 +68,11 @@ function save(): void {
   fs.writeFileSync(dataPath, JSON.stringify(plain, null, 2), "utf-8");
 }
 
-// Không load phòng từ file khi khởi động: sau restart không thể khôi phục
-// setTimeout, nên luôn bắt đầu với data rỗng. File chỉ dùng để lưu trong phiên.
 fs.ensureDirSync(path.dirname(dataPath));
 
 declare global {
-  var data_command_bcua_rooms: GameData | undefined;
   var data_command_ban_bau_cua_tom_ca_ga_nai: CooldownData | undefined;
 }
-
-let data: GameData = global.data_command_bcua_rooms ?? (global.data_command_bcua_rooms = {});
 
 let d = global.data_command_ban_bau_cua_tom_ca_ga_nai;
 
@@ -91,9 +86,9 @@ if (!d.s) {
 
 if (!d.t) {
   d.t = setInterval(() => {
-    Object.entries(d.s).forEach(([key, value]) => {
+    Object.entries(d!.s).forEach(([key, value]) => {
       if (value <= Date.now()) {
-        delete d.s[key];
+        delete d!.s[key];
       }
     });
   }, 1000);
@@ -103,36 +98,6 @@ const time_wai_create = 2;
 const time_del_ban = 5;
 const time_diing = 5;
 const bet_money_min = 100;
-
-export async function clearBaucuaRoom(threadID: string): Promise<boolean> {
-  let cleared = false;
-
-  const room = data[threadID];
-  if (room?.set_timeout) {
-    clearTimeout(room.set_timeout);
-  }
-
-  if (threadID in data) {
-    delete data[threadID];
-    save();
-    cleared = true;
-  }
-
-  const storedRaw = await fs.readJson(dataPath).catch(() => ({}));
-  const stored =
-    storedRaw && typeof storedRaw === "object" && !Array.isArray(storedRaw)
-      ? (storedRaw as Record<string, unknown>)
-      : {};
-
-  if (threadID in stored) {
-    delete stored[threadID];
-    fs.ensureDirSync(path.dirname(dataPath));
-    await fs.writeFile(dataPath, JSON.stringify(stored, null, 2), "utf-8");
-    cleared = true;
-  }
-
-  return cleared;
-}
 
 async function stream_url(url: string): Promise<Buffer | undefined> {
   try {
@@ -158,7 +123,7 @@ function parseAmount(value: string | number | undefined): bigint | number {
   const complexMatch = String(value).match(/^(\d*\.?\d*)([bkmtr]*)?(\d*)$/i);
   if (!complexMatch) return NaN;
 
-  let [, mainNumber, unit, decimalPart] = complexMatch;
+  const [, mainNumber, unit, decimalPart] = complexMatch;
   let numericValue = parseFloat(
     mainNumber + (decimalPart ? "." + decimalPart : "")
   );
@@ -166,7 +131,7 @@ function parseAmount(value: string | number | undefined): bigint | number {
   if (isNaN(numericValue)) return NaN;
 
   numericValue = Math.floor(numericValue * 100);
-  let baseNumber = BigInt(numericValue);
+  const baseNumber = BigInt(numericValue);
 
   switch (unit?.toLowerCase()) {
     case "b":
@@ -207,39 +172,35 @@ const bcuaCommand: Command = {
   cd: 3,
   prefix: true,
 
-  onCall: async (ctx: CommandOnCallContext) => {
+  onCall: async (ctx: CommandOnCallContext): Promise<void> => {
     const { client, event, args, threadData, main, commandName } = ctx;
     const { threadID: tid, messageID: mid, senderID: sid } = event;
 
-    const send = (msg: any): Promise<any> => {
-      return new Promise((resolve) => {
-        client.sendMessage(msg, tid, (_err: any, res: any) => resolve(res), mid);
+    const sendWithId = (msg: any): Promise<{ messageID?: string }> =>
+      new Promise((resolve) => {
+        client.sendMessage(msg, tid, (_err: any, res: any) => resolve(res || {}), mid);
       });
-    };
 
-    if (/^(clear|reset)$/i.test(args[0] || "")) {
-      const cleared = await clearBaucuaRoom(tid);
-      return send(
-        cleared
-          ? "✅ Đã xóa dữ liệu Bầu Cua của nhóm này."
-          : "ℹ️ Nhóm này không có dữ liệu Bầu Cua để xóa."
-      );
-    }
+    const send = async (msg: any): Promise<void> => {
+      await sendWithId(msg);
+    };
 
     const p = data[tid]?.players;
 
     if (/^(create|c|-c)$/.test(args[0] || "")) {
       if (tid in data) {
-        return send("❎ Nhóm đã tạo bàn bầu cua!");
+        await send("❎ Nhóm đã tạo bàn bầu cua!");
+        return;
       }
 
       if (sid in d.s && d.s[sid]) {
         const remaining = d.s[sid] - Date.now();
         const minutes = Math.floor(remaining / 1000 / 60);
         const seconds = Math.floor((remaining / 1000) % 60);
-        return send(
+        await send(
           `❎ Vui lòng quay lại sau ${minutes}p${seconds}s mỗi người chỉ được tạo ${time_wai_create}p một lần`
         );
+        return;
       }
 
       if (d.s) {
@@ -260,29 +221,33 @@ const bcuaCommand: Command = {
       };
 
       save();
-      return send(
+      await send(
         "✅ Tạo bàn bầu cua thành công\n📌 Ghi bầu/cua/nai/tôm/cá/gà + số tiền để cược"
       );
+      return;
     } else if (/^end$/.test(args[0] || "")) {
       if (!p) {
-        return send(
+        await send(
           `❎ Nhóm chưa tạo bàn bầu cua để tạo hãy dùng lệnh: ${args[0]} create`
         );
+        return;
       }
 
       const threadInfo = await threadData.get(tid);
       const adminIDs = threadInfo?.threadInfo?.adminIDs || [];
 
       if (adminIDs.some((admin: any) => admin.id === sid)) {
-        return send(
+        const sent = await sendWithId(
           `📌 Cần 5 người hoặc toàn bộ người chơi trong bàn thả cảm xúc vào tin nhắn này để bình chọn huỷ bàn bầu cua hiện tại`
-        ).then((res: any) => {
-          res.commandName = commandName;
-          res.p = p;
-          res.r = 0;
-          main.onReact.set(res.messageID, res);
-          return res;
-        });
+        );
+        const reactData = sent as { messageID?: string; commandName?: string; p?: Player[]; r?: number };
+        if (reactData.messageID) {
+          reactData.commandName = commandName;
+          reactData.p = p;
+          reactData.r = 0;
+          main.onReact.set(reactData.messageID, reactData as any);
+        }
+        return;
       }
     } else {
       const attachmentBuffer = await stream_url(
@@ -297,10 +262,11 @@ const bcuaCommand: Command = {
         attachment = createReadStream(outPath);
       }
 
-      return send({
+      await send({
         body: `[ BẦU CUA NHIỀU NGƯỜI ]\n────────────────────\n✏️ Để tạo bàn bầu cua:\n𖢨 bcua create | -c | c\n🔰 Để tham gia cược hãy chat:\nbầu/cua/nai/tôm/cá/gà + [số_tiền/allin/%/k/m/b/kb/mb/gb/g]\n🔎 Để xem thông tin bàn hãy chat: infobc\n🔗 Để rời bàn hãy chat: rời\n🎰 Bắt đầu lắc chat: lắc\n📌 Công thức:\n𖢨 Đơn vị sau là số 0:\n─────────────\n[ k 12 | m 15 | b 18 | kb 21 | mb 24 | gb 27 | g 36 ]\n────────────────────\n⚠️ Trong quá trình chơi nếu có lỗi hãy báo với admin`,
         attachment,
       });
+      return;
     }
   },
 
@@ -308,11 +274,15 @@ const bcuaCommand: Command = {
     const { client, event, userData, threadData } = ctx;
     const { args = [], threadID: tid, messageID: mid, senderID: sid } = event;
 
-    const send = (msg: any): Promise<any> => {
-      return new Promise((resolve) => {
-        client.sendMessage(msg, tid, (_err: any, res: any) => resolve(res), mid);
+    const send = async (msg: any): Promise<void> =>
+      new Promise((resolve) => {
+        client.sendMessage(msg, tid, () => resolve(), mid);
       });
-    };
+
+    const sendWithId = (msg: any): Promise<{ messageID?: string }> =>
+      new Promise((resolve) => {
+        client.sendMessage(msg, tid, (_err: any, res: any) => resolve(res || {}), mid);
+      });
 
     const select = (args[0] || "").toLowerCase();
     const bet_money_input = args[1];
@@ -339,7 +309,8 @@ const bcuaCommand: Command = {
     p = room.players;
 
     if (room.playing) {
-      return send("❎ Bàn đang lắc không thể thực hiện hành động");
+      await send("❎ Bàn đang lắc không thể thực hiện hành động");
+      return;
     }
 
     if (["gà", "tôm", "bầu", "cua", "cá", "nai"].includes(select)) {
@@ -350,7 +321,8 @@ const bcuaCommand: Command = {
       } else if (/^[0-9]+%$/.test(bet_money_input || "")) {
         const percentMatch = bet_money_input?.match(/^([0-9]+)/);
         if (!percentMatch) {
-          return send("❎ Tiền cược không hợp lệ!");
+          await send("❎ Tiền cược không hợp lệ!");
+          return;
         }
         bet_money =
           (BigInt(await get_money(sid)) * BigInt(percentMatch[0])) /
@@ -360,25 +332,28 @@ const bcuaCommand: Command = {
       }
 
       if (typeof bet_money === "number" && isNaN(bet_money)) {
-        return send("❎ Tiền cược không hợp lệ!");
+        await send("❎ Tiền cược không hợp lệ!");
+        return;
       }
 
       const betAmount = typeof bet_money === "bigint" ? bet_money : BigInt(bet_money);
 
       if (betAmount < BigInt(bet_money_min)) {
-        return send(
+        await send(
           `❎ Tiền cược không được thấp hơn ${formatCurrency(bet_money_min)}`
         );
+        return;
       }
 
       if (betAmount > BigInt(await get_money(sid))) {
-        return send("❎ Bạn không đủ tiền");
+        await send("❎ Bạn không đủ tiền");
+        return;
       }
 
       const player = p.find((player) => player.id === sid);
 
       if (player) {
-        send(
+        await send(
           `✅ Đã thay đổi cược từ ${formatCurrency(player.bet_money)} ${player.select} sang ${formatCurrency(betAmount)} ${select}`
         );
         player.select = select;
@@ -391,9 +366,10 @@ const bcuaCommand: Command = {
           bet_money: betAmount,
         });
         save();
-        return send(
+        await send(
           `✅ Bạn đã cược ${select} với số tiền ${formatCurrency(betAmount)}`
         );
+        return;
       }
     }
 
@@ -404,18 +380,21 @@ const bcuaCommand: Command = {
         }
         delete data[tid];
         save();
-        return send(
+        await send(
           "✅ Rời bàn thành công vì bạn là chủ bàn nên bàn sẽ bị huỷ"
         );
+        return;
       }
 
       const playerIndex = p.findIndex((player) => player.id === sid);
       if (playerIndex !== -1) {
         p.splice(playerIndex, 1)[0];
         save();
-        return send("✅ Rời bàn thành công");
+        await send("✅ Rời bàn thành công");
+        return;
       } else {
-        return send("❎ Bạn không có trong bàn tài xỉu");
+        await send("❎ Bạn không có trong bàn tài xỉu");
+        return;
       }
     }
 
@@ -424,7 +403,7 @@ const bcuaCommand: Command = {
       const playerNames = await Promise.all(
         p.map(async (player) => {
           const name = getName ? await getName(player.id) : null;
-          return ` ${p.indexOf(player) + 1}. ${name || 'Người chơi'} cược ${formatCurrency(player.bet_money)} vào [ ${player.select} ]\n────────────────────`;
+          return ` ${p.indexOf(player) + 1}. ${name || "Người chơi"} cược ${formatCurrency(player.bet_money)} vào [ ${player.select} ]\n────────────────────`;
         })
       );
 
@@ -432,31 +411,35 @@ const bcuaCommand: Command = {
       const threadInfo = await threadData.get(tid);
       const threadName = threadInfo?.threadName || threadInfo?.threadInfo?.threadName || tid;
 
-      return send(
+      await send(
         `[ THÔNG TIN BÀN BẦU CUA ]\n────────────────────\n👤 Tổng ${p.length} người tham gia gồm:\n${playerNames.join("\n")}\n📌 Chủ bàn: ${authorName}\n🏘️ Nhóm: ${threadName}`
       );
+      return;
     }
 
     if (["lắc"].includes(select)) {
       if (sid !== room.author) {
-        return send("❎ Bạn không phải chủ bàn nên không thể bắt đầu xổ");
+        await send("❎ Bạn không phải chủ bàn nên không thể bắt đầu xổ");
+        return;
       }
 
       if (!p || p.length === 0) {
-        return send(
+        await send(
           "❎ Chưa có ai tham gia đặt cược nên không thể bắt đầu xổ"
         );
+        return;
       }
 
       if (room.rolled) {
-        return send("❎ Bàn này đã được lắc trước đó, không thể lắc lại");
+        await send("❎ Bàn này đã được lắc trước đó, không thể lắc lại");
+        return;
       }
 
       room.rolled = true;
       room.playing = true;
       save();
 
-      const diing = await send("🪇 Bot đang lắc...");
+      const diing = await sendWithId("🪇 Bot đang lắc...");
 
       const diceOptions = [...DICE_NAMES];
 
@@ -480,11 +463,10 @@ const bcuaCommand: Command = {
         setTimeout(resolve, 1000 * time_diing)
       ).then(() => {
         if (diing.messageID) {
-          client.unsendMessage(diing.messageID, tid);
+          void client.unsendMessage(diing.messageID, tid).catch(() => undefined);
         }
       });
 
-      // Đảm bảo thư mục và ảnh tồn tại trước khi đọc
       await fs.ensureDir(CONFIG.ASSETS_DIR);
 
       const diceImageBuffers = await Promise.all(
@@ -542,7 +524,7 @@ const bcuaCommand: Command = {
           const winAmount = player.bet_money * BigInt(matchingDice);
           if (addMoney) await addMoney(player.id, winAmount);
           const name = getName ? await getName(player.id) : null;
-          return `${i + 1}. ${name || 'Người chơi'}: +${formatCurrency(winAmount)}`;
+          return `${i + 1}. ${name || "Người chơi"}: +${formatCurrency(winAmount)}`;
         })
       );
 
@@ -551,7 +533,7 @@ const bcuaCommand: Command = {
           const lossAmount = player.bet_money;
           if (delMoney) await delMoney(player.id, lossAmount);
           const name = getName ? await getName(player.id) : null;
-          return `${i + 1}. ${name || 'Người chơi'}: -${formatCurrency(lossAmount)}`;
+          return `${i + 1}. ${name || "Người chơi"}: -${formatCurrency(lossAmount)}`;
         })
       );
 
@@ -581,11 +563,10 @@ ${loseMessages.join("\n") || "Không có ai thua"}`,
     const { client, event, Reply } = ctx;
     const { threadID: tid, messageID: mid } = event;
 
-    const send = (msg: any): Promise<any> => {
-      return new Promise((resolve) => {
-        client.sendMessage(msg, tid, (_err: any, res: any) => resolve(res), mid);
+    const send = async (msg: any): Promise<void> =>
+      new Promise((resolve) => {
+        client.sendMessage(msg, tid, () => resolve(), mid);
       });
-    };
 
     const replyData = Reply as ReplyData & { type?: string };
     if (replyData.type === "change.result.dices") {
@@ -594,18 +575,18 @@ ${loseMessages.join("\n") || "Không có ai thua"}`,
     }
   },
 
-  onReact: async (ctx: CommandOnReactContext) => {
+  onReact: async (ctx: CommandOnReactContext): Promise<void> => {
     const { client, event, Reaction } = ctx;
     const { threadID: tid, messageID: mid } = event;
 
-    const send = (msg: any): Promise<any> => {
-      return new Promise((resolve) => {
-        client.sendMessage(msg, tid, (_err: any, res: any) => resolve(res), mid);
+    const send = async (msg: any): Promise<void> =>
+      new Promise((resolve) => {
+        client.sendMessage(msg, tid, () => resolve(), mid);
       });
-    };
 
     if (!(tid in data)) {
-      return send("❎ Bàn bầu cua đã kết thúc không thể bỏ phiếu tiếp");
+      await send("❎ Bàn bầu cua đã kết thúc không thể bỏ phiếu tiếp");
+      return;
     }
 
     const reaction = Reaction as any;
@@ -619,7 +600,8 @@ ${loseMessages.join("\n") || "Không có ai thua"}`,
       }
       delete data[tid];
       save();
-      return send("✅ Đã kết thúc bàn bầu cua");
+      await send("✅ Đã kết thúc bàn bầu cua");
+      return;
     }
   },
 };

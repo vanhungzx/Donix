@@ -226,7 +226,7 @@ export function setupMqttConnection(
     // Keep this conservative to avoid tight reconnect loops.
     const handshakeTimeoutMs = Number.isFinite(ctx?.options?.mqttHandshakeTimeout)
       ? Math.max(5000, Math.min(Number(ctx.options.mqttHandshakeTimeout), 30000))
-      : 10000;
+      : 20000;
     const rTimeout = setTimeout(() => {
       if (ctx.mqttClient !== mqttClient || ctx.mqttReady === true) {
         return;

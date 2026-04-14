@@ -543,6 +543,14 @@ export async function reconnectMqttHandler(
           resolve(false);
           return;
         }
+        if (seqResult === "fatal" && ctx.loggedIn === false) {
+          log.warn("getSeqID xac nhan tai khoan da logout, dung reconnect de cho AUTO-LOGIN xu ly.");
+          isReconnecting = false;
+          ctx.isReconnecting = false;
+          reconnectPromise = null;
+          resolve(false);
+          return;
+        }
         if (seqResult !== "started") {
           throw new Error(`MQTT reconnect chưa thể dựng lại listenMqtt (getSeqID=${String(seqResult)})`);
         }
@@ -624,21 +632,22 @@ export async function reconnectMqttHandler(
 export function reconnectMqtt(
   ctx: any,
   _msgCleanupInterval: NodeJS.Timeout | null,
-  getSeqID?: () => void
+  getSeqID?: () => Promise<GetSeqIdResult | unknown> | GetSeqIdResult | unknown
 ): boolean {
-  // Convert getSeqID to async if needed
-  const asyncGetSeqID = getSeqID ? async () => {
-    if (typeof getSeqID === 'function') {
+  // Keep original getSeqID return value so reconnect handler can decide next step.
+  const asyncGetSeqID = getSeqID
+    ? async (): Promise<GetSeqIdResult | unknown> => {
+      if (typeof getSeqID !== "function") return "retry";
       try {
-        getSeqID();
+        return await Promise.resolve(getSeqID());
       } catch (err) {
-        // Ignore errors
+        throw err;
       }
     }
-  } : undefined;
+    : undefined;
 
   // Force reconnect khi gọi từ event handlers (close/offline/disconnect/error)
-  reconnectMqttHandler(ctx, undefined, asyncGetSeqID || (async () => { }), undefined, true)
+  reconnectMqttHandler(ctx, undefined, asyncGetSeqID || (async () => "retry"), undefined, true)
     .catch((err: any) => {
       const isNetworkErr = isNetworkError(err);
       if (isNetworkErr) {

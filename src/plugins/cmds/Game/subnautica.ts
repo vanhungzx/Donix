@@ -773,12 +773,23 @@ const subnautica = {
       if (c == "reset") return find.durability;
       return `${b}/${find.durability} (${((b / find.durability) * 100).toFixed(0)}%)`;
     };
+    const safeUnsend = (targetMessageID?: string): void => {
+      if (!targetMessageID || typeof unsend !== "function") return;
+      try {
+        const maybePromise = unsend(targetMessageID);
+        if (maybePromise && typeof (maybePromise as Promise<unknown>).catch === "function") {
+          (maybePromise as Promise<unknown>).catch(() => { });
+        }
+      } catch {
+        // Ignore unsend errors to avoid crashing reply handlers.
+      }
+    };
     const replyData = Reply as unknown as ReplyDataExtended;
     switch (replyData.type) {
       case "shop": {
         if (!body || isNaN(parseInt(body))) return api.sendMessage("Lựa chọn không hợp lệ!", threadID, messageID);
         if (body == "1") {
-          unsend(Reply.messageID);
+          safeUnsend(Reply.messageID);
           const pathItemData = pathItem as RodItem[];
           let listItem = "===[𝗦𝗛𝗢𝗣]===\n";
           let number = 1;
@@ -802,7 +813,7 @@ const subnautica = {
           );
         }
         if (body == "2" || Reply.type == "typeFull") {
-          unsend(Reply.messageID);
+          safeUnsend(Reply.messageID);
           const userDataCheck = this.checkPath(4, senderID) as UserGameData;
           const data = userDataCheck.fishBag;
           if (data.length == 0) return api.sendMessage("Túi của bạn không có gì cả!", threadID, messageID);
@@ -835,7 +846,7 @@ const subnautica = {
           );
         }
         if (body == "3") {
-          unsend(Reply.messageID);
+          safeUnsend(Reply.messageID);
           const userDataCheck = this.checkPath(4, senderID) as UserGameData;
           const data = userDataCheck.item;
           let msg = `===𝓕𝓘𝓧 𝓘𝓣𝓔𝓜===\n`;
@@ -861,7 +872,7 @@ const subnautica = {
           );
         }
         if (body == "4") {
-          unsend(Reply.messageID);
+          safeUnsend(Reply.messageID);
           const pathEquipmentData = pathEquipment as EquipmentItem[];
           let listItem = "===[SHOP PHỤ KIỆN]===\n";
           let number = 1;
@@ -889,7 +900,7 @@ const subnautica = {
       }
       case "choosebag": {
         if (!body || isNaN(parseInt(body))) return api.sendMessage("Lựa chọn không hợp lệ!", threadID, messageID);
-        unsend(Reply.messageID);
+        safeUnsend(Reply.messageID);
         const data = this.checkPath(4, senderID) as UserGameData;
         if (body == "1") {
           if (data.fishBag.length == 0) return api.sendMessage("Trong túi của bạn không có cái nịt", threadID, messageID);
@@ -901,7 +912,7 @@ const subnautica = {
           return api.sendMessage(listFish, threadID, messageID);
         }
         if (body == "2") {
-          unsend(Reply.messageID);
+          safeUnsend(Reply.messageID);
           if (data.item.length == 0) return api.sendMessage("Trong túi của bạn không có vật phẩm nào!", threadID, messageID);
           let listItemm = `===𝓲𝓷𝓿𝓮𝓷𝓽𝓸𝓻𝔂===\n`;
           let number = 1;
@@ -921,7 +932,7 @@ const subnautica = {
         const choice = parseInt(body, 10);
         if (choice > rodItems.length || choice <= 0)
           return api.sendMessage("Lựa chọn không hợp lệ!", threadID, messageID);
-        unsend(Reply.messageID);
+        safeUnsend(Reply.messageID);
         data.mainROD = rodItems[choice - 1].name;
         writeFileSync(this.checkPath(3, senderID), JSON.stringify(data, null, 2));
         return api.sendMessage(
@@ -939,7 +950,7 @@ const subnautica = {
         const choice = parseInt(body, 10);
         if (choice > equipItems.length || choice <= 0)
           return api.sendMessage("Lựa chọn không hợp lệ!", threadID, messageID);
-        unsend(Reply.messageID);
+        safeUnsend(Reply.messageID);
         data.accessory = equipItems[choice - 1].name;
         writeFileSync(this.checkPath(3, senderID), JSON.stringify(data, null, 2));
         return api.sendMessage(
@@ -954,7 +965,7 @@ const subnautica = {
         const choice = parseInt(body, 10);
         if (choice < 1 || choice > 3 || choice > data.length)
           return api.sendMessage("Lựa chọn không hợp lệ!", threadID, messageID);
-        unsend(Reply.messageID);
+        safeUnsend(Reply.messageID);
         let listLoca = "==[𝗟𝗢𝗖𝗔𝗧𝗜𝗢𝗡]==\n";
         let number = 1;
         for (const i of data[choice - 1].area) {
@@ -996,7 +1007,7 @@ const subnautica = {
         const choice = parseInt(body, 10);
         if (choice > area.area.length || choice <= 0)
           return api.sendMessage("Lựa chọn không hợp lệ!", threadID, messageID);
-        unsend(Reply.messageID);
+        safeUnsend(Reply.messageID);
         pathh.GPS.area = area.area[choice - 1].name;
         writeFileSync(pathhh, JSON.stringify(pathh, null, 2));
         return api.sendMessage(
@@ -1017,7 +1028,7 @@ const subnautica = {
         const rateResult = await checkDur(rod.name, rod.durability, "rate");
         if (typeof rateResult === "number" && rateResult > 75)
           return api.sendMessage("Chỉ sửa được phóng lợn à nhầm phóng lao có độ bền dưới 75%", threadID, messageID);
-        unsend(Reply.messageID);
+        safeUnsend(Reply.messageID);
         const priceValue = typeof rod.price === "number" ? rod.price : parseInt(String(rod.price), 10);
         const fixPrice = parseInt((priceValue * (3 / 4)).toFixed(0), 10);
         await checkMoney(senderID, fixPrice);
@@ -1055,7 +1066,7 @@ const subnautica = {
           image: data.image,
         });
         writeFileSync(this.checkPath(3, senderID), JSON.stringify(userDataCheck, null, 2));
-        unsend(Reply.messageID);
+        safeUnsend(Reply.messageID);
         await userData.delMoney(senderID, BigInt(priceValue));
         const msg = {
           body: `Mua thành công ${data.name}\nGiá mua: ${priceValue}$\nĐộ bền: ${data.durability}\nLuck: ${data.luck}\nThời gian chờ: ${data.countdown}s`,
@@ -1085,7 +1096,7 @@ const subnautica = {
           image: data.image,
         });
         writeFileSync(this.checkPath(3, senderID), JSON.stringify(userDataCheck, null, 2));
-        unsend(Reply.messageID);
+        safeUnsend(Reply.messageID);
         await userData.delMoney(senderID, BigInt(priceValue));
         const msg = {
           body: `Mua thành công ${data.name}\nGiá mua: ${priceValue}$\n________________\n${data.description}`,
@@ -1100,7 +1111,7 @@ const subnautica = {
         const choice = parseInt(body, 10);
         if (choice > listCategory.length || choice <= 0)
           return api.sendMessage("Lựa chọn không hợp lệ!", threadID, messageID);
-        unsend(Reply.messageID);
+        safeUnsend(Reply.messageID);
         if (listCategory[choice - 1].length == 0)
           return api.sendMessage("Không có con cá nào hết á, hmmm!", threadID, messageID);
         let fish = "==𝗦𝗨𝗕𝗡𝗔𝗨𝗧𝗜𝗖𝗔==\n";
@@ -1137,7 +1148,7 @@ const subnautica = {
           if (body.toLowerCase() != "bugcaiditconmemay" && (parseInt(body, 10) > fishList.length || parseInt(body, 10) <= 0)) {
             return api.sendMessage("Lựa chọn không hợp lệ!", threadID, messageID);
           }
-          unsend(Reply.messageID);
+          safeUnsend(Reply.messageID);
           const userDataCheck = this.checkPath(4, senderID) as UserGameData;
           const bag = userDataCheck.fishBag;
           let coins = 0;
@@ -1198,7 +1209,7 @@ const subnautica = {
         }
       }
       default: {
-        unsend(Reply.messageID);
+        safeUnsend(Reply.messageID);
         return api.sendMessage("Lựa chọn không hợp lệ!", threadID, messageID);
       }
     }

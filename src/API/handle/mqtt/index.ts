@@ -5,6 +5,7 @@ import { EventEmitter as NodeEventEmitter } from "events";
 import {
   createMqttClient,
   markMqttActivity,
+  markMqttReady,
   resetMqttReadyState,
   setupMqttConnection
 } from "./connection";
@@ -228,6 +229,11 @@ function listenMqtt(defaultFuncs: any, api: any, ctx: any, globalCallback: any):
 
     try {
       markMqttActivity(ctx);
+      // Some sessions receive other MQTT topics before `/t_ms`.
+      // Mark ready on first valid incoming message to avoid false handshake timeouts.
+      if (ctx.mqttReady !== true && mqttClient._donixReady !== true) {
+        markMqttReady(ctx, globalCallback);
+      }
 
       const firstChar = topic.length > 1 ? topic.charAt(1) : "";
       const isWebRTCTopic =

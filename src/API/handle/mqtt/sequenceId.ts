@@ -34,12 +34,15 @@ function isScrapingWarningSignal(input: unknown): boolean {
 }
 
 function isLoggedOutSignal(input: unknown): boolean {
-  const text = signalText(input);
+  const text = signalText(input).toLowerCase();
   return (
     text.includes("https://www.facebook.com/login.php?") ||
     text.includes("/login.php") ||
-    text.includes("\"error\":\"Not logged in.\"") ||
-    text.includes("\"error\":\"Not logged in\"")
+    text.includes("\"error\":\"not logged in.\"") ||
+    text.includes("\"error\":\"not logged in\"") ||
+    text.includes("not logged in") ||
+    text.includes("facebook blocked the login") ||
+    text.includes("logged out")
   );
 }
 
@@ -323,8 +326,11 @@ export async function handleGetSeqIDError(
   if (errStr.includes("https://www.facebook.com/login.php?")) {
     console.error("Phiên đăng nhập hết hạn");
   }
-  if (typeof err === "object" && (err as any).error === "Not logged in" && !isScrapingWarningSignal((err as any).res)) {
+  if (isLoggedOutSignal(err) && !isScrapingWarningSignal((err as any)?.res)) {
     ctx.loggedIn = false;
+    if (err && typeof err === "object") {
+      (err as any).error = "Account logged out";
+    }
     globalCallback(err);
     return "fatal";
   }

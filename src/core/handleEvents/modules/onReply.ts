@@ -150,7 +150,8 @@ export const createOnReply =
         );
       } catch (e: unknown) {
         const error = e instanceof Error ? e : new Error(String(e));
-        scopedLogger?.error?.(`Reply handler error in ${replyData.commandName}:`, error.message);
+        const errorDetails = error.stack || error.message || String(e);
+        scopedLogger?.error?.(`Reply handler error in ${replyData.commandName}:`, errorDetails);
         client.sendMessage(`Error: ${error.message}`, tid, mid || "").catch(() => { });
       }
     };
