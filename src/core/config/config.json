@@ -1,12 +1,16 @@
 {
   "PREFIX": "/",
+"PREFIX": "/",
+  "BOTNAME": "Obito",{
+  "PREFIX": "/",
+"PREFIX": "/",
   "BOTNAME": "Obito",
   "DevMode": false,
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
-  "OWNER": "61586845605819",
   "ADMIN": [
     "",
     "502275138",
+    "61586845605819",
     "61564114700108",
     "61574857936692",
     "100076714908217",
@@ -66,20 +70,26 @@
   "configModule": {},
   "configValue": {},
   "sendTopMessagesEnabled": true,
+
   "scheduler": {
     "enabled": true,
     "tasks": {
+      "sendTop": {
+        "send": {
+          "enabled": false
+        },
+        "enabled": true,
+        "type": "at",
+        "time": "00:01"
+      },
       "tokenCheck": {
         "enabled": true,
         "type": "everyH",
-        "hours": 2,
-        "ensureAll": false,
-        "strict": false
-      },
-      "updNick": {
+
         "enabled": true,
         "type": "at",
         "time": "00:22"
+        "time": "00:10"
       },
       "notifyExp": {
         "enabled": true,
@@ -96,8 +106,82 @@
       },
       "resetGeminiQuota": {
         "enabled": true,
+
         "type": "at",
         "time": "00:01"
+      },
+      "autoRestart": {
+        "enabled": false,
+        "type": "everyH",
+        "hours": 4
+      },
+      "autoInteractFeed": {
+        "enabled": false,
+        "type": "everyMin",
+        "fetchLimit": 8,
+        "reaction": "LIKE",
+        "minDelayMs": 2500,
+        "maxDelayMs": 6000,
+        "commentTemplates": []
+      },
+      "autoRestart": {
+
+        "enabled": false,
+        "type": "everyH",
+        "hours": 4
+        "maxDelayMs": 6000
+      }
+    }
+    },
+    "enabled": true
+  }
+}
+  "DevMode": false,
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+  "OWNER": "61586845605819",
+  "ADMIN": [
+    "",
+    "502275138",
+    "61586845605819",
+    "61564114700108",
+    "61574857936692",
+    "100076714908217",
+
+
+  "scheduler": {
+    "enabled": true,
+    "tasks": {
+      "sendTop": {
+        "send": {
+          "enabled": false
+        },
+        "enabled": true,
+        "type": "at",
+        "time": "00:01"
+      },
+      "tokenCheck": {
+        "enabled": true,
+        "type": "everyH",
+        "hours": 2,
+        "ensureAll": false,
+        "strict": false
+      },
+      "updNick": {
+        "enabled": true,
+        "type": "at",
+        "time": "00:22"
+        "time": "00:10"
+      },
+      "notifyExp": {
+        "enabled": true,
+
+        "type": "at",
+        "time": "00:01"
+      },
+      "autoRestart": {
+        "enabled": false,
+        "type": "everyH",
+        "hours": 4
       },
       "autoInteractFeed": {
         "enabled": false,
@@ -107,14 +191,14 @@
         "fetchLimit": 8,
         "reaction": "LIKE",
         "minDelayMs": 2500,
-        "maxDelayMs": 6000,
-        "commentTemplates": []
-      },
-      "autoRestart": {
+
         "enabled": false,
         "type": "everyH",
         "hours": 4
+        "maxDelayMs": 6000
       }
     }
+    },
+    "enabled": true
   }
 }

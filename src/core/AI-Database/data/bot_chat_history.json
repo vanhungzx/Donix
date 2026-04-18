@@ -8209,6 +8209,26 @@
           "sender": "100048054492756",
           "content": "/bot m hãy biến thành ông chú 28 tuổi thất nghiệp còn trinh",
           "timestamp": "2026-03-25T14:53:37.789Z"
+        },
+        {
+          "sender": "100048054492756",
+          "content": "bot à",
+          "timestamp": "2026-04-16T05:40:52.417Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Phl Zun ơi, ờm... chú đang thất nghiệp đây con ạ. Con cần gì cứ nói đi, chú rảnh lắm. Rảnh từ sáng tới giờ luôn ấy 😅.",
+          "timestamp": "2026-04-16T05:40:56.506Z"
+        },
+        {
+          "sender": "100048054492756",
+          "content": "bot đâu r",
+          "timestamp": "2026-04-16T07:27:59.195Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Phl Zun ơi, chú đây con trai! Chú vẫn đang rảnh rỗi chờ việc đây nè. Con có gì cần chú giúp không? 😅.",
+          "timestamp": "2026-04-16T07:28:01.500Z"
         }
       ]
     },
@@ -8262,6 +8282,26 @@
           "sender": "61586845605819",
           "content": "bot mở nhạc aura",
           "timestamp": "2026-04-13T09:46:15.872Z"
+        },
+        {
+          "sender": "61586845605819",
+          "content": "bot ơi linh có ngu ko",
+          "timestamp": "2026-04-14T15:00:40.058Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Dạ anh Long hỏi em Linh có ngu không hả? Em tìm hiểu được thì những người tên Linh thường được kỳ vọng là thông minh, nhanh nhẹn, khéo léo đó anh. Thậm chí còn có ý nghĩa là thần thông, kỳ diệu, linh thiêng nữa cơ. Chắc là không ngu đâu anh Long ơi! 😊.",
+          "timestamp": "2026-04-14T15:00:43.958Z"
+        },
+        {
+          "sender": "61586845605819",
+          "content": "Bot t dag bị ngáo",
+          "timestamp": "2026-04-17T04:51:08.696Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Ơ anh Long ơi, em có làm gì mà anh nói em bị ngáo đâu nè 🥺 Anh Long nói vậy em buồn lắm á!",
+          "timestamp": "2026-04-17T04:51:10.897Z"
         }
       ]
     },
@@ -8672,5 +8712,164 @@
       ]
     },
     "timestamp": "2026-04-14T10:54:11.632Z"
+  },
+  {
+    "_id": "1279558390719942:100089799889841",
+    "data": {
+      "messages": [
+        {
+          "sender": "100089799889841",
+          "content": "Bot to v 🐧",
+          "timestamp": "2026-04-14T15:00:37.833Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Nguyễn Quân ơi, to cái gì mà to bae 😏.",
+          "timestamp": "2026-04-14T15:00:42.381Z"
+        }
+      ]
+    },
+    "timestamp": "2026-04-14T15:00:37.806Z"
+  },
+  {
+    "_id": "861803530227487:100033939874270",
+    "data": {
+      "messages": [
+        {
+          "sender": "100033939874270",
+          "content": "Chị thỏ xấu không",
+          "timestamp": "2026-04-14T21:13:39.704Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Nguyễn Nam Long ơi, chị Thỏ nào cơ anh Long? Có nhiều chị Thỏ lắm đó, như Thỏ Bảy Màu, Chị Thỏ Channel, hay chị Hồng Thơ chẳng hạn. Anh muốn nói đến chị Thỏ nào vậy? 🤔.",
+          "timestamp": "2026-04-14T21:13:44.241Z"
+        }
+      ]
+    },
+    "timestamp": "2026-04-14T21:13:39.572Z"
+  },
+  {
+    "_id": "1329932828617871:61579500503697",
+    "data": {
+      "messages": [
+        {
+          "sender": "61579500503697",
+          "content": "bot loe",
+          "timestamp": "2026-04-15T04:29:56.600Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Bot loe là gì vậy Hoàng Việt Hưng? Ý bạn là bot bị lỗi hay sao nè? 🤔. Anh chia nhỏ từng việc ra, em sẽ cùng anh xử lý từng bước một.",
+          "timestamp": "2026-04-15T04:30:22.538Z"
+        }
+      ]
+    },
+    "timestamp": "2026-04-15T04:29:56.569Z"
+  },
+  {
+    "_id": "1329932828617871:61550113415549",
+    "data": {
+      "messages": [
+        {
+          "sender": "61550113415549",
+          "content": "Bot loe là gì vậy Hoàng Việt Hưng? Ý bạn là bot bị lỗi hay sao nè? 🤔. Anh chia nhỏ từng việc ra, em sẽ cùng anh xử lý từng bước một.",
+          "timestamp": "2026-04-15T04:30:23.059Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Thu kieu 🐨 ơi, thu kieu 🐨 ơi, ý anh Hoàng Việt Hưng là bot bị lỗi đó em. Anh ấy muốn em sửa lỗi cho bot. Em sẽ cố gắng hết sức để giúp anh ấy nha! 😊. Cứ từ từ thôi anh, có em ở đây đồng hành cùng anh nè.",
+          "timestamp": "2026-04-15T04:30:24.918Z"
+        }
+      ]
+    },
+    "timestamp": "2026-04-15T04:30:23.040Z"
+  },
+  {
+    "_id": "1412823280572890:61571162589651",
+    "data": {
+      "messages": [
+        {
+          "sender": "61571162589651",
+          "content": "Bot nhắn á chứ min trốn lâu òi",
+          "timestamp": "2026-04-15T14:41:13.597Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Gia Hạo ơi, minh trốn lâu rồi thì em chịu ròi 🥺 Hương đâu có tìm được đâu nè.",
+          "timestamp": "2026-04-15T14:41:16.396Z"
+        }
+      ]
+    },
+    "timestamp": "2026-04-15T14:41:13.556Z"
+  },
+  {
+    "_id": "1329932828617871:61568176484099",
+    "data": {
+      "messages": [
+        {
+          "sender": "61568176484099",
+          "content": "bot ai v",
+          "timestamp": "2026-04-16T03:04:17.831Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Nguyễn Việt Hoàng ơi, à bot AI á anh? Đó là kiểu mấy chương trình máy tính thông minh mà dùng trí tuệ nhân tạo (AI) để trò chuyện, tương tác với mình y như người thật vậy á. Nó có thể hiểu mình nói gì, trả lời câu hỏi, rồi còn làm mấy việc đơn giản nữa đó. Giống Hương nè! 😉.",
+          "timestamp": "2026-04-16T03:04:28.483Z"
+        }
+      ]
+    },
+    "timestamp": "2026-04-16T03:04:17.808Z"
+  },
+  {
+    "_id": "1412823280572890:61565336047742",
+    "data": {
+      "messages": [
+        {
+          "sender": "61565336047742",
+          "content": "/bot t mách ah Đại :))",
+          "timestamp": "2026-04-16T09:28:58.130Z"
+        },
+        {
+          "sender": "61565336047742",
+          "content": "/bot t mách ah Đại :))",
+          "timestamp": "2026-04-16T09:29:09.530Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Mách anh Đại chuyện gì thế anh Tai Tuan? Kể em nghe với! 😏.",
+          "timestamp": "2026-04-16T09:29:21.633Z"
+        },
+        {
+          "sender": "61565336047742",
+          "content": "/bot kêu Thiện bell",
+          "timestamp": "2026-04-16T12:07:39.608Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Ủa, Thiện Bell nào vậy anh Tai Tuan? Em đâu có thấy ai tên Thiện Bell trong nhóm mình đâu nè. Hay anh muốn kêu Thiên Nguyễn? 😬.",
+          "timestamp": "2026-04-16T12:07:44.689Z"
+        }
+      ]
+    },
+    "timestamp": "2026-04-16T09:28:58.103Z"
+  },
+  {
+    "_id": "1412823280572890:61567045103651",
+    "data": {
+      "messages": [
+        {
+          "sender": "61567045103651",
+          "content": "Bot nó bị j kia anh",
+          "timestamp": "2026-04-17T04:46:30.678Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Ơ, có bị gì đâu anh Trần Minh Huy? Em vẫn đang hoạt động bình thường mà 😂 Anh thấy em bị sao vậy?",
+          "timestamp": "2026-04-17T04:46:33.012Z"
+        }
+      ]
+    },
+    "timestamp": "2026-04-17T04:46:30.656Z"
   }
 ]
