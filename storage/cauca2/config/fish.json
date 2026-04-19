@@ -1,0 +1,443 @@
+[
+  {
+    "name": "Cá chép",
+    "emoji": "🐟",
+    "price": 5000,
+    "weight": 2,
+    "rarity": 30
+  },
+  {
+    "name": "Cá rô",
+    "emoji": "🐠",
+    "price": 3000,
+    "weight": 1,
+    "rarity": 25
+  },
+  {
+    "name": "Cá rô phi",
+    "emoji": "🐟",
+    "price": 4500,
+    "weight": 1.5,
+    "rarity": 28
+  },
+  {
+    "name": "Cá diêu hồng",
+    "emoji": "🐠",
+    "price": 6000,
+    "weight": 2,
+    "rarity": 22
+  },
+  {
+    "name": "Cá trê",
+    "emoji": "🐡",
+    "price": 8000,
+    "weight": 3,
+    "rarity": 15
+  },
+  {
+    "name": "Cá lóc",
+    "emoji": "🐟",
+    "price": 12000,
+    "weight": 5,
+    "rarity": 10
+  },
+  {
+    "name": "Cá basa",
+    "emoji": "🐡",
+    "price": 15000,
+    "weight": 4,
+    "rarity": 12
+  },
+  {
+    "name": "Cá tra",
+    "emoji": "🐟",
+    "price": 18000,
+    "weight": 6,
+    "rarity": 9
+  },
+  {
+    "name": "Cá hồi",
+    "emoji": "🎣",
+    "price": 25000,
+    "weight": 8,
+    "rarity": 8
+  },
+  {
+    "name": "Cá chình",
+    "emoji": "🐍",
+    "price": 32000,
+    "weight": 7,
+    "rarity": 6
+  },
+  {
+    "name": "Cá mập con",
+    "emoji": "🦈",
+    "price": 50000,
+    "weight": 15,
+    "rarity": 5
+  },
+  {
+    "name": "Cá ngừ",
+    "emoji": "🐟",
+    "price": 65000,
+    "weight": 12,
+    "rarity": 4
+  },
+  {
+    "name": "Cá kiếm",
+    "emoji": "⚔️",
+    "price": 90000,
+    "weight": 20,
+    "rarity": 3
+  },
+  {
+    "name": "Cá đuối",
+    "emoji": "🦭",
+    "price": 120000,
+    "weight": 25,
+    "rarity": 2
+  },
+  {
+    "name": "Chiếc giày cũ",
+    "emoji": "👟",
+    "price": 0,
+    "weight": 0.5,
+    "rarity": 7
+  },
+  {
+    "name": "Lon bia rỗng",
+    "emoji": "🍺",
+    "price": 0,
+    "weight": 0.3,
+    "rarity": 5
+  },
+  {
+    "name": "Bao nilon",
+    "emoji": "🛍️",
+    "price": 0,
+    "weight": 0.2,
+    "rarity": 6
+  },
+  {
+    "name": "Cá bống",
+    "emoji": "🐟",
+    "price": 2000,
+    "weight": 0.5,
+    "rarity": 32
+  },
+  {
+    "name": "Cá mè",
+    "emoji": "🐠",
+    "price": 5500,
+    "weight": 2.5,
+    "rarity": 26
+  },
+  {
+    "name": "Cá trắm",
+    "emoji": "🐟",
+    "price": 7000,
+    "weight": 3,
+    "rarity": 20
+  },
+  {
+    "name": "Cá chim",
+    "emoji": "🐡",
+    "price": 9500,
+    "weight": 2,
+    "rarity": 18
+  },
+  {
+    "name": "Cá bớp",
+    "emoji": "🐟",
+    "price": 22000,
+    "weight": 6,
+    "rarity": 11
+  },
+  {
+    "name": "Tôm sú",
+    "emoji": "🦐",
+    "price": 28000,
+    "weight": 0.8,
+    "rarity": 14
+  },
+  {
+    "name": "Cua biển",
+    "emoji": "🦀",
+    "price": 35000,
+    "weight": 1.2,
+    "rarity": 9
+  },
+  {
+    "name": "Cá mú",
+    "emoji": "🐠",
+    "price": 42000,
+    "weight": 9,
+    "rarity": 7
+  },
+  {
+    "name": "Cá hố",
+    "emoji": "🐟",
+    "price": 38000,
+    "weight": 5,
+    "rarity": 8
+  },
+  {
+    "name": "Cá nục",
+    "emoji": "🐡",
+    "price": 12000,
+    "weight": 2,
+    "rarity": 16
+  },
+  {
+    "name": "Cá thu",
+    "emoji": "🐟",
+    "price": 48000,
+    "weight": 10,
+    "rarity": 6
+  },
+  {
+    "name": "Cá mặt quỷ",
+    "emoji": "😈",
+    "price": 75000,
+    "weight": 8,
+    "rarity": 4
+  },
+  {
+    "name": "Cá rồng",
+    "emoji": "🐉",
+    "price": 150000,
+    "weight": 18,
+    "rarity": 2
+  },
+  {
+    "name": "Cá koi",
+    "emoji": "🎏",
+    "price": 85000,
+    "weight": 6,
+    "rarity": 3
+  },
+  {
+    "name": "Cá vàng",
+    "emoji": "🐠",
+    "price": 3000,
+    "weight": 0.3,
+    "rarity": 24
+  },
+  {
+    "name": "Ốc mượn hồn",
+    "emoji": "🐚",
+    "price": 15000,
+    "weight": 0.5,
+    "rarity": 10
+  },
+  {
+    "name": "Sứa",
+    "emoji": "🪼",
+    "price": 8000,
+    "weight": 1,
+    "rarity": 13
+  },
+  {
+    "name": "Bạch tuộc",
+    "emoji": "🐙",
+    "price": 55000,
+    "weight": 7,
+    "rarity": 5
+  },
+  {
+    "name": "Cá mập trắng",
+    "emoji": "🦈",
+    "price": 200000,
+    "weight": 50,
+    "rarity": 1
+  },
+  {
+    "name": "Rác thải nhựa",
+    "emoji": "🗑️",
+    "price": 0,
+    "weight": 0.4,
+    "rarity": 8
+  },
+  {
+    "name": "Lốp xe cũ",
+    "emoji": "🛞",
+    "price": 0,
+    "weight": 5,
+    "rarity": 4
+  },
+  {
+    "name": "Cá Napoleon",
+    "emoji": "🐠",
+    "price": 180000,
+    "weight": 30,
+    "rarity": 2
+  },
+  {
+    "name": "Cá mặt trăng",
+    "emoji": "🌙",
+    "price": 220000,
+    "weight": 25,
+    "rarity": 2
+  },
+  {
+    "name": "Cá vây tay",
+    "emoji": "🦎",
+    "price": 280000,
+    "weight": 20,
+    "rarity": 2
+  },
+  {
+    "name": "Cá rồng biển",
+    "emoji": "🐲",
+    "price": 160000,
+    "weight": 12,
+    "rarity": 3
+  },
+  {
+    "name": "Cá nạng hải",
+    "emoji": "🦋",
+    "price": 195000,
+    "weight": 15,
+    "rarity": 3
+  },
+  {
+    "name": "Cá tầm Beluga",
+    "emoji": "🐟",
+    "price": 500000,
+    "weight": 80,
+    "rarity": 1
+  },
+  {
+    "name": "Cá ngừ vây xanh",
+    "emoji": "🐟",
+    "price": 380000,
+    "weight": 45,
+    "rarity": 1
+  },
+  {
+    "name": "Cá vạn cân",
+    "emoji": "🐋",
+    "price": 999999,
+    "weight": 100,
+    "rarity": 1
+  },
+  {
+    "name": "Cá lia thia",
+    "emoji": "🐟",
+    "price": 1500,
+    "weight": 0.2,
+    "rarity": 33
+  },
+  {
+    "name": "Cá betta",
+    "emoji": "🐠",
+    "price": 12000,
+    "weight": 0.1,
+    "rarity": 18
+  },
+  {
+    "name": "Cá neon",
+    "emoji": "✨",
+    "price": 8000,
+    "weight": 0.05,
+    "rarity": 22
+  },
+  {
+    "name": "Cá mòi",
+    "emoji": "🐟",
+    "price": 4000,
+    "weight": 0.8,
+    "rarity": 28
+  },
+  {
+    "name": "Cá bơn",
+    "emoji": "🐡",
+    "price": 35000,
+    "weight": 4,
+    "rarity": 8
+  },
+  {
+    "name": "Cá đĩa",
+    "emoji": "🐠",
+    "price": 95000,
+    "weight": 0.6,
+    "rarity": 4
+  },
+  {
+    "name": "Cá rồng Nam Mỹ",
+    "emoji": "🐲",
+    "price": 110000,
+    "weight": 3,
+    "rarity": 5
+  },
+  {
+    "name": "Rùa biển",
+    "emoji": "🐢",
+    "price": 180000,
+    "weight": 35,
+    "rarity": 2
+  },
+  {
+    "name": "Cá voi lưng gù",
+    "emoji": "🐋",
+    "price": 450000,
+    "weight": 60,
+    "rarity": 1
+  },
+  {
+    "name": "Cá piranha",
+    "emoji": "🐟",
+    "price": 42000,
+    "weight": 2,
+    "rarity": 6
+  },
+  {
+    "name": "Cá hồng đào",
+    "emoji": "🐠",
+    "price": 28000,
+    "weight": 1.5,
+    "rarity": 12
+  },
+  {
+    "name": "Cá mú đỏ",
+    "emoji": "🐡",
+    "price": 78000,
+    "weight": 11,
+    "rarity": 4
+  },
+  {
+    "name": "Sứa hồng",
+    "emoji": "🪼",
+    "price": 15000,
+    "weight": 2,
+    "rarity": 14
+  },
+  {
+    "name": "Vỏ sò quý",
+    "emoji": "🐚",
+    "price": 22000,
+    "weight": 0.3,
+    "rarity": 11
+  },
+  {
+    "name": "Cá đuối ó",
+    "emoji": "🦈",
+    "price": 165000,
+    "weight": 22,
+    "rarity": 3
+  },
+  {
+    "name": "Cá băng",
+    "emoji": "❄️",
+    "price": 140000,
+    "weight": 8,
+    "rarity": 3
+  },
+  {
+    "name": "Cá hang",
+    "emoji": "🦎",
+    "price": 320000,
+    "weight": 5,
+    "rarity": 2
+  }
+]

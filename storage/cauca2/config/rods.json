@@ -1,0 +1,37 @@
+[
+  {
+    "id": "rod_01",
+    "name": "Cần tre",
+    "price": 5000,
+    "maxWeight": 5,
+    "durability": 30
+  },
+  {
+    "id": "rod_02",
+    "name": "Cần sắt",
+    "price": 20000,
+    "maxWeight": 15,
+    "durability": 80
+  },
+  {
+    "id": "rod_03",
+    "name": "Cần carbon",
+    "price": 80000,
+    "maxWeight": 40,
+    "durability": 200
+  },
+  {
+    "id": "rod_04",
+    "name": "Cần titan",
+    "price": 150000,
+    "maxWeight": 60,
+    "durability": 350
+  },
+  {
+    "id": "rod_05",
+    "name": "Cần huyền thoại",
+    "price": 350000,
+    "maxWeight": 100,
+    "durability": 500
+  }
+]

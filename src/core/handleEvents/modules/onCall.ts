@@ -324,6 +324,11 @@ if (bodyStr === pre || (isBotMentioned && !bodyWithoutBotTag)) {
         [...cmds.values()].find((c: Command) => c.alias?.includes(inCmd)) ||
         null;
 
+      const botNoPrefixEnabled = (config as Record<string, unknown>).botNoPrefixEnabled !== false;
+      if (!botNoPrefixEnabled && cmd?.name === "bot") {
+        cmd = null;
+      }
+
       const canNP =
         cmd && (cmd.prefix === false || ownerNoPrefixAllowed(cmd, config, isOwner));
       if (canNP || isBotMentioned) {

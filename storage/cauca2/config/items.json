@@ -1,0 +1,116 @@
+[
+  {
+    "id": "repair_kit",
+    "name": "Bộ sửa cần",
+    "price": 5000,
+    "description": "Hồi phục 100% độ bền cho cần câu hiện tại",
+    "type": "instant"
+  },
+  {
+    "id": "repair_kit_pro",
+    "name": "Bộ sửa cần cao cấp",
+    "price": 15000,
+    "description": "Hồi 100% độ bền + bảo vệ cần không mất bền 1 lần câu",
+    "type": "instant"
+  },
+  {
+    "id": "lucky_charm",
+    "name": "Bùa may mắn",
+    "price": 20000,
+    "description": "Tăng 20% tỷ lệ câu cá hiếm trong 10 phút",
+    "type": "buff",
+    "duration": 600000,
+    "bonus": 20
+  },
+  {
+    "id": "lucky_charm_super",
+    "name": "Bùa may mắn VIP",
+    "price": 45000,
+    "description": "Tăng 35% tỷ lệ cá hiếm trong 15 phút",
+    "type": "buff",
+    "duration": 900000,
+    "bonus": 35
+  },
+  {
+    "id": "shield_vip",
+    "name": "Giấy bảo kê",
+    "price": 50000,
+    "description": "Bảo vệ khỏi trộm cắp trong 2 giờ",
+    "type": "buff",
+    "duration": 7200000
+  },
+  {
+    "id": "shield_24h",
+    "name": "Giấy bảo kê 24h",
+    "price": 120000,
+    "description": "Chống trộm trong 24 giờ",
+    "type": "buff",
+    "duration": 86400000
+  },
+  {
+    "id": "energy_drink",
+    "name": "Thuốc tăng lực",
+    "price": 8000,
+    "description": "Hồi 50% độ bền cần câu (dùng khi chưa gãy)",
+    "type": "instant"
+  },
+  {
+    "id": "treasure_map",
+    "name": "Bản đồ kho báu",
+    "price": 35000,
+    "description": "Lần câu tiếp theo tỷ lệ cá hiếm +50% (1 lần)",
+    "type": "instant"
+  },
+  {
+    "id": "lucky_charm_mini",
+    "name": "Bùa may mắn mini",
+    "price": 8000,
+    "description": "Tăng 10% tỷ lệ cá hiếm trong 5 phút",
+    "type": "buff",
+    "duration": 300000,
+    "bonus": 10
+  },
+  {
+    "id": "shield_6h",
+    "name": "Giấy bảo kê 6h",
+    "price": 75000,
+    "description": "Chống trộm trong 6 giờ",
+    "type": "buff",
+    "duration": 21600000
+  },
+  {
+    "id": "repair_kit_mega",
+    "name": "Bộ sửa cần mega",
+    "price": 30000,
+    "description": "Hồi full độ bền + 3 lần câu tiếp không mất độ bền",
+    "type": "instant"
+  },
+  {
+    "id": "golden_rod_oil",
+    "name": "Dầu bảo vệ cần",
+    "price": 12000,
+    "description": "2 lần câu tiếp theo giảm 50% mất độ bền",
+    "type": "instant"
+  },
+  {
+    "id": "fisher_blessing",
+    "name": "Lời chúc cần thủ",
+    "price": 55000,
+    "description": "Lần câu tiếp theo +80% tỷ lệ cá hiếm (1 lần)",
+    "type": "instant"
+  },
+  {
+    "id": "double_catch",
+    "name": "Bùa câu đôi",
+    "price": 40000,
+    "description": "Lần câu tiếp nhận x2 số cá (1 lần)",
+    "type": "instant"
+  },
+  {
+    "id": "anti_steal_trap",
+    "name": "Bẫy chống trộm",
+    "price": 28000,
+    "description": "Kẻ trộm bị cấm trộm 1 giờ (dùng khi bị trộm)",
+    "type": "instant"
+  }
+]

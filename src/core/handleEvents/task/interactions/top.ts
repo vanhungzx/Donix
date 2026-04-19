@@ -19,6 +19,8 @@ interface SendResult {
 }
 
 type PeriodKey = "day" | "week" | "month" | "total";
+export type TopPeriod = "day" | "week" | "month";
+const TOP_PERIODS: readonly TopPeriod[] = ["day", "week", "month"] as const;
 
 interface UserInteractionCount {
   id: string;
@@ -46,29 +48,6 @@ export async function sendTop(
   if (donix.send_toptt) return;
   donix.send_toptt = true;
 
-  let sendMessagesEnabled = true;
-  try {
-    const config = getConfig() as Record<string, unknown> | null;
-    const sched = config?.scheduler as Record<string, unknown> | undefined;
-    const tasks = sched?.tasks as Record<string, unknown> | undefined;
-    const sendTopTask = tasks?.sendTop as Record<string, unknown> | undefined;
-    const sendBlock = sendTopTask?.send as Record<string, unknown> | undefined;
-    const nested = sendBlock?.enabled;
-    const root = config?.sendTopMessagesEnabled;
-
-    if (root === true && nested === false) {
-      sendMessagesEnabled = true;
-    } else if (nested !== undefined) {
-      sendMessagesEnabled = nested !== false;
-    } else if (root !== undefined) {
-      sendMessagesEnabled = root !== false;
-    } else if (donix.send_toptt_enabled !== undefined) {
-      sendMessagesEnabled = donix.send_toptt_enabled !== false;
-    }
-  } catch {
-    sendMessagesEnabled = donix.send_toptt_enabled !== false;
-  }
-
   const CONC = 6;
   const sentThreads = new Set<string>();
   const NAME_CACHE = new Map<string, string>();
@@ -82,6 +61,8 @@ export async function sendTop(
     } else if (cur.day() === 1) {
       typ = "week";
     }
+
+    const sendMessagesEnabled = getSendTopMessagesEnabled(typ);
     const hdr: Record<typeof typ, string> = {
       day: "📊 Top Tương Tác Ngày",
       week: "📈 Top Tương Tác Tuần",
@@ -380,36 +361,62 @@ export async function sendTop(
   }
 }
 
-export async function setSendTopMessagesEnabled(enabled: boolean): Promise<boolean> {
+function getSendConfigBlock(): Record<string, unknown> {
+  try {
+    const config = getConfig() as Record<string, unknown> | null;
+    const sched = config?.scheduler as Record<string, unknown> | undefined;
+    const tasks = sched?.tasks as Record<string, unknown> | undefined;
+    const sendTopTask = tasks?.sendTop as Record<string, unknown> | undefined;
+    const sendBlock = sendTopTask?.send as Record<string, unknown> | undefined;
+    return sendBlock || {};
+  } catch {
+    return {};
+  }
+}
+
+function readBoolFlag(value: unknown, defaultValue = true): boolean {
+  if (value === undefined || value === null) return defaultValue;
+  return value !== false;
+}
+
+export async function setSendTopMessagesEnabled(
+  enabled: boolean,
+  period?: TopPeriod
+): Promise<boolean> {
   const donix = getDonixState();
-  donix.send_toptt_enabled = enabled;
+  if (!period) {
+    donix.send_toptt_enabled = enabled;
+  }
 
   try {
-    await updateConfigKey("scheduler.tasks.sendTop.send.enabled", enabled);
+    const key = period
+      ? `scheduler.tasks.sendTop.send.${period}`
+      : "scheduler.tasks.sendTop.send.enabled";
+    await updateConfigKey(key, enabled);
   } catch (error) {
-
     console.warn("Không thể lưu trạng thái vào config:", error);
   }
 
   return enabled;
 }
 
-export function getSendTopMessagesEnabled(): boolean {
-  try {
-    const config = getConfig() as Record<string, unknown> | null;
-    const sendTopTask = (config?.scheduler as Record<string, unknown> | undefined)?.tasks as
-      | Record<string, unknown>
-      | undefined;
-    const st = sendTopTask?.sendTop as Record<string, unknown> | undefined;
-    const nested = (st?.send as Record<string, unknown> | undefined)?.enabled;
-    const root = config?.sendTopMessagesEnabled;
-    if (root === true && nested === false) return true;
-    if (nested !== undefined) return nested !== false;
-    if (root !== undefined) return root !== false;
-  } catch {
-    /* ignore */
+export function getSendTopMessagesEnabled(period?: TopPeriod): boolean {
+  const send = getSendConfigBlock();
+  const globalEnabled = readBoolFlag(send.enabled, true);
+  if (!globalEnabled) return false;
+
+  if (period) {
+    return readBoolFlag(send[period], true);
   }
 
-  const donix = getDonixState();
-  return donix.send_toptt_enabled !== false;
+  return TOP_PERIODS.some(p => readBoolFlag(send[p], true));
+}
+
+export function getSendTopMessagesStatus(): Record<TopPeriod | "global", boolean> {
+  return {
+    global: readBoolFlag(getSendConfigBlock().enabled, true),
+    day: getSendTopMessagesEnabled("day"),
+    week: getSendTopMessagesEnabled("week"),
+    month: getSendTopMessagesEnabled("month"),
+  };
 }

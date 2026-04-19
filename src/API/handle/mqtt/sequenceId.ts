@@ -1,6 +1,7 @@
 import log from "@log";
 import utils, { get } from "../../request/index";
 import { GRAPHQL_DOC_ID } from "./constants";
+import { isCheckpoint282Signal, isCheckpoint956Signal } from "./checkpointSignals";
 import { getSequenceIdFromHtml } from "./htmlSequenceId";
 const { parseAndCheckLogin } = utils;
 
@@ -61,7 +62,7 @@ export async function handleAutoLogin(ctx: any, resData: any, retry = true, _def
   }
 
   // Xử lý checkpoint 282 - tự động đổi acc
-  if (resStr.includes("1501092823525282")) {
+  if (isCheckpoint282Signal(resStr)) {
     log.error("Bot bị checkpoint 282, đang tự động đổi tài khoản...");
     try {
       const { default: autoRelogin } = await import("../../../core/auth_login/auto_relogin");
@@ -86,7 +87,7 @@ export async function handleAutoLogin(ctx: any, resData: any, retry = true, _def
   }
 
   // Xử lý checkpoint 956 - tự động đổi acc
-  if (resStr.includes("828281030927956")) {
+  if (isCheckpoint956Signal(resStr)) {
     log.error("Bot bị checkpoint 956, đang tự động đổi tài khoản...");
     try {
       const { default: autoRelogin } = await import("../../../core/auth_login/auto_relogin");

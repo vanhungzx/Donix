@@ -1,5 +1,9 @@
 import log from "@log";
 import autoRelogin from "../../../core/auth_login/auto_relogin";
+import {
+  isCheckpoint282Or956Signal,
+  isCheckpoint282Signal,
+} from "./checkpointSignals";
 import { reloadConfig } from "../../../core/configManager";
 import { saveCookies } from "../../request/clients.js";
 import { parseAndCheckLogin } from "../../request/formatters/helpers";
@@ -245,8 +249,8 @@ export async function reconnectMqttHandler(
       return false;
     }
 
-    if (resStr.includes("828281030927956") || resStr.includes("1501092823525282")) {
-      const checkpointCode = resStr.includes("1501092823525282") ? "282" : "956";
+    if (isCheckpoint282Or956Signal(resStr)) {
+      const checkpointCode = isCheckpoint282Signal(resStr) ? "282" : "956";
       log.error(`Bot bị checkpoint ${checkpointCode}, đang tự động đổi tài khoản...`);
       isReconnecting = false;
       ctx.isReconnecting = false;

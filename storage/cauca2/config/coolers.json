@@ -1,0 +1,30 @@
+[
+  {
+    "id": "cooler_01",
+    "name": "Thùng xốp",
+    "price": 2000,
+    "multiplier": 1.1,
+    "capacity": 30
+  },
+  {
+    "id": "cooler_02",
+    "name": "Thùng đá",
+    "price": 10000,
+    "multiplier": 1.3,
+    "capacity": 80
+  },
+  {
+    "id": "cooler_03",
+    "name": "Tủ lạnh mini",
+    "price": 40000,
+    "multiplier": 1.6,
+    "capacity": 200
+  },
+  {
+    "id": "cooler_04",
+    "name": "Kho đông công nghiệp",
+    "price": 100000,
+    "multiplier": 2,
+    "capacity": 500
+  }
+]

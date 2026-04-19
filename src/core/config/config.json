@@ -1,12 +1,9 @@
 {
   "PREFIX": "/",
-"PREFIX": "/",
-  "BOTNAME": "Obito",{
-  "PREFIX": "/",
-"PREFIX": "/",
   "BOTNAME": "Obito",
   "DevMode": false,
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+  "OWNER": "61586845605819",
   "ADMIN": [
     "",
     "502275138",
@@ -18,12 +15,13 @@
     "100013619082017",
     "61575400346618",
     "61586826007038",
-    "100094368344924"
+    "100094368344924",
+    "1631016269"
   ],
   "token": {
-    "EAAAAU": "EAAAAUaZA8jlABRPqWayA8TzbLGno9ZBRaVgeVvo6FAAS8aU65SbfzZAmJ8VVJpAs88C2kpoc8sGQkec8bIMQ1OOMVb6OZAbLnSr4SXazLXIAvLJMFlnUFmd6Yv6llkD2ZAecnEaN3pAcGEsAiRIy4oLukKt6R5rZBOOTJB5l7rh80UkYZAJ9pkwEQto5HP44JDDogZDZD",
-    "EAAD6V7": "EAAD6V7os0gcBRPlZAzZCtVMmEWYOf3OsRhF3TiN5QErEBIquMB9gI4x7SNnbjeovTuSZBBC5YHHjj9PcTZARuZAY69PftUZAaD9K83aLqCDlRI2sU9vTUNetNR1AcCZCy2SlnciJ2NRt3OEiTWXevA0VMzArxJdN0S8OvM4FySZBqjqcC19T9hias5DlNklqHMNVoAZDZD",
-    "EAAD": "EAADo1TDZCuu8BRMIvsantqZAhWkU0TCC2j3sAAVYtgZAab7C19LN9tpbIKY0geZCnEXkiblrdn83HplUg9sLCCk8tyKPsoCZB76DbzsAyeng2DAWVZBdxizgjARjiThcxEZCSRXLhRDZCvvgocg1tueYea80JkmjZB661LQD6kULbfc5dD7YrIyWWqg5fAVWckPJr9ZCa63i7LfQZDZD"
+    "EAAAAU": "EAAAAUaZA8jlABRFc0SR3WVjG3ZBvwSPIY43ZBbXHm1G75kWotkLybbfBoQBHZBI7BF75ZCx0AXatm06nrCu365OzKUWpZCfBLXH39NlcBdNeqx49VKH0QMRYSXKB3zuo2s7MlcVxgClCHxUH2ZBjnIIAPUyXscPb5QPSfzZCDZCaLTwJPkzskLBXDioKI78CwKwZDZD",
+    "EAAD6V7": "EAAD6V7os0gcBRNZCRVigoyZBGqhpMVRVlmqwYxlJ9kMwewX9rDTW6Gl80b50ZBgpIa37YMMyAH74GIhyXqGPs8e82u3SgwM4qNpNTZBZAUOdxCyvslMNgGzNlsAYpDXcQ3QxZAy2mmtyuuPujSgCcToRTbQD1Egg14GGPlPrcqFlhivQaxMNc8lR5pEHcCdAZDZD",
+    "EAAD": "EAADo1TDZCuu8BREFGRSMwkpmJ2ZC7Int4rPlaXJovOuwx111OGZBY8fNCBONTSchaA1OIGlsjYFRal2Fw5OyyNlJKQt1JESaF5XoySaKZCexGKMtlXVLWkwj12yf3ZABllLdZCAYALf46XP4c00B4ZCxGttDu2CQJp6OtkfHFnuS0mfHcXQXinJ0w2bL3DsjBpMBrB7lQZDZD"
   },
   "OWNER_NOPREFIX": {
     "all": false,
@@ -70,94 +68,16 @@
   "configModule": {},
   "configValue": {},
   "sendTopMessagesEnabled": true,
-
   "scheduler": {
     "enabled": true,
     "tasks": {
       "sendTop": {
-        "send": {
-          "enabled": false
-        },
         "enabled": true,
         "type": "at",
-        "time": "00:01"
-      },
-      "tokenCheck": {
-        "enabled": true,
-        "type": "everyH",
-
-        "enabled": true,
-        "type": "at",
-        "time": "00:22"
-        "time": "00:10"
-      },
-      "notifyExp": {
-        "enabled": true,
-        "type": "at",
-        "time": "16:00"
-      },
-      "sendTop": {
-        "enabled": true,
-        "type": "at",
-        "time": "00:00",
+        "time": "00:01",
         "send": {
           "enabled": false
         }
-      },
-      "resetGeminiQuota": {
-        "enabled": true,
-
-        "type": "at",
-        "time": "00:01"
-      },
-      "autoRestart": {
-        "enabled": false,
-        "type": "everyH",
-        "hours": 4
-      },
-      "autoInteractFeed": {
-        "enabled": false,
-        "type": "everyMin",
-        "fetchLimit": 8,
-        "reaction": "LIKE",
-        "minDelayMs": 2500,
-        "maxDelayMs": 6000,
-        "commentTemplates": []
-      },
-      "autoRestart": {
-
-        "enabled": false,
-        "type": "everyH",
-        "hours": 4
-        "maxDelayMs": 6000
-      }
-    }
-    },
-    "enabled": true
-  }
-}
-  "DevMode": false,
-  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
-  "OWNER": "61586845605819",
-  "ADMIN": [
-    "",
-    "502275138",
-    "61586845605819",
-    "61564114700108",
-    "61574857936692",
-    "100076714908217",
-
-
-  "scheduler": {
-    "enabled": true,
-    "tasks": {
-      "sendTop": {
-        "send": {
-          "enabled": false
-        },
-        "enabled": true,
-        "type": "at",
-        "time": "00:01"
       },
       "tokenCheck": {
         "enabled": true,
@@ -169,12 +89,15 @@
       "updNick": {
         "enabled": true,
         "type": "at",
-        "time": "00:22"
         "time": "00:10"
       },
       "notifyExp": {
         "enabled": true,
-
+        "type": "at",
+        "time": "16:00"
+      },
+      "resetGeminiQuota": {
+        "enabled": true,
         "type": "at",
         "time": "00:01"
       },
@@ -191,14 +114,10 @@
         "fetchLimit": 8,
         "reaction": "LIKE",
         "minDelayMs": 2500,
-
-        "enabled": false,
-        "type": "everyH",
-        "hours": 4
-        "maxDelayMs": 6000
+        "maxDelayMs": 6000,
+        "commentTemplates": []
       }
     }
-    },
-    "enabled": true
-  }
+  },
+  "botNoPrefixEnabled": false
 }

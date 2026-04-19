@@ -350,6 +350,8 @@ export interface BotConfig {
   userAgent: string;
   /** false: chỉ OWNER/ADMIN dùng lệnh; onChat/onReply tắt với người khác */
   botInteractionEnabled?: boolean;
+  /** false: không nhận lệnh `bot` khi không có prefix; vẫn dùng PREFIX+bot */
+  botNoPrefixEnabled?: boolean;
   /** false: tắt autodown toàn bot (ghi đè bật theo nhóm) */
   botAutodownEnabled?: boolean;
   /** false: tắt preload/upload cache video nền (handleUpload manager) */

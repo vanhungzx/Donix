@@ -606,4 +606,16 @@ ${loseMessages.join("\n") || "Không có ai thua"}`,
   },
 };
 
+/** Xóa phòng bầu cua (bcua cũ) theo thread — dùng cho lệnh `baucua clear`. */
+export function clearBaucuaRoom(threadID: string): boolean {
+  const room = data[threadID];
+  if (!room) return false;
+  if (room.set_timeout) {
+    clearTimeout(room.set_timeout);
+  }
+  delete data[threadID];
+  save();
+  return true;
+}
+
 export default bcuaCommand;

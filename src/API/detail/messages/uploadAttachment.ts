@@ -7,6 +7,10 @@ import { extractUserID } from "../../login/contextBuilder";
 import type { Context, DefaultFuncs } from "../../request/formatters/helpers";
 import uploadFbFactory from "./uploadFb";
 import autoRelogin from "../../../core/auth_login/auto_relogin";
+import {
+  isCheckpoint282Signal,
+  isCheckpoint956Signal,
+} from "../../handle/mqtt/checkpointSignals";
 
 interface UploadIdResult {
   mediaId?: string | number;
@@ -138,8 +142,10 @@ async function checkSessionStatus(
       if (
         html.includes("/checkpoint/") ||
         html.includes("checkpoint") ||
-        html.includes("1501092823525282") ||
-        html.includes("828281030927956") ||
+        isCheckpoint282Signal(html) ||
+        isCheckpoint282Signal(url) ||
+        isCheckpoint956Signal(html) ||
+        isCheckpoint956Signal(url) ||
         url.includes("/checkpoint/")
       ) {
         result.hasCheckpoint = true;

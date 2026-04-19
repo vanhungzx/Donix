@@ -1,0 +1,37 @@
+[
+  {
+    "id": "bait_01",
+    "name": "Giun đất",
+    "price": 500,
+    "reduction": 1,
+    "luck": 5
+  },
+  {
+    "id": "bait_02",
+    "name": "Mồi cao cấp",
+    "price": 3000,
+    "reduction": 3,
+    "luck": 15
+  },
+  {
+    "id": "bait_03",
+    "name": "Mồi vàng",
+    "price": 15000,
+    "reduction": 5,
+    "luck": 30
+  },
+  {
+    "id": "bait_04",
+    "name": "Mồi đặc biệt",
+    "price": 25000,
+    "reduction": 6,
+    "luck": 40
+  },
+  {
+    "id": "bait_05",
+    "name": "Mồi thần",
+    "price": 50000,
+    "reduction": 8,
+    "luck": 55
+  }
+]

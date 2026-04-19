@@ -1,0 +1,12 @@
+[
+  {"id":"location_01","name":"Ao làng","emoji":"🏞️","minWait":3,"maxWait":8,"rareFishBonus":0,"description":"Ao nhỏ gần làng, phù hợp cần thủ mới."},
+  {"id":"location_02","name":"Sông lớn","emoji":"🌊","minWait":5,"maxWait":12,"rareFishBonus":10,"unlockPrice":15000,"description":"Dòng sông rộng, cá đa dạng hơn."},
+  {"id":"location_03","name":"Hồ thiêng","emoji":"🏔️","minWait":8,"maxWait":20,"rareFishBonus":25,"unlockPrice":50000,"description":"Hồ nước trong vắt, cá hiếm thỉnh thoảng xuất hiện."},
+  {"id":"location_04","name":"Biển sâu","emoji":"🌊","minWait":10,"maxWait":25,"rareFishBonus":35,"unlockPrice":120000,"description":"Biển xanh, săn cá lớn và cá quý."},
+  {"id":"location_05","name":"Đầm phá","emoji":"🏝️","minWait":4,"maxWait":10,"rareFishBonus":15,"unlockPrice":35000,"description":"Đầm nước lợ, nhiều tôm cua và cá nhỏ."},
+  {"id":"location_06","name":"Vịnh Hạ Long","emoji":"🏝️","minWait":6,"maxWait":15,"rareFishBonus":20,"unlockPrice":80000,"description":"Vịnh nổi tiếng, cá đặc sản và cảnh đẹp."},
+  {"id":"location_07","name":"Rạn san hô","emoji":"🪸","minWait":8,"maxWait":22,"rareFishBonus":40,"unlockPrice":200000,"description":"Rạn san hô đầy màu sắc, cá nhiệt đới hiếm."},
+  {"id":"location_08","name":"Sông Amazon","emoji":"🌳","minWait":7,"maxWait":18,"rareFishBonus":30,"unlockPrice":150000,"description":"Rừng nhiệt đới, cá piranha và loài lạ."},
+  {"id":"location_09","name":"Hồ băng","emoji":"❄️","minWait":12,"maxWait":28,"rareFishBonus":45,"unlockPrice":280000,"description":"Vùng cực lạnh, cá băng và cá hiếm."},
+  {"id":"location_10","name":"Hang động ngầm","emoji":"🕳️","minWait":15,"maxWait":35,"rareFishBonus":50,"unlockPrice":400000,"description":"Hang sâu dưới nước, chỉ dành cho cần thủ đỉnh cao."}
+]
