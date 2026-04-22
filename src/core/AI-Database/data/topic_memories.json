@@ -602,7 +602,19 @@
   {
     "_id": "1412823280572890",
     "data": {
-      "topics": {}
+      "topics": {
+        "relationship": [
+          {
+            "content": "Minh Beo sinh ra từ trứng khủng hoảng",
+            "timestamp": "2026-04-21T04:04:52.792Z",
+            "importance": 7,
+            "users": [
+              "61566523678540"
+            ],
+            "context": "/bot t sinh ra từ trứng khủng hoảng"
+          }
+        ]
+      }
     },
     "timestamp": "2026-03-25T14:20:36.360Z"
   },

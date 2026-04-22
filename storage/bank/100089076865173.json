@@ -1,11 +1,11 @@
 {
-  "money": "10649264003134480245692959026049733735557914",
+  "money": "10745395196820903283501796000887778385331604",
   "loan": "0",
   "isLocked": false,
   "lockReason": "",
   "loanDate": null,
   "lastLoanTs": null,
-  "lastDepositCredit": 1776556800000,
+  "lastDepositCredit": 1776816000000,
   "creditScore": 100,
   "transactions": [
     {
@@ -242,6 +242,21 @@
       "type": "interest_deposit_daily",
       "amount": "31852235303492961851524304165652244473253",
       "timestamp": 1776556800000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "31947792009403440737078877078149201206673",
+      "timestamp": 1776643200000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "32043635385431651059290113709383648810293",
+      "timestamp": 1776729600000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "32139766291587946012467984050511799756724",
+      "timestamp": 1776816000000
     }
   ],
   "accountCreated": 1774620379214,

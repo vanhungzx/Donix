@@ -16,6 +16,70 @@
           "text": "Trong nhiều ngữ cảnh khác nhau, \"text\" và \"key\" có thể có các ý nghĩa khác nhau.\n\n**1. \"Text\" (Văn bản):**\n\n*   Trong lĩnh vực công nghệ thông tin hoặc khi nói về các trường nhập liệu (form), \"text\" dùng để chỉ một trường nơi người dùng có thể nhập văn bản, ví dụ như tên, địa chỉ, hoặc một đoạn văn ngắn.\n*   Trong các ứng dụng dịch thuật, \"text\" là phần văn bản bạn muốn dịch từ ngôn ngữ này sang ngôn ngữ khác.\n*   Trong lập trình, \"text\" có thể là một loại dữ liệu (string) dùng để lưu trữ các ký tự, từ, câu.\n*   Trong ngữ cảnh chung, \"text\" đơn giản là nội dung bằng chữ viết.\n\n**2. \"Key\" (Khóa):**\n\n\"Key\" có nhiều nghĩa tùy thuộc vào ngữ cảnh:\n\n*   **Trong lập trình và khoa học máy tính:** \"Key\" thường là một giá trị duy nhất dùng để định danh và truy xuất dữ liệu từ một cấu trúc dữ liệu. Mỗi khóa sẽ tương ứng với một mục dữ liệu cụ thể, giúp việc tìm kiếm hiệu quả hơn nhiều so với việc duyệt qua tất cả dữ liệu. Ví dụ, trong cơ sở dữ liệu, khóa chính (primary key) là duy nhất cho mỗi bản ghi.\n*   **Trong mật mã học:** \"Key\" là một đoạn dữ liệu được dùng để mã hóa hoặc giải mã thông tin, giống như chìa khóa vật lý dùng để mở khóa.\n*   **Trong lập trình ô tô:** \"Key programming\" (lập trình khóa) là quá trình thiết lập để khóa xe (thường có chip transponder) có thể giao tiếp với hệ thống chống trộm của xe, cho phép động cơ khởi động.\n*   **Trong lập trình ngôn ngữ:** \"Keywords\" (từ khóa) là những từ đã được định nghĩa trước và dành riêng trong một ngôn ngữ lập trình, có ý nghĩa đặc biệt và không thể dùng làm tên biến hoặc tên hàm. Chúng giúp định hình cú pháp và kiểm soát luồng thực thi của chương trình.\n\nVì vậy, nếu bạn nói \"text là bỏ key vô đó hả\", có thể bạn đang hỏi về việc nhập một \"key\" (ví dụ: một mã, một mật khẩu, hoặc một giá trị định danh) vào một \"text field\" (trường văn bản) trong một biểu mẫu hoặc ứng dụng nào đó."
         }
       ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "này t book riêng đồg làm"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Tôi xin lỗi, tôi không hiểu rõ ý của bạn. \"Book riêng đồng làm\" có vẻ là một cụm từ tiếng Việt không phổ biến hoặc là một cách diễn đạt cụ thể cho một ngữ cảnh mà tôi chưa được lập trình để hiểu.\n\nBạn có thể giải thích rõ hơn ý bạn muốn nói không? Cụ thể hơn:\n\n*   **\"Book riêng\"** có nghĩa là gì trong trường hợp này? Bạn muốn đặt trước riêng, đặt lịch riêng, hay có ý nghĩa khác?\n*   **\"Đồng làm\"** có nghĩa là gì? Bạn muốn làm việc cùng, làm chung, hay có ý nghĩa nào khác?\n\nVí dụ, nếu bạn muốn nói:\n\n*   \"Tôi muốn đặt lịch riêng để làm việc cùng bạn.\"\n*   \"Tôi muốn đặt hàng riêng một sản phẩm bạn làm.\"\n*   \"Tôi muốn thuê riêng bạn để làm một dự án.\"\n\nXin hãy cung cấp thêm chi tiết để tôi có thể hiểu và hỗ trợ bạn tốt hơn."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "hi"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Chào bạn! Tôi có thể giúp gì cho bạn hôm nay?"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "hi"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Chào bạn! Tôi có thể giúp gì cho bạn hôm nay?"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "hello"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Chào bạn! Tôi có thể giúp gì cho bạn hôm nay?"
+        }
+      ]
     }
   ]
 }

@@ -1,0 +1,85 @@
+{
+  "summary": "**Tóm tắt hội thoại:**\n\n*   **Sở thích/Bối cảnh:** Người dùng bắt đầu hội thoại bằng lời chào chung chung, không có bối cảnh cụ thể hay sở thích được thể hiện rõ ràng.\n*   **Nhiệm vụ:** Trợ lý cần chủ động hỏi để xác định nhu cầu của người dùng.\n*   **Thông tin cần nhớ:** Người dùng đang mở đầu một cuộc trò chuyện mới.\n*   **Chiến lược của Trợ lý:** Chào lại và đặt câu hỏi mở để mời người dùng trình bày yêu cầu.",
+  "history": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "hi"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Chào bạn! Tôi có thể giúp gì cho bạn hôm nay?"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "hi"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Chào bạn! Bạn cần tôi giúp gì không?"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "gemini"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Đúng vậy, tôi là Gemini, một mô hình ngôn ngữ lớn được Google đào tạo. Rất vui được nói chuyện với bạn!\n\nBạn có bất kỳ câu hỏi nào về tôi, về AI, hoặc bất kỳ chủ đề nào khác mà bạn muốn thảo luận không?"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "như l"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Bạn có thể vui lòng giải thích rõ hơn ý của bạn không? Tôi không chắc mình đã hiểu đúng."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "gemini"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Đúng vậy, tôi là Gemini. Bạn có câu hỏi hay muốn trò chuyện về điều gì không?"
+        }
+      ]
+    }
+  ]
+}
