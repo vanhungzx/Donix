@@ -5070,17 +5070,17 @@ async function executeActions(
     Array.isArray(actions) ? actions.map((a) => a?.type).filter(Boolean) : []
   );
 
-  /** Ưu tiên sing/video/tiktok trước chat — bắt đầu tải sớm (Gemini hay trả [chat, sing]). */
+  /** Gửi text (chat) trước, rồi mới xử lý media (sing/video/tiktok/...) để người dùng thấy phản hồi ngay. */
   const mediaActionPriority = (type: string | undefined) => {
-    if (type === "sing") return 0;
-    if (type === "video") return 1;
-    if (type === "tiktok") return 2;
-    if (type === "createphoto") return 3;
-    if (type === "set_theme_image" || type === "set_color") return 4;
-    if (type === "change_thread_photo") return 5;
-    if (type === "set_threadname" || type === "set_thread_emoji" || type === "set_nicknames") return 6;
-    if (type === "react") return 90;
-    if (type === "chat") return 99;
+    if (type === "chat") return 0;
+    if (type === "react") return 1;
+    if (type === "sing") return 10;
+    if (type === "video") return 11;
+    if (type === "tiktok") return 12;
+    if (type === "createphoto") return 13;
+    if (type === "set_theme_image" || type === "set_color") return 14;
+    if (type === "change_thread_photo") return 15;
+    if (type === "set_threadname" || type === "set_thread_emoji" || type === "set_nicknames") return 16;
     return 100;
   };
   const orderedActions = [...actions].sort(

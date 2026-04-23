@@ -24,6 +24,10 @@ const LEGACY_PATH = path.join(DATA_DIR, "nongtrai_sse.json");
 const STREAM_PATH = "/api/v1/ptgvn/nongtrai/stream";
 const DEFAULT_API_BASE = "https://donixdev.com";
 const RECONNECT_MS = 10_000;
+/** Tránh spam console khi SSE lỗi liên tục (401, mạng, v.v.) */
+const SSE_LOG_EVERY_N_FAILURES = 30;
+
+let sseConsecutiveFailures = 0;
 
 function getNongtraiConfig() {
   const raw = getConfig()?.nongtrai;
@@ -200,12 +204,15 @@ function startSseStream(messenger: any) {
   const { apiKey } = getNongtraiConfig();
   const url = streamUrl();
 
-  log("INFO", "[nongtrai] Bắt đầu kết nối SSE…");
+  if (sseConsecutiveFailures === 0) {
+    log("INFO", "[nongtrai] Bắt đầu kết nối SSE…");
+  }
 
   st.req = connectNongtraiSse(
     url,
     apiKey,
     (payload) => {
+      sseConsecutiveFailures = 0;
       if (payload.type === "heartbeat" || payload.type === "sse_connected") return;
       if (payload.type === "channel_update" && payload.notificationText) {
         const list = st.activeThreads;
@@ -217,10 +224,15 @@ function startSseStream(messenger: any) {
     },
     (err) => {
       const msg = err instanceof Error ? err.message : String(err);
-      log("ERROR", `[nongtrai] SSE: ${msg}`);
+      sseConsecutiveFailures += 1;
+      const n = sseConsecutiveFailures;
+      if (n === 1 || n % SSE_LOG_EVERY_N_FAILURES === 0) {
+        const suffix =
+          n > 1 ? ` (lỗi liên tiếp lần ${n}, sẽ thử lại mỗi ${RECONNECT_MS / 1000}s)` : "";
+        log("ERROR", `[nongtrai] SSE: ${msg}${suffix}`);
+      }
       st.req = null;
       if (st.activeThreads.length > 0 && st.client) {
-        log("INFO", `[nongtrai] Thử kết nối lại sau ${RECONNECT_MS / 1000}s…`);
         setTimeout(() => startSseStream(st.client), RECONNECT_MS);
       }
     }

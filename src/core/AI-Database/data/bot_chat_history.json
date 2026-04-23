@@ -7735,36 +7735,6 @@
     "data": {
       "messages": [
         {
-          "sender": "61586845605819",
-          "content": "bot vẽ ảnh vario 160",
-          "timestamp": "2026-03-09T14:41:53.193Z"
-        },
-        {
-          "sender": "61586845605819",
-          "content": "bot vẽ ảnh vario 160",
-          "timestamp": "2026-03-09T14:42:03.693Z"
-        },
-        {
-          "sender": "61586845605819",
-          "content": "bot làm đc những gì",
-          "timestamp": "2026-03-09T14:42:54.835Z"
-        },
-        {
-          "sender": "61586845605819",
-          "content": "Bot vẽ vario 160 đi",
-          "timestamp": "2026-03-10T11:02:57.256Z"
-        },
-        {
-          "sender": "bot",
-          "content": "Gia Long ơi, dạ em vẽ liền ạ! 😊.",
-          "timestamp": "2026-03-10T11:02:59.197Z"
-        },
-        {
-          "sender": "61586845605819",
-          "content": "Bot làm đc những gì",
-          "timestamp": "2026-03-10T11:04:51.531Z"
-        },
-        {
           "sender": "bot",
           "content": "Em là trợ lý ảo nè Gia Long, em có thể làm được nhiều thứ lắm đó! Em có thể: \n\n- Tìm nhạc, video, TikTok\n- Tạo ảnh AI\n- Làm nét ảnh\n- Quản lý nhóm (đổi biệt danh, tên nhóm, màu chat, anti)\n- Kiểm tra tương tác, thống kê nhóm\n- Gửi voice\n- Và nhiều thứ linh tinh khác nữa!\n\nBạn muốn em làm gì cho bạn không? 😊",
           "timestamp": "2026-03-10T11:04:54.853Z"
@@ -7833,6 +7803,36 @@
           "sender": "bot",
           "content": "Dạ anh Long, em không thể thực hiện yêu cầu \"bot sex\" được ạ. Em được lập trình để hỗ trợ những tác vụ hữu ích và tích cực thôi ạ.\n\nVề các yêu cầu trước của anh, em đã ghi nhận và xử lý rồi nha:\n- Em đã bật tài xỉu lên rồi đó anh!\n- Em cũng đã đổi icon nhóm thành 👌 rồi ạ!\n\nVề việc đổi theme cảnh Hồ Tây, anh Long muốn em đổi theme AI về cảnh Hồ Tây không ạ? Hay anh có ảnh Hồ Tây nào muốn em dùng làm theme không?",
           "timestamp": "2026-04-19T05:38:09.864Z"
+        },
+        {
+          "sender": "61586845605819",
+          "content": "!bot mở nhạc 24h lyly",
+          "timestamp": "2026-04-23T00:13:41.378Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Dạ anh Long, em mở bài \"24h\" của LyLy liền đây ạ! Bài này buồn da diết luôn đó anh.",
+          "timestamp": "2026-04-23T00:13:56.511Z"
+        },
+        {
+          "sender": "61586845605819",
+          "content": "!bot mở tiktok phonk",
+          "timestamp": "2026-04-23T00:15:51.654Z"
+        },
+        {
+          "sender": "61586845605819",
+          "content": "!bot mở tiktok phonk",
+          "timestamp": "2026-04-23T00:15:57.088Z"
+        },
+        {
+          "sender": "61586845605819",
+          "content": "!bot mở tiktok phonk",
+          "timestamp": "2026-04-23T00:16:04.205Z"
+        },
+        {
+          "sender": "61586845605819",
+          "content": "!bot mở tiktok phonk",
+          "timestamp": "2026-04-23T00:16:13.367Z"
         }
       ]
     },
@@ -9088,5 +9088,23 @@
       ]
     },
     "timestamp": "2026-04-22T05:02:45.852Z"
+  },
+  {
+    "_id": "1412823280572890:61576548691395",
+    "data": {
+      "messages": [
+        {
+          "sender": "61576548691395",
+          "content": "Cảnh cáo @Nguyễn Tuấn  =))",
+          "timestamp": "2026-04-22T17:30:24.521Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Arinoji Kazu ơi, cảnh cáo Nguyễn Tuấn cái gì thế ông 🤣.",
+          "timestamp": "2026-04-22T17:30:32.605Z"
+        }
+      ]
+    },
+    "timestamp": "2026-04-22T17:30:24.503Z"
   }
 ]
