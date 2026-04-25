@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package GetWorkshopAuthorInfo;
+
+message request {
+    uint64 accountId = 1;
+    string region = 2;
+}

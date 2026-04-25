@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package GetSpecialFriendList;
+
+message request {
+    uint64 accountId = 1;
+}

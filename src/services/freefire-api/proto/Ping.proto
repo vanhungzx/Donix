@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package Ping;
+
+message request {}
+
+message response {
+    int64 serverTime = 1;
+}

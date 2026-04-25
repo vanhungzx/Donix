@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package GetRecommendedFriend;
+
+import "PlayerPersonalShow.proto";
+
+message request {
+}
+
+message response {
+    repeated PlayerPersonalShow.AccountInfoBasic infos = 1;
+}

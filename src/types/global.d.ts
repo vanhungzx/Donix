@@ -33,6 +33,7 @@ export interface DonixGlobalState {
   vdanime?: [string, string][];
   vdcos?: [string, string][];
   vdtrai?: [string, string][];
+  vdchill?: [string, string][];
   [key: string]: string | number | boolean | null | undefined | DonixGlobalState | Array<DonixGlobalState> | [string, string][] | Record<string, string | number | boolean | null | undefined> | ((...args: unknown[]) => unknown);
 }
 

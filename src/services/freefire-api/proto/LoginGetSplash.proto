@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package LoginGetSplash;
+
+message request {
+    string region = 1;
+    uint32 clientType = 2;
+    uint32 platId = 3;
+}

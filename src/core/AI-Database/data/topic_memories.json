@@ -567,7 +567,19 @@
   {
     "_id": "1264342595796016",
     "data": {
-      "topics": {}
+      "topics": {
+        "preference": [
+          {
+            "content": "Gia Long thích xem video TikTok thể loại phonk",
+            "timestamp": "2026-04-25T04:10:23.707Z",
+            "importance": 6,
+            "users": [
+              "61586845605819"
+            ],
+            "context": "!bot mở tiktok video chill"
+          }
+        ]
+      }
     },
     "timestamp": "2026-03-08T08:04:12.962Z"
   },

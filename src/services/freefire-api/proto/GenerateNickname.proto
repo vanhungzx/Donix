@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package GenerateNickname;
+
+message request {
+    string region = 1;
+    string externalId = 2;
+}
+
+message response {
+    string nickname = 1;
+}

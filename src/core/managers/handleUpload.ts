@@ -8,7 +8,7 @@ const MAX_VIDEOS = 5;
 const INTERVAL_MS = 5000;
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 const MIN_FILE_SIZE = 1024;
-const CATS = ["vdgai", "vdanime", "vdcos", "vdtrai"] as const;
+const CATS = ["vdgai", "vdanime", "vdcos", "vdtrai", "vdchill"] as const;
 
 type Cat = (typeof CATS)[number];
 
@@ -17,6 +17,7 @@ const DIRS: Record<Cat, string> = {
   vdanime: storagePath("media", "vdanime"),
   vdcos: storagePath("media", "vdcos"),
   vdtrai: storagePath("media", "vdtrai"),
+  vdchill: storagePath("media", "vdchill"),
 };
 
 type UploadResult = { video_id?: string | number; audio_id?: string | number;[key: string]: any } | undefined;

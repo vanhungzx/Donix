@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package LoginGetDesc;
+
+message request {
+    string region = 1;
+    uint32 platId = 2;
+    string countryCode = 3;
+    uint32 clientType = 4;
+}

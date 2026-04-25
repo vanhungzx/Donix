@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package MajorRegister;
+
+message request {
+    bytes nickname = 1;
+    string signatureHash = 2;
+    string externalId = 3;
+    uint32 regAvatar = 5;
+    uint32 externalType = 6;
+    uint32 platId = 7;
+    uint32 source = 13;
+    bytes deviceFingerprint = 14;
+    string region = 15;
+    uint32 clientType = 16;
+}
+
+message response {
+    uint64 accountId = 1;
+    string token = 2;
+    string serverUrl = 3;
+}

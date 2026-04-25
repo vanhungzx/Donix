@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package GetAccountOutfit;
+
+message request {
+    uint64 accountId = 1;
+}
+
+message response {
+    // Keep response flexible: server schema may change by version/region.
+    bytes profile = 1;
+    bytes outfit = 2;
+    repeated bytes details = 5;
+    uint32 status = 6;
+    uint32 flag = 8;
+}

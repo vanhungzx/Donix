@@ -12,6 +12,7 @@ const Command: Command = {
 {pn}vd trai | boy
 {pn}vd ani | anime
 {pn}vd cos | cosplay
+{pn}vd chill | lofi
 {pn}vd on/off`,
   cd: 10,
   prefix: true,
@@ -72,7 +73,10 @@ const Command: Command = {
         "anime": global.Donix.vdanime,
 
         "cos": global.Donix.vdcos,
-        "cosplay": global.Donix.vdcos
+        "cosplay": global.Donix.vdcos,
+
+        "chill": global.Donix.vdchill,
+        "lofi": global.Donix.vdchill
       };
 
       const arr = map[input];
@@ -85,7 +89,8 @@ Các loại video:
 • vd gái | gai | girl
 • vd trai | boy
 • vd ani | anime
-• vd cos | cosplay`
+• vd cos | cosplay
+• vd chill | lofi`
         );
         return;
       }

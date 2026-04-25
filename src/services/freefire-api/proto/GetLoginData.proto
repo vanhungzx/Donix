@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package GetLoginData;
+
+import "MajorLogin.proto";
+
+message request {
+    string eventtime = 3;
+    string gameid = 4;
+    uint32 platid = 5;
+    string clientversion = 7;
+    string systemsoftware = 8;
+    string devicetype = 9;
+    string telecomoper = 10;
+    string network = 11;
+    uint32 screenwidth = 12;
+    uint32 screenhight = 13;
+    string dpi = 14;
+    string cpuhardware = 15;
+    uint32 memory = 16;
+}

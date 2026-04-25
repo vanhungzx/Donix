@@ -7735,11 +7735,6 @@
     "data": {
       "messages": [
         {
-          "sender": "bot",
-          "content": "Em là trợ lý ảo nè Gia Long, em có thể làm được nhiều thứ lắm đó! Em có thể: \n\n- Tìm nhạc, video, TikTok\n- Tạo ảnh AI\n- Làm nét ảnh\n- Quản lý nhóm (đổi biệt danh, tên nhóm, màu chat, anti)\n- Kiểm tra tương tác, thống kê nhóm\n- Gửi voice\n- Và nhiều thứ linh tinh khác nữa!\n\nBạn muốn em làm gì cho bạn không? 😊",
-          "timestamp": "2026-03-10T11:04:54.853Z"
-        },
-        {
           "sender": "61586845605819",
           "content": "bot gay",
           "timestamp": "2026-03-14T16:13:18.602Z"
@@ -7833,6 +7828,11 @@
           "sender": "61586845605819",
           "content": "!bot mở tiktok phonk",
           "timestamp": "2026-04-23T00:16:13.367Z"
+        },
+        {
+          "sender": "61586845605819",
+          "content": "!bot mở tiktok video chill",
+          "timestamp": "2026-04-25T04:10:16.750Z"
         }
       ]
     },
@@ -8280,16 +8280,6 @@
       "messages": [
         {
           "sender": "61586845605819",
-          "content": "bot bật anti 1",
-          "timestamp": "2026-04-13T09:43:04.578Z"
-        },
-        {
-          "sender": "bot",
-          "content": "Dạ anh Long, em đã hiểu rồi ạ! Anh muốn em bật tính năng anti số 1 đúng không ạ? Tính năng anti số 1 này là **Anti Namebox** - ngăn đổi tên nhóm đó anh. Để em bật Anti Namebox ngay cho anh Long nha! 😊.",
-          "timestamp": "2026-04-13T09:43:16.459Z"
-        },
-        {
-          "sender": "61586845605819",
           "content": "bot mở nhạc aura",
           "timestamp": "2026-04-13T09:46:15.872Z"
         },
@@ -8377,6 +8367,16 @@
           "sender": "61586845605819",
           "content": "/bot tạo ảnh Việt Nam",
           "timestamp": "2026-04-23T05:03:27.363Z"
+        },
+        {
+          "sender": "61586845605819",
+          "content": "/bot mở video tiktok video chill",
+          "timestamp": "2026-04-25T04:08:52.623Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Dạ anh Long muốn em tạo ảnh Việt Nam ạ! Em có thể tạo ảnh về phong cảnh, văn hóa, con người Việt Nam đó anh. Để em tạo một bức ảnh về \"phong cảnh làng quê Việt Nam yên bình với những cánh đồng lúa xanh mướt, những ngôi nhà mái tranh truyền thống và dòng sông êm đềm chảy qua\" nha anh. Anh Long thấy sao ạ?",
+          "timestamp": "2026-04-25T04:08:56.985Z"
         }
       ]
     },

@@ -22,6 +22,82 @@ import { createGetSeqID } from "./sequenceId";
 
 let messageCleanupInterval: NodeJS.Timeout | null = null;
 
+// Đếm số lần MQTT bị server từ chối ở tầng CONNACK (cookie/auth chết ở tầng MQTT
+// nhưng có thể vẫn còn dùng được cho HTTP). Khi vượt ngưỡng sẽ ép auto-login lại.
+let consecutiveConnackRejections = 0;
+let isHandlingConnackAutoLogin = false;
+const CONNACK_REJECT_AUTOLOGIN_THRESHOLD = 5;
+
+/**
+ * MQTT 3.1 CONNACK return codes (1-5) = broker từ chối kết nối ở tầng giao thức:
+ *  1 Unacceptable protocol version
+ *  2 Identifier rejected
+ *  3 Server unavailable     <-- Facebook hay trả khi cookie/auth MQTT đã chết
+ *  4 Bad username or password
+ *  5 Not authorized
+ *
+ * Các lỗi này KHÔNG được sửa bằng cách reconnect lại bằng cookie cũ — phải đăng
+ * nhập lại để lấy cookie mới hoàn toàn.
+ */
+function isMqttConnackRejection(err: any): boolean {
+  if (!err) return false;
+  const code = typeof err.code === "number" ? err.code : NaN;
+  if (code >= 1 && code <= 5) return true;
+  const msg = String(err.message || err || "").toLowerCase();
+  return (
+    msg.includes("connection refused: server unavailable") ||
+    msg.includes("connection refused: not authorized") ||
+    msg.includes("connection refused: bad username or password") ||
+    msg.includes("connection refused: identifier rejected") ||
+    msg.includes("connection refused: unacceptable protocol version")
+  );
+}
+
+async function handleConnackRejectionAutoLogin(ctx: any): Promise<void> {
+  if (isHandlingConnackAutoLogin) return;
+  isHandlingConnackAutoLogin = true;
+  try {
+    const { default: autoRelogin, isAutoLoginEnabled } = await import(
+      "../../../core/auth_login/auto_relogin"
+    );
+    if (!isAutoLoginEnabled()) {
+      log.error(
+        "MQTT bị từ chối liên tục (cookie có thể đã chết ở tầng chat) nhưng AUTO-LOGIN đang tắt. Vui lòng cập nhật cookie thủ công và khởi động lại bot."
+      );
+      isHandlingConnackAutoLogin = false;
+      return;
+    }
+    log.warn(
+      `MQTT bị từ chối ${consecutiveConnackRejections} lần liên tiếp (Connection refused). Đang thử AUTO-LOGIN để lấy cookie mới...`
+    );
+    const ok = await autoRelogin(ctx);
+    if (ok) {
+      try {
+        const { reloadConfig } = await import("../../../core/configManager");
+        const reloadResult = await reloadConfig();
+        if (!reloadResult.success) {
+          log.warn(`Không thể reload config sau auto login: ${reloadResult.error || "Unknown error"}`);
+        }
+      } catch {
+        // ignore reloadConfig errors
+      }
+      log.success("AUTO-LOGIN thành công sau khi MQTT bị từ chối! Đang khởi động lại bot...");
+      process.exit(1);
+    } else {
+      log.error(
+        "AUTO-LOGIN thất bại sau khi MQTT bị từ chối liên tục. Vui lòng kiểm tra lại thông tin đăng nhập trong config.json!"
+      );
+      // Reset counter để cho phép thử lại lần sau (tránh kẹt nếu mạng hồi phục)
+      consecutiveConnackRejections = 0;
+      isHandlingConnackAutoLogin = false;
+    }
+  } catch (e: any) {
+    log.error(`Lỗi khi chạy AUTO-LOGIN sau khi MQTT bị từ chối: ${e?.message || e}`);
+    consecutiveConnackRejections = 0;
+    isHandlingConnackAutoLogin = false;
+  }
+}
+
 type MqttCallback = (err: any, msg?: any) => any;
 
 function createRealtimeCallbackWrapper(baseCallback: MqttCallback, ctx: any): MqttCallback {
@@ -145,6 +221,8 @@ function listenMqtt(defaultFuncs: any, api: any, ctx: any, globalCallback: any):
     const isClientDisconnecting =
       lowerMsg.includes("client disconnecting") || lowerMsg.includes("client disconnect");
 
+    const isConnackReject = isMqttConnackRejection(err);
+
     resetMqttReadyState(ctx);
 
     if (isClientDisconnecting) {
@@ -154,8 +232,25 @@ function listenMqtt(defaultFuncs: any, api: any, ctx: any, globalCallback: any):
     }
 
     if (isNetworkErr) {
+      // Lỗi mạng không liên quan đến cookie, không tăng counter
       log.warn(`Lỗi mạng kết nối MQTT: ${errorMsg}. Sẽ tự động kết nối lại khi có mạng...`);
+    } else if (isConnackReject) {
+      consecutiveConnackRejections++;
+      log.error(
+        `Lỗi kết nối MQTT: ${errorMsg} (lần thứ ${consecutiveConnackRejections}/${CONNACK_REJECT_AUTOLOGIN_THRESHOLD})`
+      );
+      if (
+        consecutiveConnackRejections >= CONNACK_REJECT_AUTOLOGIN_THRESHOLD &&
+        !isHandlingConnackAutoLogin
+      ) {
+        // Cookie/auth đã chết ở tầng MQTT — reconnect bằng cookie cũ là vô ích.
+        // Trigger auto-login để lấy cookie mới rồi restart bot.
+        void handleConnackRejectionAutoLogin(ctx);
+        return;
+      }
     } else {
+      // Lỗi khác (không phải mạng, không phải CONNACK reject) — reset counter
+      consecutiveConnackRejections = 0;
       log.error(`Lỗi kết nối MQTT: ${errorMsg}`);
     }
 
@@ -303,6 +398,8 @@ function listenMqtt(defaultFuncs: any, api: any, ctx: any, globalCallback: any):
     }
 
     resetReconnectCount();
+    // Reset counter rejection vì broker đã chấp nhận CONNECT
+    consecutiveConnackRejections = 0;
     if (!process.env.OnStatus) {
       log.success("Đã mở kết nối đến server chat Facebook, đang chờ /t_ms...");
       (process.env as any).OnStatus = "true";

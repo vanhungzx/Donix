@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package ChooseNewbieChoice;
+
+message request {
+    uint64 accountId = 1;
+    uint32 choice = 2;
+    uint32 value = 3;
+}
+
+message response {
+    uint32 result = 1;
+}

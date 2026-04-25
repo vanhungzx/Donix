@@ -1,0 +1,23 @@
+{
+  "name": "freefire-api",
+  "version": "0.1.0",
+  "description": "Thư viện Node.js (CommonJS) không chính thức để đăng nhập Garena Free Fire, lấy thống kê người chơi và render ảnh stats.",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./service": "./service.js",
+    "./lib/api": "./lib/api.js",
+    "./info": "./info/index.js",
+    "./freefireStatsCanvas": "./freefireStatsCanvas.js"
+  },
+  "scripts": {
+    "test": "node ./service.js"
+  },
+  "dependencies": {
+    "axios": "*",
+    "protobufjs": "*",
+    "canvas": "*"
+  },
+  "author": "DongDev",
+  "license": "MIT"
+}

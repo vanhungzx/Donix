@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package GetPlayerGalleryShowInfo;
+
+import "SetPlayerGalleryShowInfo.proto";
+
+message request {
+    uint64 accountId = 1;
+    string signatureMd5 = 3;
+}
+
+message response {
+    uint32 version = 1;
+    repeated SetPlayerGalleryShowInfo.GalleryShowInfo info_item = 2;
+}
