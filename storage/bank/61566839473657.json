@@ -1,11 +1,11 @@
 {
-  "money": "6043223",
+  "money": "6067419",
   "loan": "0",
   "isLocked": false,
   "lockReason": "",
   "loanDate": null,
   "lastLoanTs": null,
-  "lastDepositCredit": 1776902400000,
+  "lastDepositCredit": 1777075200000,
   "creditScore": 100,
   "transactions": [
     {
@@ -222,6 +222,16 @@
       "type": "interest_deposit_daily",
       "amount": "12062",
       "timestamp": 1776902400000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "12086",
+      "timestamp": 1776988800000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "12110",
+      "timestamp": 1777075200000
     }
   ],
   "accountCreated": 1775558005459,

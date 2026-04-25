@@ -19,9 +19,9 @@
     "1631016269"
   ],
   "token": {
-    "EAAAAU": "EAAAAUaZA8jlABRacTVWgwWxTkdRRY2ZC5CdivurjbwzOPXR168GYZCmCHNn0rbNKZBbkcZCH8SuqB8G5AU0xR5yiWbBxigTMWw9rqLGOHOHfueNw0QHmPKXSO59GzryJL7iYW9rPIgpypCOWTIyU0sxxUZCjJrGWLyfbXItKAJO6ZCWuW7xzWm7XhPwR33horrTrqT55hJBx6CAUwZDZD",
-    "EAAD6V7": "EAAD6V7os0gcBRWrvSv7PVYSc2z91zzcY04xrYQ8MZBliFhKQ83FaqyIBrRnAUiVUbB4tz443VYmNUxw7eb44u6rtHBOVI7svTNSaL9TSti0Vsf1BRZB2OAOMZALFZBPyKLu6EKGml2CDDpGR0FsTSrY9asbweYavJXSs2L6v9HVEd6UnZCXeA8HQIIBTIduNTGWThw72r0OgykAZDZD",
-    "EAAD": "EAADo1TDZCuu8BRbgzb94qjZCisjZAWGAixxH4OptNSZBt7AiUKCv3J1Dy41pd3iQkZAExTwmoowBCAz4G2AzwvRLCIrK0SFQrpHjxlJneZBayT4npf9qhC6t0b51ElRwNYjDkeOoPbT55EfDXvDnhG3UU7ZCPyR8ZA5lByrEG5KzaZAL8R3OmXlanTX2kFEwtPx6ovVF4oZAaQ8AMlHhy2DxW7MwZDZD"
+    "EAAAAU": "EAAAAUaZA8jlABRbntRB6GFeSHrHvZBp6DSfFy4IpwIwfkVkOAbZBErkyrXD5Qpg1oHd29vZAFFd9jQRrTZCHbq0snZAAD6XbAYfqLTb9aQEKULZAJlGwuSe56zWqvd2AKP7ZCtQMMT4u2pCTaZAUIwHhOB13HxBPuPYI8QQrDqpXKOKOC0xeRL8aZC0rui3uOcZBzuTqtMkEIM8SB1qZBJghigZDZD",
+    "EAAD6V7": "EAAD6V7os0gcBRdLDQE55iGdnEf3AIesUL8OaQ0oSS2MXc9h50BUOVqZBH85HTwa1KMHudZCuSiktexXFPQNBUujDYMS7Gb69XR3AxaoHfmMF8MY4pfofd85cg2G3hGzgZCZCUeEgVb8oJmp2vcvvPt9OZB6ckn8m13cSRBvmoJ5QxYwfdYxsLTaDHygYBrpJZAumW4ZBevXj9K3mvajQgZDZD",
+    "EAAD": "EAADo1TDZCuu8BRQfevGVz15ZB8ob5hvUttHBOaXmo7clNsYz3YKaoEPiLi6sSVWEwjkhL62TwfPQo37KJWY5LFZBbGWVgNL3gc0KBuO8z7SB9GUsBi5xZASqHBp45rGcxssBZC7kZBhE8rRlzhpwyGjUKTgLnmQigsjCzXptJxyXzk7J98BJpDGKI48ZAmqb4WUKTMp2Pozxaaa4EhzPrqWjAZDZD"
   },
   "OWNER_NOPREFIX": {
     "all": false,
@@ -54,7 +54,7 @@
       "email": "61574857936692",
       "password": "Longzzz123@",
       "twofactor": "7Z7P 6TZD 5XHL KSOF NYZJ ZIG5 5IJO QMCZ",
-      "cookie": "c_user=61574857936692; xs=30:7Qj0em2nsOmC7w:2:1776589007:-1:-1; fr=0WcXQp6yA86ILfSHl.AWdP7lCL8TKrqdPB80g1mK3vHbvmfimjlWqt4QCuA9OQpBkCo2Y.Bp5JjP..AAA.0.0.Bp5JjP.AWcPENec-shdkS8z4cbhP1f5xig; datr=y5jkaVL9vtSwnn5RirRoJ7ll",
+      "cookie": "c_user=61574857936692; xs=31:ycQhTiLcxuOHvg:2:1777033948:-1:-1; fr=0ipqTCsf1eNu96zan.AWftPpuB2C0rQoxdCvwnOtyqdzmTx6oy2KRnbi2Ogs66f4qimrE.Bp62Lb..AAA.0.0.Bp62Lb.AWc5uZI3N_DyalaozbGXAbOpqxY; datr=1mLracst8Req3iUjHkaCpfPg",
       "disabled": false
     },
     {
@@ -66,6 +66,10 @@
     }
   ],
   "configModule": {},
+  "nongtrai": {
+    "apiBase": "https://donixdev.com",
+    "apiKey": "dnx_live_QFHzoQyKc7jh16JnKsYtEmI9e9HF4nyLbzwFLS"
+  },
   "configValue": {},
   "sendTopMessagesEnabled": true,
   "scheduler": {

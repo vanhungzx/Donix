@@ -1,0 +1,18 @@
+{
+  "money": "0",
+  "loan": "0",
+  "isLocked": false,
+  "lockReason": "",
+  "loanDate": null,
+  "lastLoanTs": null,
+  "lastDepositCredit": null,
+  "creditScore": 100,
+  "transactions": [],
+  "accountCreated": 1777008213378,
+  "lastDaily": 0,
+  "dailyStreak": 0,
+  "terms": [],
+  "goals": [],
+  "requestsIncoming": [],
+  "requestsOutgoing": []
+}

@@ -1,38 +1,6 @@
 {
-  "summary": "**Tóm tắt hội thoại:**\n\n*   **Sở thích/Bối cảnh:** Người dùng bắt đầu hội thoại bằng lời chào chung chung, không có bối cảnh cụ thể hay sở thích được thể hiện rõ ràng.\n*   **Nhiệm vụ:** Trợ lý cần chủ động hỏi để xác định nhu cầu của người dùng.\n*   **Thông tin cần nhớ:** Người dùng đang mở đầu một cuộc trò chuyện mới.\n*   **Chiến lược của Trợ lý:** Chào lại và đặt câu hỏi mở để mời người dùng trình bày yêu cầu.",
+  "summary": "**Tóm tắt hội thoại:**\n\n*   **Sở thích/Bối cảnh:** Người dùng bắt đầu hội thoại bằng lời chào chung chung (\"hi\"), không có bối cảnh cụ thể hay sở thích được thể hiện rõ ràng.\n*   **Nhiệm vụ:** Trợ lý cần chủ động hỏi để xác định nhu cầu của người dùng.\n*   **Thông tin cần nhớ:** Người dùng đang mở đầu một cuộc trò chuyện mới.\n*   **Chiến lược của Trợ lý:** Chào lại và đặt câu hỏi mở để mời người dùng trình bày yêu cầu (\"Chào bạn! Bạn cần tôi giúp gì không?\").",
   "history": [
-    {
-      "role": "user",
-      "parts": [
-        {
-          "text": "hi"
-        }
-      ]
-    },
-    {
-      "role": "model",
-      "parts": [
-        {
-          "text": "Chào bạn! Tôi có thể giúp gì cho bạn hôm nay?"
-        }
-      ]
-    },
-    {
-      "role": "user",
-      "parts": [
-        {
-          "text": "hi"
-        }
-      ]
-    },
-    {
-      "role": "model",
-      "parts": [
-        {
-          "text": "Chào bạn! Bạn cần tôi giúp gì không?"
-        }
-      ]
-    },
     {
       "role": "user",
       "parts": [
@@ -78,6 +46,38 @@
       "parts": [
         {
           "text": "Đúng vậy, tôi là Gemini. Bạn có câu hỏi hay muốn trò chuyện về điều gì không?"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "gemini"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Chào bạn! Có vẻ như bạn đang gọi tên tôi. Bạn có câu hỏi nào muốn hỏi hoặc có điều gì muốn chia sẻ không? Hãy cho tôi biết nhé!"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "gemini"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Chào bạn! Tôi là Gemini. Bạn có điều gì muốn hỏi hay cần tôi giúp đỡ không?"
         }
       ]
     }
