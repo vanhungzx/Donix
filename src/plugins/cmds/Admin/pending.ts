@@ -431,7 +431,7 @@ async function sendPendingList(
 }
 
 const pendingCommand: Command = {
-  name: "pending",
+  name: "p",
   alias: ["pending"],
   version: "1.1.0",
   role: 3,

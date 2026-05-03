@@ -482,5 +482,14 @@
       "allowToxic": true
     },
     "timestamp": "2026-04-14T21:13:39.537Z"
+  },
+  {
+    "_id": "1616492666278593",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2026-04-27T15:07:16.926Z"
   }
 ]

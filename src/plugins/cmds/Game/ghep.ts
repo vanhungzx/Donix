@@ -309,7 +309,7 @@ const ghepCommand: Command = {
 
   async onCall(ctx: CommandOnCallContext): Promise<void> {
     const { event, reply, userData, threadData } = ctx;
-    const { threadID, senderID } = event;
+    const { threadID, senderID, mentions } = event;
 
     try {
       const rates = [21, 67, 19, 37, 17, 96, 52, 62, 76, 83, 100, 99, 0, 48];
@@ -325,14 +325,34 @@ const ghepCommand: Command = {
         return;
       }
 
-      let targetId = ids[Math.floor(Math.random() * ids.length)] ?? String(senderID);
-      if (ids.length > 1) {
-        for (let i = 0; i < 10 && String(targetId) === String(senderID); i++) {
-          targetId = ids[Math.floor(Math.random() * ids.length)] ?? targetId;
+      let targetId: string;
+
+      // ====== THÊM @TAG (KHÔNG PHÁ LOGIC CŨ) ======
+      const mentionIDs = mentions ? Object.keys(mentions) : [];
+
+      if (mentionIDs.length > 0) {
+        targetId = mentionIDs[0];
+
+        // chặn tự ghép
+        if (String(targetId) === String(senderID)) {
+          await reply("Bạn không thể ghép với chính mình.");
+          return;
+        }
+      } else {
+        // ====== LOGIC RANDOM GIỮ NGUYÊN ======
+        targetId = ids[Math.floor(Math.random() * ids.length)] ?? String(senderID);
+
+        if (ids.length > 1) {
+          for (let i = 0; i < 10 && String(targetId) === String(senderID); i++) {
+            targetId = ids[Math.floor(Math.random() * ids.length)] ?? targetId;
+          }
         }
       }
 
-      const nameCrush = (getName ? await getName(String(targetId)).catch(() => null) : null) || "Người bí ẩn";
+      const nameCrush =
+        (getName ? await getName(String(targetId)).catch(() => null) : null) ||
+        "Người bí ẩn";
+
       const imageBuffer = await makeImage({
         one: String(senderID),
         two: String(targetId),

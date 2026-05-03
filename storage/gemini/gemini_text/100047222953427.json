@@ -16,6 +16,22 @@
           "text": "Hello! How can I help you today?"
         }
       ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "ultra có khác"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "\"Ultra\" thường được dùng để chỉ phiên bản cao cấp nhất, mạnh mẽ nhất hoặc có nhiều tính năng nổi bật hơn so với các phiên bản thông thường trong một dòng sản phẩm nào đó. Sự khác biệt cụ thể sẽ tùy thuộc vào từng sản phẩm hoặc dòng sản phẩm. Dưới đây là một vài ví dụ điển hình:\n\n**1. Chip Intel Core Ultra:**\n\n*   **AI Boost:** Intel Core Ultra được trang bị Intel AI Boost, có khả năng thực hiện khoảng 34 nghìn tỷ phép tính mỗi giây, giúp tăng tốc hiệu suất trong các ứng dụng sử dụng trí tuệ nhân tạo.\n*   **Kiến trúc chiplet:** Sử dụng kiến trúc chiplet mới với GPU Intel Arc tích hợp 8 Xe-cores, giúp tối ưu hóa hiệu suất đồ họa và tiết kiệm năng lượng.\n*   **Hiệu suất đồ họa:** Các vi xử lý Intel Core Ultra H-series có GPU Intel Arc tích hợp, mang lại hiệu suất đồ họa cao hơn gấp đôi so với các dòng trước.\n*   **NPU tích hợp:** Tích hợp NPU (Bộ xử lý thần kinh) giúp tăng tốc các tác vụ AI.\n\n**2. Apple Watch Ultra:**\n\n*   **Thiết kế và vật liệu:** Apple Watch Ultra (và Ultra 2) sở hữu thiết kế mạnh mẽ, cứng cáp với khung viền vuông bằng Titanium và mặt kính Sapphire bền chắc.\n*   **Màn hình lớn và sáng:** Màn hình kích thước 49mm, lớn hơn các dòng Apple Watch khác, với độ sáng lên đến 2000 nits trên Ultra 1 và 3000 nits trên Ultra 2, giúp dễ dàng nhìn rõ dưới ánh sáng mạnh.\n*   **Nút Tác Vụ (Action Button):** Có thêm nút Action màu cam tùy chỉnh, giúp điều khiển vật lý nhanh chóng nhiều chức năng.\n*   **Các tính năng nổi bật của Ultra 2 so với Ultra 1:**\n    *   **Bộ xử lý:** Ultra 2 được trang bị chip S9 SiP mới hơn, mạnh mẽ hơn so với chip S8 SiP trên Ultra 1.\n    *   **Màn hình:** Ultra 2 có độ sáng tối đa 3000 nits, trong khi Ultra 1 là 2000 nits.\n    *   **Tính năng Double Tap:** Ultra 2 hỗ trợ cử chỉ chạm hai lần để điều khiển nhanh các chức năng.\n    *   **Bộ nhớ:** Ultra 2 có bộ nhớ 64GB, gấp đôi so với 32GB của Ultra 1.\n    *   **Chip siêu băng rộng:** Ultra 2 có chip siêu băng rộng thế hệ 2.\n\n**3. Samsung Galaxy S Ultra (ví dụ S25 Ultra so với các phiên bản trước):**\n\n*   **Thiết kế:** Galaxy S25 Ultra có thiết kế phẳng hoàn toàn và là mẫu Ultra mỏng nhất, nhẹ nhất từ trước đến nay, nhẹ hơn 16g so với S23 Ultra và 15g so với S24 Ultra.\n*   **Vật liệu:** Khung titan và kính Gorilla Glass Victus 2 (hoặc Gorilla Armor 2 ở mặt trước) được sử dụng, hứa hẹn khả năng chống nứt vỡ cao hơn.\n*   **Màn hình:** Màn hình Dynamic AMOLED 2X 6,9 inch, lớn hơn 0,1 inch so với S24 Ultra và S23 Ultra nhờ giảm viền, và duy trì độ sáng tối đa 2.600 nits (cao hơn nhiều so với 1.750 nits của S23 Ultra).\n*   **Hiệu suất và AI:** Được trang bị chipset Snapdragon 8 Elite (dự kiến), mang lại hiệu suất cao hơn và cải thiện các tính năng AI.\n*   **S Pen:** S25 Ultra có thể sẽ không còn hỗ trợ Bluetooth cho S Pen, bỏ đi một số tính năng như Air Actions.\n\n**4. Trong Digimon:**\n\n*   Trong Digimon, khái niệm \"Ultra\" thường mập mờ hơn so với các cấp độ tiến hóa khác như \"Mega\".\n*   Thông thường, Mega là cấp độ tiến hóa cao nhất, nhưng trong một số phiên bản, \"Ultra\" được giới thiệu như một cấp độ cao hơn.\n*   Việc một Digimon được coi là Ultra hay không hầu như lúc nào cũng không rõ ràng, và đôi khi chỉ là một danh hiệu trong các phiên bản cụ thể.\n\nTóm lại, \"Ultra\" thường biểu thị một phiên bản được cải tiến đáng kể về hiệu năng, tính năng, thiết kế hoặc vật liệu so với các phiên bản tiêu chuẩn, mang lại trải nghiệm cao cấp hơn."
+        }
+      ]
     }
   ]
 }

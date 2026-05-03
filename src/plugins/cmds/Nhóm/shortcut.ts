@@ -1,4 +1,3 @@
-
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 import axios, { AxiosInstance } from 'axios';
 import crypto from 'crypto';
@@ -213,246 +212,7 @@ function statSize(p: string): number {
   try { return fs.statSync(p).size; } catch { return 0; }
 }
 
-function ffprobeDuration(p: string): Promise<number> {
-  return new Promise(resolve => {
-    const timeout = setTimeout(() => resolve(1), 10000);
-    ffmpeg.ffprobe(p, (_e, d) => {
-      clearTimeout(timeout);
-      resolve(Number(d?.format?.duration || 1));
-    });
-  });
-}
-
-async function ffprobeVideoInfo(p: string): Promise<{ width: number; height: number; duration: number }> {
-  return new Promise(resolve => {
-    const timeout = setTimeout(() => resolve({ width: 1280, height: 720, duration: 1 }), 10000);
-    ffmpeg.ffprobe(p, (_e, d: any) => {
-      clearTimeout(timeout);
-      const videoStream = d?.streams?.find((s: any) => s.codec_type === 'video');
-      resolve({
-        width: videoStream?.width || 1280,
-        height: videoStream?.height || 720,
-        duration: Number(d?.format?.duration || 1),
-      });
-    });
-  });
-}
-
-const MAX_BYTES = 2.5 * 1024 * 1024; // 2.5MB max limit
-const MIN_BYTES = 2 * 1024 * 1024;   // 2MB min target
-
-// === OPTIMIZED COMPRESSION WITH BETTER QUALITY ===
-async function compressVideo(tempPath: string, filePath: string, targetBitrate: number, width: number, height: number | null = null): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const command = ffmpeg(tempPath);
-    if (height) {
-      command.size(`${width}x${height}`);
-    } else {
-      command.size(`${width}x?`);
-    }
-
-    const timeout = setTimeout(() => {
-      (command as any).kill('SIGKILL');
-      reject(new Error('Compression timeout'));
-    }, 300000);
-
-    command
-      .videoBitrate(`${targetBitrate}k`)
-      .audioBitrate('64k')
-      .videoCodec('libx264')
-      .audioCodec('aac')
-      .outputOptions([
-        '-movflags', '+faststart',
-        '-pix_fmt', 'yuv420p',
-        '-profile:v', 'high',
-        '-level', '4.0',
-        '-preset', 'fast',
-        '-maxrate', `${targetBitrate * 1.2}k`,
-        '-bufsize', `${targetBitrate * 2.4}k`,
-        '-g', '50',
-        '-keyint_min', '25',
-        '-sc_threshold', '0',
-        '-threads', '0',
-        '-tune', 'film',
-        '-bf', '2',
-        '-refs', '3',
-        '-subq', '6',
-      ])
-      .save(filePath)
-      .on('end', () => { clearTimeout(timeout); resolve(); })
-      .on('error', (err: Error) => { clearTimeout(timeout); reject(err); });
-  });
-}
-
-async function compressAudio(tempPath: string, filePath: string, bitrate: number): Promise<void> {
-  return new Promise((resolve, reject) => {
-    ffmpeg(tempPath)
-      .audioBitrate(`${bitrate}k`)
-      .audioCodec('libmp3lame')
-      .outputOptions(['-ac', '2'])
-      .save(filePath)
-      .on('end', () => { resolve(void 0); })
-      .on('error', reject);
-  });
-}
-
-async function compressImage(tempPath: string, filePath: string, width: number, quality: number): Promise<void> {
-  await sharp(tempPath)
-    .resize(width, null, { fit: 'inside', withoutEnlargement: true })
-    .webp({ quality, effort: 2 })
-    .toFile(filePath);
-}
-
-async function compressVideoUnder2MB(tempPath: string, filePath: string): Promise<boolean> {
-  const size = statSize(tempPath);
-
-  if (size && size >= MIN_BYTES && size <= MAX_BYTES) {
-    fs.copyFileSync(tempPath, filePath);
-    return true;
-  }
-
-  let videoInfo: { width: number; height: number; duration: number };
-  try {
-    videoInfo = await ffprobeVideoInfo(tempPath);
-  } catch {
-    videoInfo = { width: 1280, height: 720, duration: 1 };
-  }
-
-  const dur = Math.max(1, videoInfo.duration);
-  const originalWidth = videoInfo.width;
-  const originalHeight = videoInfo.height;
-  const aspectRatio = originalHeight / originalWidth;
-
-  const targetSize = 2.25 * 1024 * 1024;
-  const targetBps = Math.max(80000, Math.floor((targetSize * 8 * 0.94) / dur));
-  const aBitrate = 64000;
-  let vBps = Math.max(50000, targetBps - aBitrate);
-  void vBps; // vBps kept for reference (we use calculatedBitrate below)
-
-  const resolutions = [
-    { width: 720, height: Math.round(720 * aspectRatio) },
-    { width: 640, height: Math.round(640 * aspectRatio) },
-    { width: 560, height: Math.round(560 * aspectRatio) },
-  ].filter(r => r.width <= originalWidth && r.height <= originalHeight);
-
-  for (const res of resolutions) {
-    const resolutionFactor = res.width / 720;
-    const adjustedTargetBps = Math.floor((targetSize * 8 * 0.94) / dur);
-    const calculatedBitrate = Math.max(400, Math.min(1800, Math.floor((adjustedTargetBps - aBitrate) * resolutionFactor / 1000)));
-
-    try {
-      await compressVideo(tempPath, filePath, calculatedBitrate, res.width, res.height);
-      const resultSize = statSize(filePath);
-
-      if (resultSize >= MIN_BYTES && resultSize <= MAX_BYTES) return true;
-
-      if (resultSize > 0) {
-        const ratio = targetSize / resultSize;
-        const adjustedBitrate = Math.max(300, Math.min(2000, Math.floor(calculatedBitrate * ratio)));
-        if (Math.abs(adjustedBitrate - calculatedBitrate) > 50) {
-          try {
-            await compressVideo(tempPath, filePath, adjustedBitrate, res.width, res.height);
-            const adjustedSize = statSize(filePath);
-            if (adjustedSize >= MIN_BYTES && adjustedSize <= MAX_BYTES) return true;
-          } catch { /* continue */ }
-        }
-      }
-    } catch {
-      try {
-        const fallbackBitrate = Math.max(300, Math.floor(calculatedBitrate * 0.8));
-        await compressVideo(tempPath, filePath, fallbackBitrate, res.width, res.height);
-        const fallbackSize = statSize(filePath);
-        if (fallbackSize >= MIN_BYTES && fallbackSize <= MAX_BYTES) return true;
-      } catch { /* continue */ }
-    }
-  }
-
-  const finalSize = statSize(filePath);
-  return finalSize >= MIN_BYTES && finalSize <= MAX_BYTES;
-}
-
-async function compressAudioUnder2MB(tempPath: string, filePath: string): Promise<boolean> {
-  const size = statSize(tempPath);
-  if (size && size >= MIN_BYTES && size <= MAX_BYTES) {
-    fs.copyFileSync(tempPath, filePath);
-    return true;
-  }
-
-  const dur = (await ffprobeDuration(tempPath)) || 1;
-  const targetSize = 2 * 1024 * 1024;
-  const aBps = Math.max(24000, Math.min(128000, Math.floor((targetSize * 8 * 0.95) / dur)));
-
-  try {
-    await compressAudio(tempPath, filePath, Math.floor(aBps / 1000));
-    const resultSize = statSize(filePath);
-    if (resultSize >= MIN_BYTES && resultSize <= MAX_BYTES) return true;
-
-    if (resultSize < MIN_BYTES) {
-      await compressAudio(tempPath, filePath, Math.floor((aBps * 1.3) / 1000));
-    }
-  } catch { /* noop */ }
-
-  const finalSize = statSize(filePath);
-  return finalSize >= MIN_BYTES && finalSize <= MAX_BYTES;
-}
-
-async function compressImageUnder2MB(tempPath: string, filePath: string): Promise<boolean> {
-  const size = statSize(tempPath);
-  if (size && size >= MIN_BYTES && size <= MAX_BYTES) {
-    fs.copyFileSync(tempPath, filePath);
-    return true;
-  }
-
-  try {
-    const meta = await sharp(tempPath).metadata();
-    const width = Math.min(meta.width || 1280, 1280);
-    await compressImage(tempPath, filePath, width, 70);
-    const resultSize = statSize(filePath);
-    if (resultSize >= MIN_BYTES && resultSize <= MAX_BYTES) return true;
-  } catch { /* continue */ }
-
-  try {
-    await compressImage(tempPath, filePath, 1024, 60);
-    const resultSize = statSize(filePath);
-    if (resultSize >= MIN_BYTES && resultSize <= MAX_BYTES) return true;
-  } catch { /* continue */ }
-
-  try {
-    await compressImage(tempPath, filePath, 800, 50);
-  } catch { /* noop */ }
-
-  const finalSize = statSize(filePath);
-  return finalSize >= MIN_BYTES && finalSize <= MAX_BYTES;
-}
-
-async function processMediaFile(tempPath: string, outputPath: string, contentType: string): Promise<{ success: boolean; originalSize: number; compressedSize: number; saved: number; }> {
-  const originalSize = statSize(tempPath);
-  let success = false;
-
-  try {
-    if (contentType.startsWith('video/')) {
-      success = await compressVideoUnder2MB(tempPath, outputPath);
-    } else if (contentType.startsWith('audio/')) {
-      success = await compressAudioUnder2MB(tempPath, outputPath);
-    } else if (contentType.startsWith('image/')) {
-      success = await compressImageUnder2MB(tempPath, outputPath);
-    } else {
-      fs.copyFileSync(tempPath, outputPath);
-      const finalSize = statSize(outputPath);
-      success = finalSize >= MIN_BYTES && finalSize <= MAX_BYTES;
-    }
-
-    const compressedSize = statSize(outputPath);
-    return {
-      success: success && compressedSize >= MIN_BYTES && compressedSize <= MAX_BYTES,
-      originalSize,
-      compressedSize,
-      saved: originalSize - compressedSize,
-    };
-  } catch {
-    return { success: false, originalSize, compressedSize: 0, saved: 0 };
-  }
-}
+const MAX_BYTES = 25 * 1024 * 1024; // Messenger practical upper bound
 
 async function compressMediaFromUrl(url: string, outputPath: string, ext: string, client?: any): Promise<string | null> {
   const inExt = getExtByType(ext);
@@ -475,29 +235,15 @@ async function compressMediaFromUrl(url: string, outputPath: string, ext: string
 
     if (!downloaded) throw new Error('download-failed');
 
-    // If the original file is already within Messenger size constraints,
-    // keep it as-is (do NOT force it to be >= 2MB, otherwise small images/audio fail).
+    // Bỏ nén: luôn giữ nguyên file gốc sau khi tải.
     const originalSize = statSize(tempIn);
-    if (originalSize > 0 && originalSize <= MAX_BYTES) {
-      await fs.promises.copyFile(tempIn, outputPath);
-      return outputPath;
+    if (originalSize <= 0) {
+      throw new Error('File tải về không hợp lệ');
     }
-
-    const ct = ['jpg', 'jpeg', 'png', 'webp'].includes(inExt)
-      ? 'image/jpeg'
-      : inExt === 'gif'
-        ? 'image/gif'
-        : inExt === 'mp3'
-          ? 'audio/mpeg'
-          : 'video/mp4';
-
-    const result = await processMediaFile(tempIn, outputPath, ct);
-
-    const finalSize = statSize(outputPath);
-    // Accept anything <= MAX_BYTES. (Small files are fine; only upper bound matters.)
-    if ((!result.success && finalSize <= 0) || finalSize > MAX_BYTES) {
-      throw new Error('File size not within allowed limit after processing');
+    if (originalSize > MAX_BYTES) {
+      throw new Error(`File quá lớn (${formatMB(originalSize)} > ${formatMB(MAX_BYTES)})`);
     }
+    await fs.promises.copyFile(tempIn, outputPath);
 
     return outputPath;
   } catch {
@@ -617,7 +363,7 @@ const shortcutModule: Command = {
     B1: Nhập từ khóa (ví dụ: xin chao)
     B2: Nhập nội dung trả lời
     B3: Chọn media:
-      • Reply ảnh/video/mp3/gif → bot tải & nén
+      • Reply ảnh/video/mp3/gif → bot tải file gốc
       • Nhập "s" → chỉ gửi text
       • Nhập "random gái" / "random trai" / "random vdcos" / "random anime"
 
@@ -913,7 +659,7 @@ const shortcutModule: Command = {
         const ft = att.type === 'photo' ? 'jpg' : att.type === 'audio' ? 'mp3' : att.type === 'video' ? 'mp4' : 'gif';
         fileExt = getExtByType(ft);
         const url = pickAttachmentUrl(att);
-        client.sendMessage('⏳ Đang tải và nén file...', event.threadID);
+        client.sendMessage('⏳ Đang tải file...', event.threadID);
         const localPath = url ? await saveMediaLocal(url, event.threadID, fileExt, client as any) : null;
         if (!localPath) return client.sendMessage('❎ Lỗi lưu file media.', event.threadID, event.messageID);
         localFilePath = localPath;
@@ -1060,7 +806,7 @@ const shortcutModule: Command = {
         const ft = att.type === 'photo' ? 'jpg' : att.type === 'audio' ? 'mp3' : att.type === 'video' ? 'mp4' : 'gif';
         fileExt = getExtByType(ft);
         const url = pickAttachmentUrl(att);
-        client.sendMessage('⏳ Đang tải và nén file...', event.threadID);
+        client.sendMessage('⏳ Đang tải file...', event.threadID);
         const localPath = url ? await saveMediaLocal(url, event.threadID, fileExt, client as any) : null;
         if (!localPath) return client.sendMessage('❎ Lỗi lưu file media.', event.threadID, event.messageID);
         localFilePath = localPath;
@@ -1218,7 +964,7 @@ const shortcutModule: Command = {
             (data as any).file = getExtByType(ft);
             const url = pickAttachmentUrl(att);
 
-            client.sendMessage('⏳ Đang tải và nén file...', event.threadID);
+            client.sendMessage('⏳ Đang tải file...', event.threadID);
 
             const localPath = url ? await saveMediaLocal(url, event.threadID, (data as any).file, client as any) : null;
             if (!localPath) return client.sendMessage('❎ Lỗi lưu file media.', event.threadID, event.messageID);
@@ -1337,7 +1083,7 @@ const shortcutModule: Command = {
             (data as any).file = getExtByType(ft);
             const url = pickAttachmentUrl(att);
 
-            client.sendMessage('⏳ Đang tải và nén file...', event.threadID);
+            client.sendMessage('⏳ Đang tải file...', event.threadID);
 
             const localPath = url ? await saveMediaLocal(url, event.threadID, (data as any).file, client as any) : null;
             if (!localPath) return client.sendMessage('❎ Lỗi lưu file media.', event.threadID, event.messageID);
@@ -1428,7 +1174,7 @@ const shortcutModule: Command = {
             await client.sendMessage({ body: processedMsg, attachment }, event.threadID, event.messageID);
             return;
           }
-          console.log('[SHORTCUT] Downloading and compressing from URL');
+          console.log('[SHORTCUT] Downloading media from URL');
           const tempOut = await downloadAndCompressToTemp((targetShortcut as any).url, (targetShortcut as any).file || 'mp4', client as any);
           console.log('[SHORTCUT] Download result:', { tempOut, success: !!tempOut });
           if (!tempOut) {
