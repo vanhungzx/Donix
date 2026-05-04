@@ -88,6 +88,144 @@ function guessMimeFromExt(e: string) {
   return MIME_BY_EXT[String(e || "").toLowerCase()] || "application/octet-stream";
 }
 
+const SUBHAT_GPT_API_URL = "https://api.subhatde.id.vn/api/AI/geminipro";
+const SUBHAT_BANANA_API_URL = "https://api.subhatde.id.vn/api/AI/banana";
+
+async function fallbackChatToSubhat(
+  prompt: string,
+  options?: { timeout?: number; retries?: number },
+  reason?: string
+): Promise<string> {
+  const timeoutMs = options?.timeout || 15000;
+  const maxRetries = options?.retries || 3;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await axios.get(SUBHAT_GPT_API_URL, {
+        params: { prompt },
+        headers: {
+          "User-Agent": "Mozilla/5.0",
+          "Accept": "application/json,text/plain,*/*"
+        },
+        timeout: timeoutMs,
+        maxRedirects: 5
+      });
+
+      const result = response.data?.data || response.data?.result || response.data;
+      if (result && typeof result === "string" && result.trim().length > 0) {
+        console.log(`[Fallback] Subhat API thành công. Lý do dùng fallback: ${reason || "Gemini lỗi"}`);
+        return result.trim();
+      }
+    } catch (error: any) {
+      const status = error?.response?.status;
+      const isHeaderTooLarge = status === 431 || String(error?.message || "").includes("431");
+
+      if (isHeaderTooLarge && prompt.length > 200) {
+        // Rút gọn prompt và thử lại
+        const shortenedPrompt = prompt.slice(0, Math.max(50, prompt.length - 100));
+        console.log(`[Fallback] Subhat nhận lỗi 431, retry với prompt rút gọn...`);
+        if (attempt < maxRetries - 1) {
+          try {
+            const retryResponse = await axios.get(SUBHAT_GPT_API_URL, {
+              params: { prompt: shortenedPrompt },
+              headers: {
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "application/json,text/plain,*/*"
+              },
+              timeout: timeoutMs
+            });
+            const retryResult = retryResponse.data?.data || retryResponse.data?.result || retryResponse.data;
+            if (retryResult && typeof retryResult === "string" && retryResult.trim().length > 0) {
+              return retryResult.trim();
+            }
+          } catch { }
+        }
+      }
+
+      if (attempt < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
+      }
+    }
+  }
+
+  throw new Error("Subhat fallback API đã dùng hết retry, vui lòng thử lại sau");
+}
+
+async function callBananaImageApi(
+  prompt: string,
+  fileUrl: string,
+  options?: { timeout?: number }
+): Promise<string> {
+  const timeoutMs = options?.timeout || 20000;
+
+  try {
+    const response = await axios.get(SUBHAT_BANANA_API_URL, {
+      params: { prompt, fileUrl },
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "application/json,text/plain,*/*"
+      },
+      timeout: timeoutMs,
+      maxRedirects: 5
+    });
+
+    const result = response.data?.data || response.data?.result || response.data;
+    if (result && typeof result === "string" && result.trim().length > 0) {
+      console.log("[Banana] Xử lý ảnh thành công");
+      return result.trim();
+    }
+  } catch (error) {
+    console.log("[Banana] Lỗi khi xử lý ảnh:", error instanceof Error ? error.message : error);
+  }
+
+  throw new Error("Banana API không thể xử lý ảnh");
+}
+
+const SATORU_GENERATE_API_URL = "https://gemini.satoru.click/generate";
+const SATORU_API_KEY = "satoru-deptrai-2025";
+
+async function callSatoruGenerate(
+  prompt: string,
+  imageUrl?: string,
+  ratio: string = "auto",
+  options?: { timeout?: number }
+): Promise<{ success: boolean; imageUrl?: string; error?: string }> {
+  const timeoutMs = options?.timeout || 30000;
+
+  try {
+    const body = imageUrl
+      ? { imageUrl, prompt, ratio }
+      : { prompt, ratio };
+
+    const response = await axios.post(SATORU_GENERATE_API_URL, body, {
+      headers: {
+        "X-API-Key": SATORU_API_KEY,
+        "Content-Type": "application/json"
+      },
+      timeout: timeoutMs,
+      maxRedirects: 5
+    });
+
+    const result = response.data;
+    if (result?.success && result?.imageUrl) {
+      console.log("[Satoru] Tạo/sửa ảnh thành công");
+      return { success: true, imageUrl: result.imageUrl };
+    }
+
+    return {
+      success: false,
+      error: result?.error || "Satoru API không trả về imageUrl"
+    };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.log("[Satoru] Lỗi khi tạo/sửa ảnh:", errorMsg);
+    return {
+      success: false,
+      error: `Satoru API lỗi: ${errorMsg}`
+    };
+  }
+}
+
 function withStreamMeta<T extends NodeJS.ReadableStream>(
   stream: T,
   filename: string,
@@ -4503,9 +4641,35 @@ ${geminiAnswer}`;
       );
     }
     if (retry >= API_KEYS.length * 2 || !hasAnyAvailableKey()) {
-      throw new Error(
-        "Đã dùng hết quota cho tất cả key (flash và lite). Vui lòng thử lại sau."
-      );
+      // Tất cả key Gemini đã hết quota => thử dùng Subhat fallback
+      console.warn("[Gemini] Hết quota, chuyển sang Subhat fallback API...");
+      try {
+        const fallbackResponse = await fallbackChatToSubhat(
+          prompt,
+          { timeout: 15000, retries: 2 },
+          `Gemini hết quota sau ${retry} lần thử`
+        );
+        
+        // Lưu tin nhắn Subhat vào lịch sử
+        chatData.data.messages.push({
+          sender: "bot",
+          content: fallbackResponse,
+          timestamp: new Date().toISOString()
+        });
+        if (chatData.data.messages.length > 20)
+          chatData.data.messages = chatData.data.messages.slice(-20);
+        await personalChatHistory.updateOneUsingId(
+          historySessionKey,
+          chatData
+        );
+        
+        return [{ type: "chat", content: fallbackResponse }];
+      } catch (fallbackErr) {
+        console.error("[Fallback] Subhat API cũng lỗi:", fallbackErr);
+        throw new Error(
+          "Đã dùng hết quota cho tất cả key (flash và lite) và fallback API cũng không khả dụng. Vui lòng thử lại sau."
+        );
+      }
     }
     throw e;
   }
