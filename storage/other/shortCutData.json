@@ -3361,5 +3361,18 @@
       }
     }
   ],
-  "1329932828617871": []
+  "1329932828617871": [],
+  "1328173842517972": [
+    {
+      "input": "@Gia Long",
+      "output": "gọi con cặc à {name}",
+      "url": "s",
+      "short_type": {
+        "type": "tag",
+        "senderID": "61586845605819"
+      },
+      "file": "jpg",
+      "localFilePath": "storage/other/shortcutMedia/1328173842517972/3d51b3bbd5df0e15c5fb151536910d93.jpg"
+    }
+  ]
 }

@@ -1,0 +1,37 @@
+{
+  "summary": "",
+  "history": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "bản đồ hưng yên"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Bạn có thể tìm thấy nhiều loại bản đồ về Hưng Yên, bao gồm bản đồ hành chính và bản đồ tổng thể tỉnh. Hưng Yên là một tỉnh thuộc vùng Đồng bằng sông Hồng, nằm ở miền Bắc Việt Nam. Tỉnh này có vị trí địa lý thuận lợi, nằm trong vùng kinh tế trọng điểm phía Bắc và tam giác kinh tế Hà Nội - Hải Phòng - Quảng Ninh.\n\n**Vị trí địa lý và ranh giới:**\n*   Hưng Yên nằm ở trung tâm đồng bằng sông Hồng.\n*   Phía Đông giáp tỉnh Hải Dương.\n*   Phía Tây và Tây Bắc giáp Thủ đô Hà Nội.\n*   Phía Nam giáp tỉnh Thái Bình.\n*   Phía Tây Nam giáp tỉnh Hà Nam.\n*   Phía Bắc giáp tỉnh Bắc Ninh và Hải Dương. (Lưu ý: Có sự khác nhau nhỏ trong các nguồn về phía Bắc giáp Hải Dương hay chỉ Bắc Ninh. Thông tin mới nhất cho thấy phía Bắc giáp Bắc Ninh và phía Đông giáp Hải Dương.)\n\n**Đặc điểm của bản đồ hành chính Hưng Yên:**\nBản đồ hành chính tỉnh Hưng Yên thể hiện ranh giới các đơn vị hành chính của tỉnh theo các quy luật toán học chặt chẽ, sử dụng hệ thống ký hiệu, màu sắc và chú giải chi tiết. Bản đồ này chứa đựng nhiều thông tin về điều kiện tự nhiên, kinh tế - xã hội, các trung tâm chính trị, kinh tế, văn hóa và xã hội của tỉnh.\n\n**Các đơn vị hành chính:**\nTính đến năm 2024, Hưng Yên có 10 đơn vị hành chính cấp huyện, bao gồm: thành phố Hưng Yên, thị xã Mỹ Hào và 8 huyện (Kim Động, Ân Thi, Khoái Châu, Phù Cừ, Tiên Lữ, Văn Giang, Văn Lâm, Yên Mỹ).\n\nBạn có thể tìm kiếm các bản đồ hành chính chi tiết của từng huyện, thị xã và thành phố thuộc Hưng Yên trên các trang web chuyên về bản đồ hoặc cổng thông tin của tỉnh. Một số bản đồ có sẵn ở định dạng PDF chất lượng cao để tải về và in ấn."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "gemini"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Bạn muốn biết gì về Gemini? Gemini là gì hay bạn muốn biết thông tin cụ thể nào khác?\n\nTôi là một mô hình ngôn ngữ lớn, được đào tạo bởi Google."
+        }
+      ]
+    }
+  ]
+}

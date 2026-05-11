@@ -25,5 +25,40 @@
     "lastCatchTime": 0,
     "lastCatchFishName": null,
     "catchStreak": 0
+  },
+  "61586845605819": {
+    "rod": "rod_05",
+    "rodDurability": 495,
+    "bait": "bait_05",
+    "cooler": "cooler_04",
+    "location": "location_10",
+    "unlockedLocations": [
+      "location_01",
+      "location_10"
+    ],
+    "totalCaught": 5,
+    "totalValue": 19000,
+    "caughtFish": {
+      "Cá chép": 2,
+      "Cá rô": 3
+    },
+    "inventory": {},
+    "items": {
+      "fisher_blessing": 1,
+      "double_catch": 1,
+      "anti_steal_trap": 1
+    },
+    "buffs": {
+      "luckEndTime": 0
+    },
+    "dailyQuests": [],
+    "lastQuestDate": "",
+    "lastStealTime": 0,
+    "protectionEnd": 0,
+    "lastStealerID": null,
+    "lastActive": 1777889066500,
+    "lastCatchTime": 1777889066497,
+    "lastCatchFishName": "Cá rô",
+    "catchStreak": 1
   }
 }

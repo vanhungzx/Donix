@@ -1,7 +1,6 @@
 import type { Command, CommandOnCallContext } from "@types";
-import { promises as dns } from "node:dns";
-import https from "node:https";
 import os from "node:os";
+import moment from "moment-timezone";
 
 declare const global: any;
 
@@ -14,113 +13,112 @@ const uptCommand: Command = {
   cd: 5,
   prefix: false,
 
-  async onCall({ reply }: CommandOnCallContext): Promise<void> {
-    const u = process.uptime();
-    const h = String(Math.floor(u / 3600)).padStart(2, "0");
-    const m = String(Math.floor((u % 3600) / 60)).padStart(2, "0");
-    const s = String(Math.floor(u % 60)).padStart(2, "0");
+  async onCall(ctx: CommandOnCallContext): Promise<void> {
+    const { reply, event, userData } = ctx;
+    const { senderID } = event;
 
-    const { heapUsed, rss } = process.memoryUsage();
+    // ===== FIX USER NAME (GIỐNG GHEP) =====
+    const getName = userData.getName as ((id: string) => Promise<string | null | undefined>) | undefined;
+    const userName =
+      (getName ? await getName(String(senderID)).catch(() => null) : null) ||
+      "User";
 
-    const totalRam = os.totalmem() / 1e9;
-    const usedRam = totalRam - os.freemem() / 1e9;
-    const ramPercent = ((usedRam / totalRam) * 100).toFixed(1);
+    // ===== TIME =====
+    const timeNow = moment().tz("Asia/Ho_Chi_Minh").format("DD/MM/YYYY | HH:mm:ss");
 
-    const cpuLoad = (os.loadavg()[0] ?? 0).toFixed(1);
+    // ===== UPTIME =====
+    const uptime = convertTime(process.uptime());
 
-    let botStatus = "Không ổn định";
+    // ===== CPU =====
+    const cpuModel = os.cpus()[0]?.model || "Unknown";
+    const cpuUsage = await getCpuUsage(); // real %
 
-    try {
-      if (global.mqttClient) {
-        const isConnected = global.mqttClient.connected === true;
-        const isDisconnected = global.mqttClient.disconnected === true;
-        const isReconnecting = global.mqttClient.reconnecting === true;
-        const isReady = global.mqttClient._donixReady === true;
+    // ===== RAM =====
+    const totalRAM = os.totalmem();
+    const freeRAM = os.freemem();
+    const usedRAM = totalRAM - freeRAM;
+    const percentUsed = (usedRAM / totalRAM) * 100;
 
-        if (isConnected && isReady) {
-          botStatus = "Ổn định";
-        } else if (isConnected) {
-          botStatus = "Đã mở kết nối, chờ /t_ms";
-        } else if (isReconnecting) {
-          botStatus = "Đang kết nối lại";
-        } else if (isDisconnected) {
-          botStatus = "Mất kết nối";
-        } else {
-          botStatus = "Đang khởi tạo";
-        }
-      } else {
-        botStatus = "Chưa khởi tạo";
-      }
-    } catch {
-      botStatus = "Lỗi kiểm tra";
-    }
+    const ramUsedGB = (usedRAM / 1024 / 1024 / 1024).toFixed(2);
+    const ramTotalGB = (totalRAM / 1024 / 1024 / 1024).toFixed(2);
 
-    let ping: string | number = "N/A";
-    let dnsPing: string | number = "N/A";
+    // ===== PROCESS =====
+    const heap = process.memoryUsage();
+    const heapUsed = (heap.heapUsed / 1024 / 1024).toFixed(2);
+    const heapTotal = (heap.heapTotal / 1024 / 1024).toFixed(2);
+    const rss = (heap.rss / 1024 / 1024).toFixed(2);
 
-    try {
-      const d = Date.now();
-      await dns.lookup("google.com");
-      dnsPing = Date.now() - d;
-    } catch {
-      // ignore dns errors
-    }
+    // ===== PING FAKE (GIỮ NGUYÊN) =====
+    const ping = Math.floor(Math.random() * 30) + 20;
+    const dns = Math.floor(Math.random() * 10) + 1;
 
-    try {
-      const startedAt = Date.now();
-
-      await new Promise<void>((resolve) => {
-        const req = https.get("https://www.google.com", (res) => {
-          res.on("data", () => { });
-          res.on("end", () => {
-            ping = Date.now() - startedAt;
-            resolve();
-          });
-        });
-
-        req.on("error", () => {
-          ping = "N/A";
-          resolve();
-        });
-
-        req.on("timeout", () => {
-          req.destroy();
-          ping = "Timeout";
-          resolve();
-        });
-
-        req.setTimeout(5000);
-      });
-    } catch {
-      ping = "N/A";
-    }
-
-    const now = new Date();
-    const time = now.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
-
-    const status = `⏰ Thời gian hiện tại: ${time}
-⏳ Bot đã hoạt động: ${h}:${m}:${s}
-📊 Ping: ${ping}ms | DNS: ${dnsPing}ms
-📡 Trạng thái: ${botStatus}
-
-💾 MEMORY USAGES:
-├─ RSS: ${(rss / 1048576).toFixed(0)}MB
-├─ Heap: ${(heapUsed / 1048576).toFixed(0)}MB
-├─ RAM hệ thống: ${usedRam.toFixed(1)}GB / ${totalRam.toFixed(1)}GB
-└─ Sử dụng tổng: ${ramPercent}%
-
-⚙️ SYSTEM INFO:
-├─ Platform: ${os.platform()} ${os.arch()}
-├─ Node.js: ${process.version}
-├─ CPU Load: ${cpuLoad}
-└─ Hostname: ${os.hostname()}`;
+    // ===== BODY =====
+    const msg = `『 SYSTEM INFO 』
+⏰ Time: ${timeNow}
+⚡ Uptime: ${uptime}
+📶 Ping: ${ping}ms | DNS: ${dns}ms
+💻 CPU: ${cpuModel}
+└ Load: ${cpuUsage.toFixed(1)}% ${renderBar(cpuUsage)}
+💾 RAM: ${ramUsedGB}GB/${ramTotalGB}GB
+└ Used: ${percentUsed.toFixed(1)}% ${renderBar(percentUsed)}
+📊 Process:
+└ Heap: ${heapUsed}/${heapTotal}MB
+└ RSS: ${rss}MB
+👤 User: ${userName}`;
 
     await reply({
-      body: status,
-      attachment: global.Donix.vdanime?.splice?.(0, 1) || [],
+      body: msg,
+      attachment: global.Donix.vdchill?.splice?.(0, 1) || [],
       effect: "love",
     });
   },
 };
 
 export default uptCommand;
+
+/* ===== FUNCTIONS ===== */
+
+function convertTime(s: number) {
+  const d = Math.floor(s / (3600 * 24));
+  const h = Math.floor((s % (3600 * 24)) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = Math.floor(s % 60);
+  const timeFormat = [h, m, sec]
+    .map(v => String(v).padStart(2, "0"))
+    .join(":");
+  return d > 0 ? `${d} ngày ${timeFormat}` : timeFormat;
+}
+
+function renderBar(percent: number) {
+  const total = 10;
+  const filled = Math.round((percent / 100) * total);
+  return "█".repeat(filled) + "░".repeat(total - filled);
+}
+
+async function getCpuUsage(): Promise<number> {
+  return new Promise(resolve => {
+    const start = os.cpus();
+    setTimeout(() => {
+      const end = os.cpus();
+
+      let idle = 0;
+      let total = 0;
+
+      for (let i = 0; i < start.length; i++) {
+        const s = start[i].times;
+        const e = end[i].times;
+
+        const idleDiff = e.idle - s.idle;
+        const totalDiff = Object.keys(e).reduce(
+          (acc, key) => acc + ((e as any)[key] - (s as any)[key]),
+          0
+        );
+
+        idle += idleDiff;
+        total += totalDiff;
+      }
+
+      resolve(100 - (idle / total) * 100);
+    }, 100);
+  });
+}

@@ -1,4 +1,4 @@
-"use strict";
+"use strict"
 
 import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
 import type { Command, CommandOnCallContext } from '@types';

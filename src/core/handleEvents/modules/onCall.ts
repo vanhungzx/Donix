@@ -279,19 +279,32 @@ export const createOnCall = ({
     const bodyWithoutBotTag = stripBotMentions(bodyStr);
 
 if (bodyStr === pre || (isBotMentioned && !bodyWithoutBotTag)) {
+  const uptime = process.uptime();
+
+  const days = Math.floor(uptime / 86400);
+  const hours = Math.floor((uptime % 86400) / 3600);
+  const minutes = Math.floor((uptime % 3600) / 60);
+  const seconds = Math.floor(uptime % 60);
+
+  const pad = (n) => n.toString().padStart(2, '0');
+
+  const timeOn =
+    (days > 0 ? `${days} ngày ` : '') +
+    `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+
   const arr = [
-    `Ơiii bạn ơi (*´∀｀*) \nDùng ${pre}help để xem lệnh nha! 💕`,
-    `Bạn đang tìm lệnh hả? (｡♥‿♥｡)\nGõ ${pre}help để xem nè! ✨`,
-    `Hehe bạn cute ghê ~\nDùng ${pre}help để xem danh sách lệnh nha! 🌸`,
-    `Mình có thể giúp gì cho bạn không? (◕‿◕✿)\nGõ ${pre}help để xem lệnh nè! 💝`,
-    `Bạn muốn xem lệnh hả? (｡◕‿◕｡)\nDùng ${pre}help nha! 🎀`,
-    `Chào bạn đáng yêu! ٩(◕‿◕｡)۶\nGõ ${pre}help để xem mình có thể làm gì nè! 🌟`,
+    `Ơiii bạn ơi (*´∀｀*) \nDùng ${pre}help để xem lệnh nha! 💕\n⏰ Time on: ${timeOn}`,
+    `Bạn đang tìm lệnh hả? (｡♥‿♥｡)\nGõ ${pre}help để xem nè! ✨\n⏰ Time on: ${timeOn}`,
+    `Hehe bạn cute ghê ~\nDùng ${pre}help để xem danh sách lệnh nha! 🌸\n⏰ Time on: ${timeOn}`,
+    `Mình có thể giúp gì cho bạn không? (◕‿◕✿)\nGõ ${pre}help để xem lệnh nè! 💝\n⏰ Time on: ${timeOn}`,
+    `Bạn muốn xem lệnh hả? (｡◕‿◕｡)\nDùng ${pre}help nha! 🎀\n⏰ Time on: ${timeOn}`,
+    `Chào bạn đáng yêu! ٩(◕‿◕｡)۶\nGõ ${pre}help để xem mình có thể làm gì nè! 🌟\n⏰ Time on: ${timeOn}`,
   ];
 
   if (reply) {
     const sent = await reply({
       body: arr[Math.floor(Math.random() * arr.length)],
-      attachment: global.Donix.vdgai?.splice?.(0, 1) || [],
+      attachment: global.Donix.vdanime?.splice?.(0, 1) || [],
       effect: "fire"
     });
     if (unsend && sent?.messageID) {
