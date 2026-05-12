@@ -1,4 +1,4 @@
-import * as cheerio from "cheerio";
+import cheerio from "cheerio";
 import FormData from "form-data";
 import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { join } from "path";

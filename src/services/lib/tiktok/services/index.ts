@@ -1,14 +1,12 @@
-import { getCommentList } from './comment.service.js'
-import { getFYPFeed } from './feed.service.js'
-import { extractXttTokenFromCookie, getTiktokCredentials, searchUserIdByUsername } from './helpers.js'
-import { searchItem, searchMusic, searchSingle, searchStream } from './search.service.js'
-import { getUserAwemeList, getUserInfoByUsername } from './user.service.js'
-import { getCredentials, resolveShortLink } from './utils.service.js'
-import { getAwemeDetails, getMultiAwemeDetails } from './video.service.js'
+import { getCommentList } from './comment.service.js';
+import { getFYPFeed } from './feed.service.js';
+import { extractXttTokenFromCookie, getTiktokCredentials, searchUserIdByUsername } from './helpers.js';
+import { searchItem, searchMusic, searchSingle, searchStream } from './search.service.js';
+import { getUserAwemeList, getUserInfoByUsername } from './user.service.js';
+import { getCredentials, resolveShortLink } from './utils.service.js';
+import { getAwemeDetails, getMultiAwemeDetails } from './video.service.js';
 
-// Use loose typing here to avoid TypeScript complaining about exported
-// composite types that depend on many internal service result types.
-const TiktokService: any = {
+const TiktokService = {
   getUserInfoByUsername,
   getUserAwemeList,
   getAwemeDetails,
@@ -20,10 +18,10 @@ const TiktokService: any = {
   searchStream,
   searchSingle,
   searchItem,
-  getCredentials,
-}
+  getCredentials
+};
 
-export default TiktokService
+export default TiktokService;
 export {
   getCommentList,
   getFYPFeed,
@@ -40,4 +38,4 @@ export {
   resolveShortLink,
   getAwemeDetails,
   getMultiAwemeDetails
-}
+};

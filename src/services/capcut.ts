@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from "axios";
-import * as cheerio from "cheerio";
+import cheerio from "cheerio";
 
 export interface Attachment {
   type: "Video";

@@ -1,12 +1,14 @@
 import axios from "axios";
 import { wrapper } from "axios-cookiejar-support";
-import * as cheerio from "cheerio";
+import cheerio from "cheerio";
 import fs from "fs";
 import path from "path";
 import qs from "qs";
 import { CookieJar } from "tough-cookie";
 import search from "./lib/youtube/search";
 import searchv2 from "./lib/youtube/searchv2";
+import ytdl from "./lib/youtube/lib/index";
+import type { YoutubeFormat, YoutubeInfo } from "./lib/youtube/lib/types";
 
 const YOUTUBE_COOKIES =
   "VISITOR_INFO1_LIVE=hTwDl_5D2sE; VISITOR_PRIVACY_METADATA=CgJWThIEGgAgWg%3D%3D; LOGIN_INFO=AFmmF2swRQIgF-xzU0uLaSsOK_ZY30EKwKG9lVnmwHVkya9b-59Mn_YCIQC9knMm9pEdOBNQrgM8Yikk_yaq6oUi7zCf0cS42_xYmw:QUQ3MjNmenQ1ZEg0R0huVlZ0djhYZzRXNU9FQnQ2U3EtR1N5cUxMeU5ucHNCYTNtU1VRbF9zeTVfZmJZd3VRYmYtem95R0V1UFdOOVFoZ0ZYbVVDamxLY0dwWjhjeXgzMFd6XzhtSVBRQmZYajZPc094RU5DWC1hdDhHb0VLUkxGRzVPZWJ2UEtnd1YybzlBbG9YUVRYYXBjdHJuMXFyR3dn; HSID=A-_whUBaMZmfstwFA; SSID=Ad18eoSDHfyiuMRU0; APISID=BEtSwEprxT-jBoK_/AoO1QIsvcruRFBlKF; SAPISID=KvON-L4r0G96S5Sa/A8_pKPxf-NNtDYsTM; __Secure-1PAPISID=KvON-L4r0G96S5Sa/A8_pKPxf-NNtDYsTM; __Secure-3PAPISID=KvON-L4r0G96S5Sa/A8_pKPxf-NNtDYsTM; PREF=f6=40000080&f7=100&tz=Asia.Saigon&f5=20000; SID=g.a0001AgwWXTiIuOsJqbkqXHB-lCshth-hoCJksbQ18gtLjmuQ39xk8kS7htlfT2kDFGmmkpKxAACgYKAXwSARUSFQHGX2Mi8R5D99UImM3GkVbY-mN8lRoVAUF8yKo2FJ9rxG4mfTfxUYt3VRki0076; __Secure-1PSID=g.a0001AgwWXTiIuOsJqbkqXHB-lCshth-hoCJksbQ18gtLjmuQ39x2haDpeE9ZpfN7rSuDimm4QACgYKAYoSARUSFQHGX2MiTar6nznorG-JvgiF6jaJTRoVAUF8yKrxBBsgpmuNApDTa9pSVRcw0076; __Secure-3PSID=g.a0001AgwWXTiIuOsJqbkqXHB-lCshth-hoCJksbQ18gtLjmuQ39xpzFh0mjBhTLwraz3B2acwQACgYKAfASARUSFQHGX2Mi3g3qjraH_sRQEtTIhqhGRRoVAUF8yKrLghFyUuRw5TmLpJPjqc_a0076; __Secure-ROLLOUT_TOKEN=CNjW3ojT4MSrUhCVn-abioqMAxju8YDJx92PAw%3D%3D; YSC=8hjZE2YgE78; __Secure-1PSIDTS=sidts-CjUBmkD5S2Y2MjId3J0cgoL-40IocyUaQNQL_qGAmg0yHEKq5Xu06tKn2bZoqsZPyiBIcFh-rRAA; __Secure-3PSIDTS=sidts-CjUBmkD5S2Y2MjId3J0cgoL-40IocyUaQNQL_qGAmg0yHEKq5Xu06tKn2bZoqsZPyiBIcFh-rRAA; SIDCC=AKEyXzUwU2Dedk9pleh-FY7wgMJEvpQzirp3jrCQbho0213Go7degHaFvxmTYzSszZk7o-xzPe99; __Secure-1PSIDCC=AKEyXzXIQi5ReyYFpjbaO_Dl4UfqMA7iNA1KM-RNGfU3cOiZFMd-JkwADDH_w5HvwoD6vlTjmQM; __Secure-3PSIDCC=AKEyXzUWF4w7tJJrDanSrFJaCtV-qnY7b_96Pf1E7aArIOD4p4S9UfiJON1G4Ia5wC0J-xO0q6d0";
@@ -59,12 +61,289 @@ function sanitize(s: string): string {
   return String(s).replace(/[<>:"/\\|?*]/g, "_").substring(0, 100);
 }
 
+interface ResolvedYoutubeInfo {
+  author: string;
+  id: string;
+  lengthSeconds: number;
+  title: string;
+  views: number;
+}
+
+interface ResolvedYoutubeStream {
+  bitrate: number;
+  container: string | null;
+  mimeType: string | null;
+  quality: string;
+  url: string;
+}
+
+interface DownloadYouTubeResult {
+  error: string | null;
+  file: {
+    path: string;
+    size: number;
+    sizeFormatted: string;
+  } | null;
+  format: {
+    container: string | null;
+    mimeType: string | null;
+    quality: string;
+    type: "mp3" | "video";
+  } | null;
+  success: boolean;
+  videoInfo: ResolvedYoutubeInfo | null;
+}
+
+const toNumber = (value: number | string | null | undefined): number => {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+};
+
+const hasDirectUrl = (format: YoutubeFormat): format is YoutubeFormat & { url: string } =>
+  typeof format.url === "string" && format.url.length > 0;
+
+function selectBestAudioSource(
+  formats: readonly YoutubeFormat[]
+): (YoutubeFormat & { url: string }) | null {
+  const directAudioOnly = formats
+    .filter(format => hasDirectUrl(format) && format.hasAudio === true && format.hasVideo !== true)
+    .sort(
+      (left, right) =>
+        toNumber(right.audioBitrate ?? right.bitrate ?? right.averageBitrate) -
+        toNumber(left.audioBitrate ?? left.bitrate ?? left.averageBitrate)
+    );
+
+  if (directAudioOnly[0]) return directAudioOnly[0];
+
+  const fallback = formats
+    .filter(format => hasDirectUrl(format) && format.hasAudio === true)
+    .sort(
+      (left, right) =>
+        toNumber(right.audioBitrate ?? right.bitrate ?? right.averageBitrate) -
+        toNumber(left.audioBitrate ?? left.bitrate ?? left.averageBitrate)
+    );
+
+  return fallback[0] || null;
+}
+
+function selectBestProgressiveSource(
+  formats: readonly YoutubeFormat[]
+): (YoutubeFormat & { url: string }) | null {
+  const progressive = formats
+    .filter(format => hasDirectUrl(format) && format.hasAudio === true && format.hasVideo === true)
+    .sort((left, right) => {
+      const leftDistance = Math.abs((toNumber(left.height) || 360) - 360);
+      const rightDistance = Math.abs((toNumber(right.height) || 360) - 360);
+      if (leftDistance !== rightDistance) return leftDistance - rightDistance;
+      return (
+        toNumber(right.audioBitrate ?? right.bitrate ?? right.averageBitrate) -
+        toNumber(left.audioBitrate ?? left.bitrate ?? left.averageBitrate)
+      );
+    });
+
+  return progressive[0] || null;
+}
+
+function normalizeYoutubeInfo(info: YoutubeInfo, fallbackId: string): ResolvedYoutubeInfo {
+  const details = info.videoDetails;
+  return {
+    id: details?.videoId || fallbackId,
+    title: details?.title || "Video",
+    author: details?.author || "Unknown",
+    lengthSeconds: toNumber(details?.lengthSeconds),
+    views: toNumber(details?.viewCount),
+  };
+}
+
+function toResolvedStream(format: YoutubeFormat, fallbackQuality: string): ResolvedYoutubeStream | null {
+  if (!hasDirectUrl(format)) return null;
+  return {
+    url: format.url,
+    mimeType: format.mimeType || null,
+    container: format.container || null,
+    bitrate: toNumber(format.audioBitrate ?? format.bitrate ?? format.averageBitrate),
+    quality:
+      fallbackQuality ||
+      format.qualityLabel ||
+      format.audioQuality ||
+      (format.container ? `${format.container}` : "unknown"),
+  };
+}
+
+function selectBestAudioFormat(formats: readonly YoutubeFormat[]): ResolvedYoutubeStream | null {
+  const candidates = formats
+    .filter(format => hasDirectUrl(format) && format.hasAudio === true)
+    .filter(format => format.hasVideo !== true)
+    .map(format => toResolvedStream(format, format.audioQuality || "audio"))
+    .filter((format): format is ResolvedYoutubeStream => format !== null)
+    .sort((left, right) => right.bitrate - left.bitrate);
+
+  if (candidates[0]) return candidates[0];
+
+  const fallback = formats
+    .filter(format => hasDirectUrl(format) && format.hasAudio === true)
+    .map(format => toResolvedStream(format, format.qualityLabel || format.audioQuality || "audio"))
+    .filter((format): format is ResolvedYoutubeStream => format !== null)
+    .sort((left, right) => right.bitrate - left.bitrate);
+
+  return fallback[0] || null;
+}
+
+function selectBestProgressiveFormat(formats: readonly YoutubeFormat[]): ResolvedYoutubeStream | null {
+  const progressive = formats
+    .filter(format => hasDirectUrl(format) && format.hasAudio === true && format.hasVideo === true)
+    .map(format => ({
+      stream: toResolvedStream(format, format.qualityLabel || "video"),
+      height: toNumber(format.height),
+    }))
+    .filter(
+      (entry): entry is { stream: ResolvedYoutubeStream; height: number } => entry.stream !== null
+    )
+    .sort((left, right) => {
+      const leftDistance = Math.abs((left.height || 360) - 360);
+      const rightDistance = Math.abs((right.height || 360) - 360);
+      if (leftDistance !== rightDistance) return leftDistance - rightDistance;
+      return right.stream.bitrate - left.stream.bitrate;
+    });
+
+  return progressive[0]?.stream || null;
+}
+
+async function downloadYouTubeViaYtdl(
+  urlOrId: string,
+  format: "mp3" | "video",
+  outputDir: string
+): Promise<DownloadYouTubeResult> {
+  const id = extractVideoId(urlOrId);
+  const info = await ytdl.getInfo(`https://www.youtube.com/watch?v=${id}`);
+  const videoInfo = normalizeYoutubeInfo(info, id);
+  const selectedFormat =
+    format === "mp3"
+      ? selectBestAudioSource(info.formats)
+      : selectBestProgressiveSource(info.formats);
+  const selectedStream = selectedFormat
+    ? toResolvedStream(
+        selectedFormat,
+        format === "mp3"
+          ? selectedFormat.audioQuality || "audio"
+          : selectedFormat.qualityLabel || "video"
+      )
+    : null;
+
+  if (!selectedFormat || !selectedStream) {
+    throw new Error(`KhÃ´ng tÃ¬m tháº¥y Ä‘á»‹nh dáº¡ng ${format}`);
+  }
+
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+
+  const ext =
+    format === "mp3"
+      ? selectedStream.container === "mp4"
+        ? "m4a"
+        : selectedStream.container || "mp3"
+      : selectedStream.container || "mp4";
+  const file = path.join(outputDir, `${sanitize(videoInfo.title)}_${videoInfo.id}.${ext}`);
+
+  await new Promise<void>((resolve, reject) => {
+    const source = ytdl.downloadFromInfo(info, { format: selectedFormat });
+    const writer = fs.createWriteStream(file);
+    source.on("error", reject);
+    writer.on("error", reject);
+    writer.on("finish", () => resolve());
+    source.pipe(writer);
+  });
+  const stat = fs.statSync(file);
+
+  return {
+    success: true,
+    error: null,
+    videoInfo,
+    format: {
+      type: format,
+      quality: selectedStream.quality,
+      mimeType: selectedStream.mimeType,
+      container: selectedStream.container,
+    },
+    file: {
+      path: file,
+      size: stat.size,
+      sizeFormatted: `${(stat.size / 1024 / 1024).toFixed(2)} MB`,
+    },
+  };
+}
+
+async function getMp4ViaYtdl(videoId: string): Promise<{
+  author: string;
+  id: string;
+  lengthSeconds: number;
+  mp3: string | null;
+  title: string;
+  url: string | null;
+  views: number;
+} | null> {
+  try {
+    const id = extractVideoId(videoId);
+    const info = await ytdl.getInfo(`https://www.youtube.com/watch?v=${id}`);
+    const videoInfo = normalizeYoutubeInfo(info, id);
+    const bestVideo = selectBestProgressiveFormat(info.formats);
+    const bestAudio = selectBestAudioFormat(info.formats);
+
+    return {
+      id: videoInfo.id,
+      title: videoInfo.title,
+      author: videoInfo.author,
+      lengthSeconds: videoInfo.lengthSeconds,
+      views: videoInfo.views,
+      url: bestVideo?.url || null,
+      mp3: bestAudio?.url || null,
+    };
+  } catch (error) {
+    console.error("Lá»—i khi láº¥y dá»¯ liá»‡u:", error);
+    return null;
+  }
+}
+
+async function getMp3ViaYtdl(videoId: string): Promise<{
+  author: string;
+  id: string;
+  lengthSeconds: number;
+  title: string;
+  url: string | null;
+  views: number;
+} | null> {
+  try {
+    const id = extractVideoId(videoId);
+    const info = await ytdl.getInfo(`https://www.youtube.com/watch?v=${id}`);
+    const videoInfo = normalizeYoutubeInfo(info, id);
+    const bestAudio = selectBestAudioFormat(info.formats);
+
+    return {
+      id: videoInfo.id,
+      title: videoInfo.title,
+      author: videoInfo.author,
+      lengthSeconds: videoInfo.lengthSeconds,
+      views: videoInfo.views,
+      url: bestAudio?.url || null,
+    };
+  } catch (error) {
+    console.error("Lá»—i khi láº¥y dá»¯ liá»‡u:", error);
+    return null;
+  }
+}
+
 export async function downloadYouTube(
   urlOrId: string,
   format: "mp3" | "video" = "mp3",
   outputDir = "./temp"
-): Promise<any> {
+): Promise<DownloadYouTubeResult> {
   try {
+    return await downloadYouTubeViaYtdl(urlOrId, format, outputDir);
     const id = extractVideoId(urlOrId);
     const client = {
       name: "ANDROID",
@@ -202,7 +481,17 @@ export async function downloadYouTube(
 export async function getMp4(
   videoId: string,
   payloadData: Record<string, any> = {}
-): Promise<any> {
+): Promise<{
+  author: string;
+  id: string;
+  lengthSeconds: number;
+  mp3: string | null;
+  title: string;
+  url: string | null;
+  views: number;
+} | null> {
+  void payloadData;
+  return await getMp4ViaYtdl(videoId);
   function generateClientPlaybackNonce(length: number): string {
     const CPN_CHARS =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
@@ -310,7 +599,15 @@ export async function getMp4(
   }
 }
 
-export async function getMp3(videoId: string): Promise<any> {
+export async function getMp3(videoId: string): Promise<{
+  author: string;
+  id: string;
+  lengthSeconds: number;
+  title: string;
+  url: string | null;
+  views: number;
+} | null> {
+  return await getMp3ViaYtdl(videoId);
   function generateClientPlaybackNonce(length: number): string {
     const CPN_CHARS =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";

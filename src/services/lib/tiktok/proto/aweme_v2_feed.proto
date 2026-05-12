@@ -1,0 +1,238 @@
+syntax = "proto3";
+
+// =============================================================================
+// TikTok Trill — POST /aweme/v2/feed (application/x-protobuf)
+// Reverse-engineered: 2026-04-11 bởi decodeProtobufWire trên 1.1MB response.
+// Body rỗng (empty POST) vẫn trả feed. Pagination: request field 9/10 (bytes) = blob như response min/max_cursor — encode động awemeV2FeedRequestBody.js.
+// =============================================================================
+
+package tiktok.aweme.v2;
+
+// ---------- RESPONSE ----------
+
+message FeedResponse {
+  int32  status_code   = 1;  // 0 = OK
+  int32  unknown2      = 2;  // 0
+  int32  unknown3      = 3;  // 0
+  int32  has_more      = 4;  // 1 = còn page
+  repeated AwemeItem aweme_list = 5;
+  int32  unknown7      = 7;  // 1
+  int32  unknown8      = 8;  // 1
+  bytes  min_cursor    = 9;  // len~7
+  bytes  max_cursor    = 10; // len~36
+  int32  unknown20     = 20; // 1
+  bytes  log_pb        = 21; // ~206 byte
+  bytes  unknown22     = 22;
+  int32  unknown25     = 25;
+  bytes  extra_config  = 26; // ~6 KB
+  bytes  unknown28     = 28;
+  bytes  unknown29     = 29;
+  bytes  unknown31     = 31;
+  bytes  unknown33     = 33;
+}
+
+// ---------- AWEME ITEM ----------
+
+message AwemeItem {
+  bytes    aweme_id     = 1;   // string dạng "7621148534477163783"
+  bytes    desc         = 2;   // mô tả video
+  uint32   create_time  = 3;   // unix epoch
+  Author   author       = 4;
+  Video    video        = 5;
+  // field 6 chưa rõ
+  Music    music        = 7;
+  bytes    share_url    = 8;   // https://www.tiktok.com/…
+  int32    unknown9     = 9;
+  Statistics statistics = 10;
+  Status   status       = 11;
+  int32    aweme_type   = 13;  // 12 = photo? 0 = video?
+  bytes    unknown18    = 18;  // 346 byte nested
+  bytes    text_extra   = 19;  // hashtag / @mention
+  bytes    unknown21    = 21;
+  int32    unknown25    = 25;
+  int32    unknown27    = 27;
+  int32    unknown30    = 30;
+  int32    unknown35    = 35;
+  bytes    unknown37    = 37;
+  int32    unknown38    = 38;
+  bytes    rec_extra_json = 40; // JSON: {"author_id":…, "author_country":…}
+  uint32   unknown44    = 44;
+  int32    unknown45    = 45;
+  int32    unknown47    = 47;
+  int32    unknown48    = 48;
+  bytes    region       = 49;  // "TW", "VN", …
+  int32    unknown54    = 54;
+  bytes    group_id     = 57;
+  bytes    aweme_id_dup = 63;  // trùng field 1
+  int32    unknown65    = 65;
+  bytes    unknown78    = 78;
+  bytes    image_post   = 86;  // ảnh slideshow
+  bytes    language     = 91;  // "vi"
+  int32    unknown105   = 105;
+  bytes    unknown106   = 106;
+  bytes    promotion    = 116;
+  bytes    unknown138   = 138;
+  bytes    unknown160   = 160;
+  bytes    unknown182   = 182;
+  bytes    page_source  = 183; // "for_you_page_1"
+  bytes    unknown190   = 190;
+  bytes    unknown206   = 206;
+  bytes    unknown207   = 207;
+  bytes    unknown214   = 214;
+  bytes    geo_json     = 217;
+  bytes    unknown219   = 219;
+  int32    unknown222   = 222;
+  bytes    mix_id       = 225;
+  bytes    mix_id_dup   = 226;
+  bytes    desc_wrapper = 232; // lồng field 1 = desc
+  bytes    media_type_tag = 233; // "single_song"
+  int32    unknown238   = 238;
+  bytes    unknown241   = 241;
+  bytes    ansa_json    = 243; // JSON: {"ansaParam":{…}}
+  Video    video_dup    = 246; // giống field 5 — có thể original vs watermark
+  bytes    unknown247   = 247;
+  bytes    unknown248   = 248;
+  int32    unknown256_type = 256; // "photo" / "video" tag tại byte
+  int32    unknown282   = 282;
+  bytes    unknown284   = 284;
+  bytes    unknown289   = 289;
+  fixed64  unknown292   = 292;
+  int32    unknown298   = 298; // 200, 305
+  int32    unknown299   = 299; // 2
+  bytes    unknown312   = 312;
+  bytes    bit_rate_info = 315; // nested: fixed32 + varint + bytes
+  bytes    unknown321   = 321;
+  bytes    feed_control = 336; // nested config
+  bytes    unknown401   = 401;
+  bytes    commerce_json = 416; // JSON: {"sale_intent":…}
+}
+
+// ---------- AUTHOR ----------
+
+message Author {
+  bytes   uid             = 1;  // "7197435304658437122"
+  bytes   short_id        = 2;  // "0"
+  bytes   nickname        = 3;  // len~25
+  bytes   avatar_thumb    = 5;  // nested ImageUrl
+  bytes   avatar_medium   = 7;  // nested ImageUrl
+  bytes   avatar_larger   = 8;  // nested ImageUrl
+  int32   unknown12       = 12;
+  int32   unknown18       = 18;
+  bytes   unique_id       = 26; // "_meowdangiuu_"
+  bytes   sec_uid         = 53; // nested
+  int32   verified        = 55; // 1
+  bytes   region          = 64; // "TW"
+  bytes   language        = 127;// "vi"
+  bytes   avatar_168      = 175;
+  bytes   avatar_300      = 176;
+  bytes   sec_uid_b64     = 191;// base64
+  bytes   extra_json      = 215;// JSON {"imprs_info":…}
+  int32   unknown216      = 216;
+}
+
+// ---------- VIDEO ----------
+
+message Video {
+  uint32  unknown1        = 1;
+  bytes   vid             = 2;  // "7108388653767953178"
+  bytes   ratio           = 3;  // nested (width/height)
+  bytes   origin_title    = 4;  // "haanhh.mixi?"
+  bytes   unknown5        = 5;
+  // field 6 missing
+  ImageUrl cover          = 7;  // avatar / cover
+  ImageUrl origin_cover   = 8;
+  ImageUrl dynamic_cover  = 9;
+  PlayAddr play_addr      = 10; // URL danh sách → video MP4
+  int32   duration        = 12; // giây
+  int32   unknown15       = 15;
+  bytes   meta_json       = 16; // JSON: {"aed_music_dur":…}
+  int32   unknown17       = 17;
+  bytes   download_addr   = 56;
+  bytes   download_addr2  = 57;
+  bytes   unknown65       = 65;
+  bytes   unknown66       = 66;
+  int32   unknown67       = 67;
+  int32   unknown70       = 70;
+  int32   quality         = 75; // 100
+}
+
+// ---------- PLAY ADDR (nested trong video.play_addr hoặc cover) ----------
+
+message PlayAddr {
+  bytes   uri        = 1;  // path trên CDN
+  repeated bytes url_list = 2; // URL đầy đủ (2-4 URL)
+  int32   width      = 3;
+  int32   height     = 4;
+  int32   unknown6   = 6;
+}
+
+// Dùng lại cho cover / avatar
+message ImageUrl {
+  bytes   uri        = 1;
+  repeated bytes url_list = 2;
+  int32   width      = 3;
+  int32   height     = 4;
+  int32   unknown6   = 6;
+}
+
+// ---------- MUSIC ----------
+
+message Music {
+  bytes   id           = 1;
+  bytes   title        = 2;
+  int32   unknown3     = 3;
+  int32   unknown4     = 4;
+  ImageUrl cover_medium = 5;
+  ImageUrl cover_large  = 6;
+  PlayAddr play_url     = 7;
+  bytes   unknown8     = 8;
+  int32   unknown9     = 9;
+  bytes   unknown11    = 11;
+  int32   duration     = 13;
+  bytes   unknown18    = 18;
+  int32   unknown21    = 21;
+  int32   unknown24    = 24;
+  bytes   unknown25    = 25;
+  bytes   owner_info   = 27;
+  int32   unknown28    = 28;
+  bytes   unknown30    = 30;
+  bytes   unknown31    = 31;
+  int32   unknown32    = 32;
+  fixed64 unknown33    = 33;
+  int32   unknown34    = 34;
+  bytes   unknown39    = 39;
+  bytes   unknown40    = 40;
+  bytes   unknown41    = 41;
+}
+
+// ---------- STATISTICS ----------
+
+message Statistics {
+  bytes   aweme_id       = 1;
+  int32   comment_count  = 2;
+  int32   digg_count     = 3;  // likes
+  int32   share_count    = 4;
+  int32   play_count     = 5;
+  int32   download_count = 6;
+  int32   unknown7       = 7;
+  int32   unknown8       = 8;
+  int32   unknown9       = 9;
+  int32   unknown10      = 10;
+  int32   collect_count  = 11;
+  int32   unknown12      = 12;
+}
+
+// ---------- STATUS ----------
+
+message Status {
+  bytes   aweme_id       = 1;
+  int32   private_status = 2;
+  int32   allow_comment  = 3;
+  int32   allow_share    = 4;
+  int32   unknown7       = 7;
+  int32   unknown9       = 9;
+  int32   unknown10      = 10;
+  int32   unknown11      = 11;
+  int32   unknown12      = 12;
+  int32   unknown13      = 13;
+}

@@ -1,116 +1,141 @@
-import { Argus } from './argus.js'
-import { bytesToHex } from './buffer-utils.js'
-import { md5Hex } from './crypto-utils.js'
-import { Gorgon } from './gorgon.js'
-import { Ladon } from './ladon.js'
-import { randomBytes } from 'crypto'
-import { v4 as uuidv4 } from 'uuid'
-import type {
-  BaseMobileParams,
-  MobileHeadersSignatureParams,
-  MobileHeadersSignatureResult
-} from '../types/index.js'
+import { Argus } from './argus.js';
+import { bytesToHex } from './buffer-utils.js';
+import { md5Hex } from './crypto-utils.js';
+import { Gorgon } from './gorgon.js';
+import { Ladon } from './ladon.js';
+import { randomBytes } from 'crypto';
+import { randomUUID } from 'crypto';
 
-export const getBaseMobileParams = (): BaseMobileParams => {
-  const device_id = '7555746395380368897'
-  const iid = '7580036180676593416'
-  const cdid = uuidv4()
-  const openudid = bytesToHex(new Uint8Array(randomBytes(8)))
-  const timestamp = Math.floor(Date.now() / 1000)
+const TRILL_DEFAULT_LICENSE_ID = 2142840551;
 
+const getTrillFeedBaseParams = (overrides: Record<string, unknown> = {}): Record<string, string | number> => {
+  const timestamp = Math.floor(Date.now() / 1000);
+  const iid = String(overrides.iid ?? overrides.install_id ?? '7627523021921896213');
+  const device_id = String(overrides.device_id ?? '7626781349097424405');
   return {
+    device_platform: 'android',
+    os: 'android',
     _rticket: Date.now(),
-    device_id,
+    cdid: String(overrides.cdid ?? randomUUID()),
+    channel: 'googleplay',
+    aid: 1180,
+    app_name: 'trill',
+    version_code: 440604,
+    version_name: '44.6.4',
+    manifest_version_code: 440604,
+    update_version_code: 440604,
+    resolution: '1080*1920',
+    dpi: 480,
+    device_type: String(overrides.device_type ?? 'PGT-AN00'),
+    device_brand: String(overrides.device_brand ?? 'Honor'),
+    language: 'vi',
+    os_api: 28,
+    os_version: '9',
+    ac: 'wifi',
+    app_type: 'normal',
+    sys_region: 'VN',
+    last_install_time: Number(overrides.last_install_time ?? timestamp - 120),
+    timezone_name: 'Asia/Ho_Chi_Minh',
+    app_language: 'vi',
+    timezone_offset: 25200,
+    locale: 'vi-VN',
     ts: timestamp,
     iid,
-    openudid,
-    cdid,
-    manifest_version_code: 410405,
-    app_language: 'en',
-    app_type: 'normal',
-    app_package: 'com.zhiliaoapp.musically.go',
-    channel: 'googleplay',
-    device_type: 'SM-G998B',
-    language: 'en',
-    host_abi: 'x86_64',
-    locale: 'en',
-    resolution: '900*1600',
-    update_version_code: 410405,
-    ac2: 'wifi',
-    sys_region: 'US',
-    os_api: 28,
-    timezone_name: 'Asia/Saigon',
-    dpi: 240,
-    carrier_region: 'VN',
-    ac: 'wifi',
-    os: 'android',
-    os_version: '9',
-    timezone_offset: 25200,
-    version_code: 410405,
-    app_name: 'musically_go',
-    ab_version: '41.4.5',
-    version_name: '41.4.5',
-    device_brand: 'samsung',
-    op_region: 'VN',
-    ssmix: 'a',
-    device_platform: 'android',
-    build_number: '41.4.5',
-    region: 'US',
-    aid: 1340
-  }
-}
+    device_id,
+    openudid: String(overrides.openudid ?? bytesToHex(new Uint8Array(randomBytes(8)))),
+    pull_type: Number(overrides.pull_type ?? 4),
+    is_non_personalized: Number(overrides.is_non_personalized ?? 0),
+    cmpl_enc: String(overrides.cmpl_enc ?? 'unknown')
+  };
+};
+
+const getBaseMobileParams = (): Record<string, string | number> => ({
+  _rticket: Date.now(),
+  device_id: '7555746395380368897',
+  ts: Math.floor(Date.now() / 1000),
+  iid: '7580036180676593416',
+  openudid: bytesToHex(new Uint8Array(randomBytes(8))),
+  cdid: randomUUID(),
+  manifest_version_code: 410405,
+  app_language: 'en',
+  app_type: 'normal',
+  app_package: 'com.zhiliaoapp.musically.go',
+  channel: 'googleplay',
+  device_type: 'SM-G998B',
+  language: 'en',
+  host_abi: 'x86_64',
+  locale: 'en',
+  resolution: '900*1600',
+  update_version_code: 410405,
+  ac2: 'wifi',
+  sys_region: 'US',
+  os_api: 28,
+  timezone_name: 'Asia/Saigon',
+  dpi: 240,
+  carrier_region: 'VN',
+  ac: 'wifi',
+  os: 'android',
+  os_version: '9',
+  timezone_offset: 25200,
+  version_code: 410405,
+  app_name: 'musically_go',
+  ab_version: '41.4.5',
+  version_name: '41.4.5',
+  device_brand: 'samsung',
+  op_region: 'VN',
+  ssmix: 'a',
+  device_platform: 'android',
+  build_number: '41.4.5',
+  region: 'US',
+  aid: 1340
+});
 
 const createMobileHeadersSignature = ({
   queryParams,
   bodyPayload,
-  cookies
-}: MobileHeadersSignatureParams): MobileHeadersSignatureResult => {
-  const unixTimestamp = Math.floor(Date.now() / 1000)
-  const aid = 1340
-  const licenseId = 1611921764
-  const secDeviceId = ''
-  const sdkVersion = 'v05.00.03-ov-android'
-  const sdkVersionInt = 167773760
-  const platform = 0
-
-  try {
-    const gorgonInstance = new Gorgon({
-      params: queryParams,
-      unix: unixTimestamp,
-      bodyPayload,
-      cookies
-    })
-    const gorgonHeaders = gorgonInstance.getValue()
-
-    const xLadon = Ladon.encrypt({ khronos: unixTimestamp, licenseId, aid })
-
-    const x_ss_stub = bodyPayload ? md5Hex(bodyPayload) : undefined
-
-    const xArgus = Argus.getSign({
+  cookies,
+  aid = 1340,
+  licenseId = 1611921764,
+  gorgonVersion = '0404',
+  sdkVersion = 'v05.00.03-ov-android',
+  sdkVersionInt = 167773760
+}: {
+  queryParams: string;
+  bodyPayload?: string | Uint8Array | Buffer;
+  cookies?: string;
+  aid?: number;
+  licenseId?: number;
+  gorgonVersion?: '0404' | '8404';
+  sdkVersion?: string;
+  sdkVersionInt?: number;
+}): Record<string, string | undefined> => {
+  const unixTimestamp = Math.floor(Date.now() / 1000);
+  const gorgonHeaders = new Gorgon({
+    params: queryParams,
+    unix: unixTimestamp,
+    bodyPayload,
+    cookies,
+    gorgonVersion
+  }).getValue();
+  const hasBody = Boolean(bodyPayload && bodyPayload.length);
+  const x_ss_stub = hasBody ? md5Hex(bodyPayload as string | Uint8Array | Buffer) : undefined;
+  return {
+    'X-Gorgon': gorgonHeaders['X-Gorgon'],
+    'X-Khronos': gorgonHeaders['X-Khronos'],
+    'x-ss-req-ticket': gorgonHeaders['x-ss-req-ticket'],
+    'X-Ladon': Ladon.encrypt({ khronos: unixTimestamp, licenseId, aid }),
+    'X-Argus': Argus.getSign({
       queryParams,
       x_ss_stub,
       timestamp: unixTimestamp,
       aid,
       licenseId,
-      platform,
-      secDeviceId,
       sdkVersion,
       sdkVersionInt
-    })
+    }),
+    'x-ss-stub': x_ss_stub ? x_ss_stub.toUpperCase() : undefined
+  };
+};
 
-    return {
-      'X-Gorgon': gorgonHeaders['X-Gorgon'],
-      'X-Khronos': gorgonHeaders['X-Khronos'],
-      'x-ss-req-ticket': gorgonHeaders['x-ss-req-ticket'],
-      'X-Ladon': xLadon,
-      'X-Argus': xArgus,
-      'x-ss-stub': x_ss_stub ? x_ss_stub.toUpperCase() : undefined
-    }
-  } catch (err) {
-    const error = err instanceof Error ? err : new Error(String(err))
-    throw new Error(`Failed to create mobile headers signature: ${error.stack ?? error.message}`)
-  }
-}
-
-export { createMobileHeadersSignature }
-export default createMobileHeadersSignature
+export { getBaseMobileParams, getTrillFeedBaseParams, TRILL_DEFAULT_LICENSE_ID };
+export default createMobileHeadersSignature;

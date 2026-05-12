@@ -1,45 +1,22 @@
-import axios from 'axios'
-import qs from 'qs'
-import { TIKTOK_API_URL } from '../constants/index.js'
-import createMobileHeadersSignature, { getBaseMobileParams } from '../tiktok-signer/signHeadersMobile.js'
-import { extractXttTokenFromCookie, getTiktokCredentials } from './helpers.js'
-import type {
-  GetCommentListOptions,
-  TikTokComment,
-  TikTokCommentUser,
-  TikTokReply,
-  TikTokApiResponse,
-  TikTokCommentRaw
-} from '../types/index.js'
+import axios from 'axios';
+import qs from 'qs';
+import { TIKTOK_API_URL } from '../constants/index.js';
+import createMobileHeadersSignature, { getBaseMobileParams } from '../tiktok-signer/signHeadersMobile.js';
+import { extractXttTokenFromCookie, getTiktokCredentials } from './helpers.js';
+import type { JsonObject, TikTokRequestOptions } from '../types.js';
 
-interface GetCommentListResult {
-  comments: TikTokComment[]
-  cursor: number | string
-  hasMore: boolean
-  total: number
-}
+type CommentListOptions = TikTokRequestOptions & {
+  awemeId: string;
+  cursor?: number;
+  count?: number;
+  enterFrom?: string;
+  liteFlowSchedule?: string;
+  cdnCacheIsLogin?: number;
+  cdnCacheStrategy?: string;
+  isNonPersonalized?: number;
+};
 
-const buildCommentUser = (raw: TikTokCommentRaw): TikTokCommentUser => ({
-  uid: raw.user?.uid ?? raw.user_id ?? '',
-  uniqueId: raw.user?.unique_id ?? raw.user?.uniqueId ?? '',
-  nickname: raw.user?.nickname ?? raw.user?.nick_name ?? '',
-  avatarUri:
-    raw.user?.avatar_thumb?.url_list?.[0] ??
-    raw.user?.avatar_medium?.url_list?.[0] ??
-    raw.user?.avatar_larger?.url_list?.[0] ??
-    ''
-})
-
-const buildReply = (reply: TikTokCommentRaw): TikTokReply => ({
-  cid: reply.cid ?? reply.comment_id ?? '',
-  text: reply.text ?? reply.comment_text ?? '',
-  createTime: reply.create_time ?? 0,
-  diggCount: reply.digg_count ?? reply.like_count ?? 0,
-  replyCount: reply.reply_count ?? 0,
-  user: buildCommentUser(reply)
-})
-
-export const getCommentList = async (options: GetCommentListOptions): Promise<GetCommentListResult> => {
+const getCommentList = async (options: CommentListOptions): Promise<JsonObject> => {
   try {
     const {
       awemeId,
@@ -50,29 +27,33 @@ export const getCommentList = async (options: GetCommentListOptions): Promise<Ge
       cdnCacheIsLogin = 1,
       cdnCacheStrategy = 'v0',
       isNonPersonalized = 0
-    } = options
+    } = options;
 
     const credentials = options.cookie
       ? { cookie: options.cookie, xTtToken: options.xTtToken }
-      : getTiktokCredentials()
-    const cookie = credentials.cookie
-    const xTtToken = credentials.xTtToken ?? extractXttTokenFromCookie(cookie)
+      : getTiktokCredentials();
+    const cookie = credentials.cookie;
+    const xTtToken = credentials.xTtToken || extractXttTokenFromCookie(cookie);
 
-    const baseParams = getBaseMobileParams()
+    const baseParams = getBaseMobileParams() as Record<string, string | number | boolean>;
     const params: Record<string, string> = {
       ...Object.fromEntries(Object.entries(baseParams).map(([k, v]) => [k, String(v)])),
       aweme_id: awemeId,
-      cursor: cursor.toString(),
-      count: count.toString(),
+      cursor: String(cursor),
+      count: String(count),
       enter_from: enterFrom,
       lite_flow_schedule: liteFlowSchedule,
-      cdn_cache_is_login: cdnCacheIsLogin.toString(),
+      cdn_cache_is_login: String(cdnCacheIsLogin),
       cdn_cache_strategy: cdnCacheStrategy,
-      is_non_personalized: isNonPersonalized.toString()
-    }
+      is_non_personalized: String(isNonPersonalized)
+    };
 
-    const queryString = qs.stringify(params)
-    const signatureHeaders = createMobileHeadersSignature({ queryParams: queryString, cookies: cookie })
+    const queryString = qs.stringify(params);
+    const signatureHeaders = createMobileHeadersSignature({
+      queryParams: queryString,
+      cookies: cookie
+    }) as Record<string, string | undefined>;
+
     const headers: Record<string, string> = {
       'User-Agent': 'com.zhiliaoapp.musically.go/420004 (Linux; U; Android 9; vi_VN; 23113RKC6C; Build/PQ3A.190605.06171036;tt-ok/3.12.13.44.lite-ul)',
       'Accept-Encoding': 'gzip',
@@ -86,48 +67,82 @@ export const getCommentList = async (options: GetCommentListOptions): Promise<Ge
       'x-tt-store-region-src': 'uid',
       'ttzip-tlb': '1',
       Cookie: cookie
-    }
+    };
+    if (xTtToken) headers['x-tt-token'] = xTtToken;
+    Object.entries(signatureHeaders).forEach(([k, v]) => {
+      if (v) headers[k] = v;
+    });
 
-    if (xTtToken) headers['x-tt-token'] = xTtToken
-    Object.entries(signatureHeaders).forEach(([k, v]) => { if (v) headers[k] = v })
-
-    const { data: responseData } = await axios.get<TikTokApiResponse>(TIKTOK_API_URL.GET_COMMENT_LIST, {
+    const { data: responseData } = await axios.get(TIKTOK_API_URL.GET_COMMENT_LIST, {
       params,
       headers,
-      paramsSerializer: (p) => qs.stringify(p, { encode: true })
-    })
+      paramsSerializer: (inputParams) => qs.stringify(inputParams)
+    });
 
-    if (responseData.status_code !== undefined && responseData.status_code !== 0) {
-      throw new Error(
-        `TikTok API error: ${responseData.status_msg ?? 'Unknown error'} (code: ${responseData.status_code})`
-      )
+    const response = responseData as JsonObject;
+    if (typeof response.status_code === 'number' && response.status_code !== 0) {
+      throw new Error(`TikTok API error: ${String(response.status_msg || 'Unknown error')} (code: ${response.status_code})`);
     }
 
-    const comments = responseData.comments ?? []
-    const hasMore = responseData.has_more === 1
-    const total = responseData.total ?? 0
-    const nextCursor = responseData.cursor ?? cursor
+    const comments = Array.isArray(response.comments) ? response.comments : [];
+    const formattedComments = comments.map((comment) => {
+      const item = comment as JsonObject;
+      const user = (item.user || {}) as JsonObject;
+      const avatarThumb = (user.avatar_thumb || {}) as { url_list?: unknown[] };
+      const avatarMedium = (user.avatar_medium || {}) as { url_list?: unknown[] };
+      const avatarLarger = (user.avatar_larger || {}) as { url_list?: unknown[] };
+      const replies = Array.isArray(item.reply_comment) ? item.reply_comment : [];
+      return {
+        cid: String(item.cid || item.comment_id || ''),
+        text: String(item.text || item.comment_text || ''),
+        createTime: Number(item.create_time || 0),
+        diggCount: Number(item.digg_count || item.like_count || 0),
+        replyCount: Number(item.reply_count || 0),
+        user: {
+          uid: String(user.uid || item.user_id || ''),
+          uniqueId: String(user.unique_id || user.uniqueId || ''),
+          nickname: String(user.nickname || user.nick_name || ''),
+          avatarUri: String(avatarThumb.url_list?.[0] || avatarMedium.url_list?.[0] || avatarLarger.url_list?.[0] || '')
+        },
+        replyComment: replies.map((replyItem) => {
+          const reply = replyItem as JsonObject;
+          const replyUser = (reply.user || {}) as JsonObject;
+          const rThumb = (replyUser.avatar_thumb || {}) as { url_list?: unknown[] };
+          const rMedium = (replyUser.avatar_medium || {}) as { url_list?: unknown[] };
+          const rLarger = (replyUser.avatar_larger || {}) as { url_list?: unknown[] };
+          return {
+            cid: String(reply.cid || reply.comment_id || ''),
+            text: String(reply.text || reply.comment_text || ''),
+            createTime: Number(reply.create_time || 0),
+            diggCount: Number(reply.digg_count || reply.like_count || 0),
+            replyCount: Number(reply.reply_count || 0),
+            user: {
+              uid: String(replyUser.uid || reply.user_id || ''),
+              uniqueId: String(replyUser.unique_id || replyUser.uniqueId || ''),
+              nickname: String(replyUser.nickname || replyUser.nick_name || ''),
+              avatarUri: String(rThumb.url_list?.[0] || rMedium.url_list?.[0] || rLarger.url_list?.[0] || '')
+            }
+          };
+        })
+      };
+    });
 
-    const formattedComments: TikTokComment[] = comments.map((comment) => ({
-      cid: comment.cid ?? comment.comment_id ?? '',
-      text: comment.text ?? comment.comment_text ?? '',
-      createTime: comment.create_time ?? 0,
-      diggCount: comment.digg_count ?? comment.like_count ?? 0,
-      replyCount: comment.reply_count ?? 0,
-      user: buildCommentUser(comment),
-      replyComment: (comment.reply_comment ?? []).map(buildReply)
-    }))
-
-    return { comments: formattedComments, cursor: nextCursor, hasMore, total }
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.status) {
+    return {
+      comments: formattedComments,
+      cursor: Number(response.cursor || cursor),
+      hasMore: Number(response.has_more || 0) === 1,
+      total: Number(response.total || 0)
+    };
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error) && error.response) {
       throw new Error(
-        `Failed to fetch comment list: HTTP ${error.response.status} - ${error.response.statusText ?? error.message}. Response: ${JSON.stringify(error.response?.data ?? {}).substring(0, 200)}`
-      )
+        `Failed to fetch comment list: HTTP ${error.response.status} - ${error.response.statusText || error.message}. Response: ${JSON.stringify(error.response?.data || {}).substring(0, 200)}`
+      );
     }
-    if (error instanceof Error) throw new Error(`Failed to fetch comment list: ${error.message}`)
-    throw new Error('Failed to fetch comment list')
+    if (error instanceof Error) throw new Error(`Failed to fetch comment list: ${error.message}`);
+    throw new Error('Failed to fetch comment list');
   }
-}
+};
 
-export default getCommentList
+export { getCommentList };
+export default getCommentList;

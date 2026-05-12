@@ -1,6 +1,6 @@
 "use strict";
 import axios, { AxiosInstance, Method } from "axios";
-import * as cheerio from "cheerio";
+import cheerio from "cheerio";
 
 
 const FALLBACK_COOKIE =
@@ -352,6 +352,139 @@ class InstagramAPI {
     return response.data.user;
   }
 
+  private extractReelPayload(html: string): any {
+    const $ = cheerio.load(html);
+    const scripts = $("script");
+    let scriptContent: string | undefined;
+
+    scripts.each((_i, script) => {
+      const child = (script as any).children?.[0];
+      const content =
+        typeof child?.data === "string" ? child.data.trim() : undefined;
+
+      if (
+        content &&
+        content.startsWith("{") &&
+        content.includes("__bbox") &&
+        (content.includes("reels_media") ||
+          content.includes("reels_media__connection"))
+      ) {
+        scriptContent = content;
+        return false;
+      }
+
+      return undefined;
+    });
+
+    if (!scriptContent) {
+      throw new Error("Cannot find Instagram reel script JSON");
+    }
+
+    const parsedData = JSON.parse(scriptContent);
+    return (
+      parsedData?.require?.[0]?.[3]?.[0]?.__bbox?.require?.[0]?.[3]?.[1]
+        ?.__bbox?.result?.data || null
+    );
+  }
+
+  private matchesMediaId(value: unknown, targetId: string): boolean {
+    if (value === null || value === undefined) return false;
+
+    const candidate = String(value);
+    const normalizedTarget = String(targetId);
+
+    return (
+      candidate === normalizedTarget ||
+      candidate.split("_")[0] === normalizedTarget ||
+      normalizedTarget.split("_")[0] === candidate
+    );
+  }
+
+  private findMediaItem(items: any[], targetId: string): any | undefined {
+    return items.find((item: any) => {
+      const candidates = [
+        item?.pk,
+        item?.id,
+        item?.media_key,
+        item?.story_media_id,
+        item?.originalData?.pk,
+        item?.originalData?.id,
+      ];
+
+      return candidates.some((candidate) =>
+        this.matchesMediaId(candidate, targetId)
+      );
+    });
+  }
+
+  private toDownloadResult(resp: any, fallback?: {
+    title?: string | null;
+    username?: string | null;
+  }): DownloadResult {
+    const attachments: Attachment[] = [];
+
+    if (resp?.video_versions?.length) {
+      attachments.push({
+        type: "Video",
+        url: resp.video_versions[0].url,
+      });
+    } else if (resp?.image_versions2?.candidates?.length) {
+      attachments.push({
+        type: "Photo",
+        url: resp.image_versions2.candidates[0].url,
+      });
+    } else if (Array.isArray(resp?.carousel_media)) {
+      for (const item of resp.carousel_media) {
+        if (item?.video_versions?.length) {
+          attachments.push({
+            type: "Video",
+            url: item.video_versions[0].url,
+          });
+        } else if (item?.image_versions2?.candidates?.length) {
+          attachments.push({
+            type: "Photo",
+            url: item.image_versions2.candidates[0].url,
+          });
+        }
+      }
+    }
+
+    return {
+      id: String(resp?.id ?? resp?.pk ?? ""),
+      message: resp?.caption?.text || resp?.caption || fallback?.title || null,
+      author:
+        resp?.user?.full_name && resp?.user?.username
+          ? `${resp.user.full_name} (${resp.user.username})`
+          : resp?.user?.username || fallback?.username || "Unknown",
+      like: this.formatNumber(resp?.like_count) || null,
+      comment: this.formatNumber(resp?.comment_count) || null,
+      play: this.formatNumber(resp?.play_count) || null,
+      attachments,
+    };
+  }
+
+  private async fetchMediaInfoById(
+    mediaId: string,
+    fallback?: { title?: string | null; username?: string | null }
+  ): Promise<DownloadResult | null> {
+    try {
+      const res = await this.request<any>(
+        "GET",
+        `/api/v1/media/${mediaId}/info/`
+      );
+      const items = Array.isArray(res?.items) ? res.items : [];
+      const resp = this.findMediaItem(items, mediaId) || items[0];
+
+      if (!resp) {
+        return null;
+      }
+
+      return this.toDownloadResult(resp, fallback);
+    } catch {
+      return null;
+    }
+  }
+
   async highlights(url: string): Promise<DownloadResult[]> {
     const res = await fetch(url, {
       method: "GET",
@@ -384,37 +517,17 @@ class InstagramAPI {
     });
 
     const data = await res.text();
-    const $ = cheerio.load(data);
-    const scripts = $("script");
-    let scriptContent: string | undefined;
+    const reelData = this.extractReelPayload(data);
+    const dataResponse =
+      reelData?.["xdt_api__v1__feed__reels_media__connection"]?.edges?.[0]
+        ?.node;
+    const items = dataResponse?.items;
 
-    scripts.each((_i, script) => {
-      const child = (script as any).children?.[0];
-      if (
-        child &&
-        child.data &&
-        child.data.includes("username") &&
-        child.data.includes("original_width")
-      ) {
-        scriptContent = child.data;
-        return false;
-      }
-      return undefined;
-    });
-
-    if (!scriptContent) {
-      throw new Error("Cannot find highlight script JSON");
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new Error("Cannot find highlight items in Instagram response");
     }
 
-    const parsedData = JSON.parse(scriptContent);
-    const result =
-      parsedData?.require?.[0]?.[3]?.[0]?.__bbox?.require?.[0]?.[3]?.[1]
-        ?.__bbox?.result;
-    const dataResponse =
-      result?.data?.["xdt_api__v1__feed__reels_media__connection"]?.edges?.[0]
-        ?.node;
-
-    const results: DownloadResult[] = (dataResponse.items || []).map(
+    const results: DownloadResult[] = items.map(
       (resp: any) => {
         const attachments: Attachment[] = [];
         if (resp.video_versions && resp.video_versions.length > 0) {
@@ -435,7 +548,7 @@ class InstagramAPI {
         return {
           id: String(resp.id),
           message: dataResponse.title || null,
-          author: dataResponse.user?.username || "Unknown",
+          author: dataResponse.user?.username || resp.user?.username || "Unknown",
           like: null,
           comment: null,
           play: null,
@@ -478,75 +591,13 @@ class InstagramAPI {
         throw new Error("Không có bài viết nào");
       }
 
-      const posts: StoryResult | undefined = postInfo.items
-        .filter((info: any) => info.pk.toString() === id)
-        .map((info: any) => {
-          const dataReturn: { images: string[]; videos: string[] } = {
-            images: [],
-            videos: [],
-          };
-
-          if (info.video_versions) {
-            dataReturn.videos = [info.video_versions[0].url];
-          } else {
-            const allImage =
-              info.carousel_media ||
-              [
-                {
-                  image_versions2: info.image_versions2,
-                },
-              ];
-            dataReturn.images = allImage.map(
-              (item: any) => item.image_versions2.candidates[0].url
-            );
-          }
-
-          const postData = {
-            ...dataReturn,
-            caption: info.caption?.text || "",
-            owner: {
-              id: info.user.pk,
-              username: info.user.username,
-              full_name: info.user.full_name,
-              profile_pic_url: info.user.profile_pic_url,
-            },
-            like_count: info.like_count,
-            comment_count: info.comment_count,
-            created_at: info.taken_at,
-            media_type: info.media_type,
-            originalData: info,
-          };
-
-          const attachments: Attachment[] = [];
-          if (postData.images && postData.images.length > 0) {
-            attachments.push(
-              ...postData.images.map((imageUrl) => ({
-                type: "Photo" as const,
-                url: imageUrl,
-              }))
-            );
-          } else if (postData.videos && postData.videos.length > 0) {
-            attachments.push(
-              ...postData.videos.map((videoUrl) => ({
-                type: "Video" as const,
-                url: videoUrl,
-              }))
-            );
-          }
-
-          return {
-            pk: String(postData.originalData.pk),
-            id: String(postData.originalData.id),
-            message: postData.caption || null,
-            author: postData
-              ? `${postData.owner.full_name} (${postData.owner.username})`
-              : null,
-            like: this.formatNumber(postData.like_count) || null,
-            comment: this.formatNumber(postData.comment_count) || null,
-            play: this.formatNumber(postData.originalData.play_count) || null,
-            attachments,
-          };
-        })[0];
+      const matchedItem = this.findMediaItem(postInfo.items, id);
+      const posts: StoryResult | undefined = matchedItem
+        ? ({
+            ...this.toDownloadResult(matchedItem),
+            pk: String(matchedItem.pk ?? matchedItem.id ?? id),
+          } as StoryResult)
+        : undefined;
 
       if (!posts) {
         throw new Error("Story not found");
@@ -554,8 +605,17 @@ class InstagramAPI {
 
       return posts;
     } catch (_e) {
-      const data = await this.highlights(url);
-      return data;
+      const extracted = extract(url);
+      if (!extracted) {
+        throw _e;
+      }
+
+      const direct = await this.fetchMediaInfoById(extracted.id);
+      if (direct) {
+        return direct as StoryResult;
+      }
+
+      return await this.story2(url);
     }
   }
 
@@ -568,38 +628,13 @@ class InstagramAPI {
       "GET",
       `/api/v1/media/${storyId}/info/`
     );
-    const data = res.items || [];
-    const resp = data.find((item: any) => item.id === storyId);
+    const data = Array.isArray(res?.items) ? res.items : [];
+    const resp = this.findMediaItem(data, storyId);
     if (!resp) {
       throw new Error("Không tìm thấy story");
     }
 
-    const attachments: Attachment[] = [];
-    if (resp.video_versions && resp.video_versions.length > 0) {
-      attachments.push({
-        type: "Video",
-        url: resp.video_versions[0].url,
-      });
-    } else if (
-      resp.image_versions2 &&
-      resp.image_versions2.candidates &&
-      resp.image_versions2.candidates.length > 0
-    ) {
-      attachments.push({
-        type: "Photo",
-        url: resp.image_versions2.candidates[0].url,
-      });
-    }
-
-    return {
-      id: String(resp.id),
-      message: resp.caption,
-      author: `${resp.user.full_name} (${resp.user.username})`,
-      like: null,
-      comment: null,
-      play: null,
-      attachments,
-    };
+    return this.toDownloadResult(resp);
   }
 
   async story2(url: string): Promise<DownloadResult> {
@@ -646,71 +681,43 @@ class InstagramAPI {
       },
     });
 
-    const data = await res.text();
-    const $ = cheerio.load(data);
-    const scripts = $("script");
-    let scriptContent: string | undefined;
-
-    scripts.each((_i, script) => {
-      const child = (script as any).children?.[0];
-      if (
-        child &&
-        child.data &&
-        child.data.includes("username") &&
-        child.data.includes("original_width")
-      ) {
-        scriptContent = child.data;
-        return false;
-      }
-      return undefined;
-    });
-
     const extracted = extract(url);
     if (!extracted) throw new Error("Invalid story URL");
     const { id } = extracted;
 
-    if (!scriptContent) {
-      throw new Error("Cannot find story script JSON");
+    const data = await res.text();
+    const reelData = this.extractReelPayload(data);
+    const dataResponse =
+      reelData?.["xdt_api__v1__feed__reels_media"]?.reels_media?.[0];
+    const items = dataResponse?.items;
+
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new Error("Cannot find story items in Instagram response");
     }
 
-    const parsedData = JSON.parse(scriptContent);
-    const result =
-      parsedData?.require?.[0]?.[3]?.[0]?.__bbox?.require?.[0]?.[3]?.[1]
-        ?.__bbox?.result;
-    const dataResponse =
-      result?.data?.["xdt_api__v1__feed__reels_media"]?.reels_media[0];
-
-    const output: DownloadResult | undefined = dataResponse.items
-      .filter((info: any) => info.pk.toString() === id)
-      .map((info: any) => {
-        const attachments: Attachment[] = [];
-        if (info.video_versions && info.video_versions.length > 0) {
-          attachments.push({
-            type: "Video",
-            url: info.video_versions[0].url,
-          });
-        } else if (
-          info.image_versions2 &&
-          info.image_versions2.candidates &&
-          info.image_versions2.candidates.length > 0
-        ) {
-          attachments.push({
-            type: "Photo",
-            url: info.image_versions2.candidates[0].url,
-          });
-        }
-        return {
-          id: String(info.id),
-          message: dataResponse.title || null,
-          author: dataResponse.user?.username || "Unknown",
-          like: null,
-          comment: null,
-          play: null,
-          attachments,
-        };
-      })[0];
+    const matchedItem = this.findMediaItem(items, id);
+    const redirectedAwayFromTarget = !res.url.includes(`/${id}`);
+    const fallbackItem =
+      !matchedItem && redirectedAwayFromTarget && items.length > 0
+        ? items[0]
+        : undefined;
+    const selectedItem = matchedItem || fallbackItem;
+    const output: DownloadResult | undefined = selectedItem
+      ? this.toDownloadResult(selectedItem, {
+          title: dataResponse.title || null,
+          username: dataResponse.user?.username || null,
+        })
+      : undefined;
 
     if (!output) {
+      const direct = await this.fetchMediaInfoById(id, {
+        title: dataResponse.title || null,
+        username: dataResponse.user?.username || null,
+      });
+      if (direct) {
+        return direct;
+      }
+
       throw new Error("Story not found in parsed data");
     }
 

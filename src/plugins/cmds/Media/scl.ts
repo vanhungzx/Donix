@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import type { Command, CommandOnCallContext, CommandOnReplyContext, ReplyData } from "@types";
 import type { SearchResultItem, DownloadResult } from "../../../services/soundcloud";
 
@@ -135,8 +136,10 @@ const command: Command = {
         const trackInfo = await sc.down(chosenItem?.url);
         const attachments = Array.isArray(trackInfo?.attachments) ? trackInfo.attachments : [];
         const audio = attachments.find((a) => String(a?.type || "").toLowerCase() === "audio");
+        const localFilePath = trackInfo?.localFilePath || audio?.localFilePath;
+        const remoteUrl = audio?.url;
 
-        if (!audio?.url) {
+        if (!localFilePath && !remoteUrl) {
           await reply("❎ Không tìm thấy tệp âm thanh để tải xuống");
           return;
         }
@@ -146,7 +149,9 @@ const command: Command = {
           `⩺ Tác giả: ${trackInfo?.author || chosenItem?.author?.full_name || chosenItem?.author?.username || "Unknown"}\n` +
           `⩺ Thời lượng: ${trackInfo?.duration || chosenItem?.duration || "N/A"}`;
 
-        const stream = await (utils as { stream: (url: string, ext: string) => Promise<unknown> }).stream(audio.url, "mp3");
+        const stream = localFilePath
+          ? fs.createReadStream(localFilePath)
+          : await (utils as { stream: (url: string, ext: string) => Promise<unknown> }).stream(String(remoteUrl), "mp3");
         await reply({
           body: bodyFormat,
           attachment: {

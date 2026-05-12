@@ -1,9 +1,13 @@
-import axios, { AxiosInstance } from "axios";
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import { wrapper } from "axios-cookiejar-support";
 import { CookieJar } from "tough-cookie";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import ffmpeg from "fluent-ffmpeg";
+import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
+
+ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 interface SoundCloudUser {
   avatar_url: string;
@@ -117,9 +121,11 @@ export interface DownloadResult {
   share: string | number;
   duration: string;
   create_at: string;
+  localFilePath?: string;
   attachments: Array<{
     type: "Audio";
-    url: string;
+    url?: string;
+    localFilePath?: string;
   }>;
 }
 
@@ -179,26 +185,68 @@ class SoundCloudAPI {
     );
   }
 
-  private async getClientID(): Promise<string> {
+  private isSuccessStatus(status: number): boolean {
+    return status >= 200 && status < 300;
+  }
+
+  private async getResponse<T>(
+    url: string,
+    config: AxiosRequestConfig = {},
+    retryWithFreshClientId: boolean = false
+  ): Promise<AxiosResponse<T>> {
+    const response = await this.request.get<T>(url, config);
+
+    if (
+      retryWithFreshClientId &&
+      (response.status === 401 || response.status === 403) &&
+      config.params &&
+      Object.prototype.hasOwnProperty.call(config.params, "client_id")
+    ) {
+      const freshClientId = await this.getClientID(true);
+      const retryResponse = await this.request.get<T>(url, {
+        ...config,
+        params: {
+          ...(config.params as Record<string, unknown>),
+          client_id: freshClientId,
+        },
+      });
+
+      if (!this.isSuccessStatus(retryResponse.status)) {
+        throw new Error(`SoundCloud request failed (${retryResponse.status}) for ${url}`);
+      }
+
+      return retryResponse;
+    }
+
+    if (!this.isSuccessStatus(response.status)) {
+      throw new Error(`SoundCloud request failed (${response.status}) for ${url}`);
+    }
+
+    return response;
+  }
+
+  private async getClientID(forceRefresh: boolean = false): Promise<string> {
     const cache = loadCache();
 
     // Fast path: cache còn tươi + validate bằng HEAD
-    if (isCacheFresh(cache)) {
+    if (!forceRefresh && isCacheFresh(cache)) {
       try {
-        await this.request.head(
+        const response = await this.request.head(
           `https://api-v2.soundcloud.com/tracks?client_id=${cache.clientId}&limit=1`,
           { headers: API_HEADERS, timeout: 3000 }
         );
-        return cache.clientId;
+        if (this.isSuccessStatus(response.status)) {
+          return cache.clientId;
+        }
       } catch {
         // hết hạn, scrape lại
       }
     }
 
     // Slow path: scrape script urls để tìm client_id
-    let scriptUrls = cache?.scriptUrls ?? null;
+    let scriptUrls = forceRefresh ? null : (cache?.scriptUrls ?? null);
     if (!scriptUrls) {
-      const mainRes = await this.request.get<string>("https://soundcloud.com/", {
+      const mainRes = await this.getResponse<string>("https://soundcloud.com/", {
         headers: { ...API_HEADERS, Range: "bytes=0-65535" },
       });
       const html = mainRes.data;
@@ -276,6 +324,55 @@ class SoundCloudAPI {
     return clientId;
   }
 
+  private async resolveWithClientId<T>(
+    url: string,
+    params: Record<string, unknown>
+  ): Promise<T> {
+    const clientId = await this.getClientID();
+    const response = await this.getResponse<T>(
+      url,
+      {
+        headers: API_HEADERS,
+        params: {
+          ...params,
+          client_id: clientId,
+        },
+      },
+      true
+    );
+    return response.data;
+  }
+
+  private getTempAudioPath(): string {
+    const tempDir = path.join(process.cwd(), "temp");
+    fs.mkdirSync(tempDir, { recursive: true });
+    return path.join(
+      tempDir,
+      `soundcloud_${Date.now()}_${Math.random().toString(36).slice(2)}.mp3`
+    );
+  }
+
+  private async downloadHlsToMp3(manifestUrl: string): Promise<string> {
+    const outputPath = this.getTempAudioPath();
+
+    await new Promise<void>((resolve, reject) => {
+      ffmpeg(manifestUrl)
+        .format("mp3")
+        .audioCodec("libmp3lame")
+        .audioBitrate(192)
+        .save(outputPath)
+        .on("end", () => resolve())
+        .on("error", (error) => reject(error));
+    });
+
+    const cleanupTimer = setTimeout(() => {
+      fs.promises.unlink(outputPath).catch(() => { });
+    }, 10 * 60 * 1000);
+    cleanupTimer.unref?.();
+
+    return outputPath;
+  }
+
   private formatNumber(number: number): string | null {
     if (isNaN(number)) return null;
     return number.toLocaleString("de-DE");
@@ -302,31 +399,44 @@ class SoundCloudAPI {
     try {
       const clientId = await this.getClientID();
 
-      const initialResponse = await this.request.get(link, { headers: API_HEADERS });
-      const responseUrl: string =  (initialResponse.request as any)?.res?.responseUrl || link;
+      const initialResponse = await this.getResponse<string>(link, { headers: API_HEADERS });
+      const responseUrl: string = (initialResponse.request as any)?.res?.responseUrl || link;
       const responseData = decodeURIComponent(responseUrl);
       const urlParts = responseData.replace("m.soundcloud.com", "soundcloud.com");
-      const { data } = await this.request.get<SoundCloudTrack>(
+      const { data } = await this.getResponse<SoundCloudTrack>(
         "https://api-v2.soundcloud.com/resolve",
         {
           headers: API_HEADERS,
           params: { url: urlParts, client_id: clientId },
-        }
+        },
+        true
       );
       const progressiveUrl = data?.media?.transcodings?.find(
         (t) => t.format.protocol === "progressive"
       )?.url;
-      if (!progressiveUrl) throw new Error("No suitable data found");
+      const hlsUrl = data?.media?.transcodings?.find(
+        (t) => t.format.protocol === "hls"
+      )?.url;
+      if (!progressiveUrl && !hlsUrl) throw new Error("No suitable data found");
 
       if (!data.track_authorization) {
-        throw new Error("Missing track_authorization for progressive stream");
+        throw new Error("Missing track_authorization for stream");
       }
 
+      const activeClientId = await this.getClientID();
       const trackAuthorization = encodeURIComponent(data.track_authorization);
-      const streamUrl = `${progressiveUrl}?client_id=${clientId}&track_authorization=${trackAuthorization}`;
-      const streamData = await this.request.get<{ url: string }>(streamUrl, { headers: API_HEADERS });
+      let url: string | undefined;
+      let localFilePath: string | undefined;
 
-      const { url } = streamData.data;
+      if (progressiveUrl) {
+        const streamUrl = `${progressiveUrl}?client_id=${activeClientId}&track_authorization=${trackAuthorization}`;
+        const streamData = await this.getResponse<{ url: string }>(streamUrl, { headers: API_HEADERS });
+        url = streamData.data.url;
+      } else if (hlsUrl) {
+        const streamUrl = `${hlsUrl}?client_id=${activeClientId}&track_authorization=${trackAuthorization}`;
+        const streamData = await this.getResponse<{ url: string }>(streamUrl, { headers: API_HEADERS });
+        localFilePath = await this.downloadHlsToMp3(streamData.data.url);
+      }
 
       return {
         id: data.id,
@@ -338,10 +448,12 @@ class SoundCloudAPI {
         share: this.formatNumber(Number(data.reposts_count)) || 0,
         duration: this.formatDuration(data.duration),
         create_at: this.formatDate(data.created_at),
+        localFilePath,
         attachments: [
           {
             type: "Audio",
             url,
+            localFilePath,
           },
         ],
       };
@@ -353,25 +465,20 @@ class SoundCloudAPI {
 
   async search(keywords: string, limit: number = 5): Promise<SearchResultItem[]> {
     try {
-      const clientId = await this.getClientID();
-
-      const { data } = await this.request.get<SearchResponse>(
+      const data = await this.resolveWithClientId<SearchResponse>(
         "https://api-v2.soundcloud.com/search/tracks",
         {
-          headers: API_HEADERS,
-          params: {
-            q: keywords,
-            client_id: clientId,
-            limit,
-            offset: 0,
-            linked_partitioning: 1,
-            app_version: APP_VERSION,
-            app_locale: "en",
-          } as any,
+          q: keywords,
+          limit,
+          offset: 0,
+          linked_partitioning: 1,
+          app_version: APP_VERSION,
+          app_locale: "en",
         }
       );
 
-      return data.collection.map((track) => ({
+      const collection = Array.isArray(data?.collection) ? data.collection : [];
+      return collection.map((track) => ({
         title: track.title,
         author: {
           avatar_url: track.user.avatar_url,
@@ -401,21 +508,28 @@ class SoundCloudAPI {
 
   async post(username: string): Promise<PostResultItem[]> {
     try {
-      const clientId = await this.getClientID();
-
-      const { data: userData } = await this.request.get<{ id: number }>(
-        `https://api-v2.soundcloud.com/resolve?url=https://soundcloud.com/${username}&client_id=${clientId}`
+      const userData = await this.resolveWithClientId<{ id: number }>(
+        "https://api-v2.soundcloud.com/resolve",
+        { url: `https://soundcloud.com/${username}` }
       );
 
       if (!userData.id) {
         throw new Error("User ID not found");
       }
 
-      const { data } = await this.request.get<StreamResponse>(
-        `https://api-v2.soundcloud.com/stream/users/${userData.id}?client_id=${clientId}&limit=20&offset=0&linked_partitioning=1&app_version=1735826482&app_locale=en`
+      const data = await this.resolveWithClientId<StreamResponse>(
+        `https://api-v2.soundcloud.com/stream/users/${userData.id}`,
+        {
+          limit: 20,
+          offset: 0,
+          linked_partitioning: 1,
+          app_version: 1735826482,
+          app_locale: "en",
+        }
       );
 
-      return data.collection.map((item) => ({
+      const collection = Array.isArray(data?.collection) ? data.collection : [];
+      return collection.map((item) => ({
         title: item.track.title,
         author: {
           avatar_url: item.track.user.avatar_url,

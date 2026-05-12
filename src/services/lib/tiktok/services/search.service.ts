@@ -1,330 +1,251 @@
-import axios from 'axios'
-import qs from 'qs'
-import { TIKTOK_API_URL } from '../constants/index.js'
-import createMobileHeadersSignature, { getBaseMobileParams } from '../tiktok-signer/signHeadersMobile.js'
-import tiktokUtils, { parseTikTokData } from '../utils/tiktok.util.js'
-import { extractXttTokenFromCookie, getTiktokCredentials } from './helpers.js'
-import type {
-  SearchOptions,
-  SearchStreamOptions,
-  SearchSingleOptions,
-  SearchItemOptions,
-  TikTokMusicFormatted,
-  FormattedAwemeItem,
-  ParsedAwemeItem,
-  TikTokApiResponse,
-  TikTokAwemeRaw
-} from '../types/index.js'
+import axios from 'axios';
+import qs from 'qs';
+import { TIKTOK_API_URL } from '../constants/index.js';
+import createMobileHeadersSignature, { getBaseMobileParams } from '../tiktok-signer/signHeadersMobile.js';
+import tiktokUtils, { parseTikTokData } from '../utils/tiktok.util.js';
+import { extractXttTokenFromCookie, getTiktokCredentials } from './helpers.js';
+import type { JsonObject, TikTokRequestOptions } from '../types.js';
 
-const buildSearchHeaders = (cookie: string, xTtToken?: string): Record<string, string> => {
+type SearchOptions = TikTokRequestOptions & {
+  keyword: string;
+  cursor?: number;
+  count?: number;
+  enterFrom?: string;
+  queryCorrectType?: number;
+  searchSource?: string;
+  searchId?: string;
+  requestTagFrom?: string;
+};
+
+const buildHeaders = (cookie: string, xTtToken: string | undefined, signatureHeaders: Record<string, string | undefined>): Record<string, string> => {
   const headers: Record<string, string> = {
     'User-Agent': 'com.zhiliaoapp.musically.go/420004 (Linux; U; Android 9; vi_VN; 23113RKC6C; Build/PQ3A.190605.06171036;tt-ok/3.12.13.44.lite-ul)',
-    'Accept-Encoding': 'gzip', 'rpc-persist-pyxis-policy-v-tnc': '1',
-    'x-ss-dp': '1340', 'x-tt-dataflow-id': '671088658', 'sdk-version': '2',
-    'passport-sdk-version': '-1', 'x-tt-ultra-lite': '1',
-    'x-vc-bdturing-sdk-version': '2.3.15.i18n', 'x-tt-store-region': 'vn',
-    'x-tt-store-region-src': 'uid', 'ttzip-tlb': '1', Cookie: cookie
-  }
-  if (xTtToken) headers['x-tt-token'] = xTtToken
-  return headers
-}
+    'Accept-Encoding': 'gzip',
+    'rpc-persist-pyxis-policy-v-tnc': '1',
+    'x-ss-dp': '1340',
+    'x-tt-dataflow-id': '671088658',
+    'sdk-version': '2',
+    'passport-sdk-version': '-1',
+    'x-tt-ultra-lite': '1',
+    'x-vc-bdturing-sdk-version': '2.3.15.i18n',
+    'x-tt-store-region': 'vn',
+    'x-tt-store-region-src': 'uid',
+    'ttzip-tlb': '1',
+    Cookie: cookie
+  };
+  if (xTtToken) headers['x-tt-token'] = xTtToken;
+  Object.entries(signatureHeaders).forEach(([k, v]) => {
+    if (v) headers[k] = v;
+  });
+  return headers;
+};
 
-interface SearchMusicResult {
-  musicList: TikTokMusicFormatted[]
-  cursor: number | string
-  hasMore: boolean
-  total: number
-}
-
-export const searchMusic = async (options: SearchOptions): Promise<SearchMusicResult> => {
+const searchMusic = async (options: SearchOptions): Promise<JsonObject> => {
   try {
     const {
-      keyword, cursor = 0, count = 10, enterFrom = 'homepage_hot',
-      queryCorrectType = 0, searchSource = 'switch_tab', searchId = '', requestTagFrom = 'h5'
-    } = options
+      keyword,
+      cursor = 0,
+      count = 10,
+      enterFrom = 'homepage_hot',
+      queryCorrectType = 0,
+      searchSource = 'switch_tab',
+      searchId = '',
+      requestTagFrom = 'h5'
+    } = options;
 
     const credentials = options.cookie
       ? { cookie: options.cookie, xTtToken: options.xTtToken }
-      : getTiktokCredentials()
-    const cookie = credentials.cookie
-    const xTtToken = credentials.xTtToken ?? extractXttTokenFromCookie(cookie)
-
-    const baseParams = getBaseMobileParams()
+      : getTiktokCredentials();
+    const cookie = credentials.cookie;
+    const xTtToken = credentials.xTtToken || extractXttTokenFromCookie(cookie);
+    const baseParams = getBaseMobileParams() as Record<string, string | number | boolean>;
     const params: Record<string, string> = {
       ...Object.fromEntries(Object.entries(baseParams).map(([k, v]) => [k, String(v)])),
-      cursor: cursor.toString(), enter_from: enterFrom, count: count.toString(),
-      keyword, query_correct_type: queryCorrectType.toString(),
-      search_source: searchSource, search_id: searchId, request_tag_from: requestTagFrom
+      cursor: String(cursor),
+      enter_from: enterFrom,
+      count: String(count),
+      keyword,
+      query_correct_type: String(queryCorrectType),
+      search_source: searchSource,
+      search_id: searchId,
+      request_tag_from: requestTagFrom
+    };
+
+    const signatureHeaders = createMobileHeadersSignature({
+      queryParams: qs.stringify(params),
+      cookies: cookie
+    }) as Record<string, string | undefined>;
+
+    const { data: responseData } = await axios.get(TIKTOK_API_URL.SEARCH_MUSIC, {
+      params,
+      headers: buildHeaders(cookie, xTtToken, signatureHeaders),
+      paramsSerializer: (inputParams) => qs.stringify(inputParams)
+    });
+
+    const response = responseData as JsonObject;
+    if (typeof response.status_code === 'number' && response.status_code !== 0) {
+      throw new Error(`TikTok API error: ${String(response.status_msg || 'Unknown error')} (code: ${response.status_code})`);
     }
-
-    const queryString = qs.stringify(params)
-    const signatureHeaders = createMobileHeadersSignature({ queryParams: queryString, cookies: cookie })
-    const headers = buildSearchHeaders(cookie, xTtToken)
-    Object.entries(signatureHeaders).forEach(([k, v]) => { if (v) headers[k] = v })
-
-    const { data: responseData } = await axios.get<TikTokApiResponse>(TIKTOK_API_URL.SEARCH_MUSIC, {
-      params, headers, paramsSerializer: (p) => qs.stringify(p, { encode: true })
-    })
-
-    if (responseData.status_code !== undefined && responseData.status_code !== 0) {
+    const musicList = Array.isArray(response.music_list) ? response.music_list : Array.isArray(response.music) ? response.music : [];
+    return {
+      musicList: musicList.map((music) => {
+        const item = music as JsonObject;
+        const coverMedium = (item.cover_medium || {}) as { url_list?: unknown[] };
+        const coverThumb = (item.cover_thumb || {}) as { url_list?: unknown[] };
+        const coverLarge = (item.cover_large || {}) as { url_list?: unknown[] };
+        const playUrl = (item.play_url || {}) as { url_list?: unknown[] };
+        return {
+          id: String(item.music_id || item.id || ''),
+          title: String(item.title || item.music_name || ''),
+          author: String(item.author || item.owner_nickname || ''),
+          coverUri: String(coverMedium.url_list?.[0] || coverThumb.url_list?.[0] || coverLarge.url_list?.[0] || ''),
+          duration: Number(item.duration || 0),
+          playUrl: String(playUrl.url_list?.[0] || item.play_url || '')
+        };
+      }),
+      cursor: Number(response.cursor || cursor),
+      hasMore: Number(response.has_more || 0) === 1,
+      total: Number(response.total || 0)
+    };
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error) && error.response) {
       throw new Error(
-        `TikTok API error: ${responseData.status_msg ?? 'Unknown error'} (code: ${responseData.status_code})`
-      )
+        `Failed to search music: HTTP ${error.response.status} - ${error.response.statusText || error.message}. Response: ${JSON.stringify(error.response?.data || {}).substring(0, 200)}`
+      );
     }
-
-    const musicList = responseData.music_list ?? responseData.music ?? []
-    const hasMore = responseData.has_more === 1
-    const total = responseData.total ?? 0
-    const nextCursor = responseData.cursor ?? cursor
-
-    const formattedMusicList: TikTokMusicFormatted[] = musicList.map((music) => ({
-      id: String(music.music_id ?? music.id ?? ''),
-      title: music.title ?? music.music_name ?? '',
-      author: music.author ?? music.owner_nickname ?? '',
-      coverUri:
-        music.cover_medium?.url_list?.[0] ??
-        music.cover_thumb?.url_list?.[0] ??
-        music.cover_large?.url_list?.[0] ??
-        '',
-      duration: music.duration ?? 0,
-      playUrl:
-        (typeof music.play_url === 'string'
-          ? music.play_url
-          : music.play_url?.url_list?.[0]) ?? undefined
-    }))
-
-    return { musicList: formattedMusicList, cursor: nextCursor, hasMore, total }
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.status) {
-      throw new Error(
-        `Failed to search music: HTTP ${error.response.status} - ${error.response.statusText ?? error.message}. Response: ${JSON.stringify(error.response?.data ?? {}).substring(0, 200)}`
-      )
-    }
-    if (error instanceof Error) throw new Error(`Failed to search music: ${error.message}`)
-    throw new Error('Failed to search music')
+    if (error instanceof Error) throw new Error(`Failed to search music: ${error.message}`);
+    throw new Error('Failed to search music');
   }
-}
+};
 
-interface SearchAwemeResult {
-  awemeList: FormattedAwemeItem[]
-  cursor: number | string
-  hasMore: boolean
-  total: number
-}
+const searchStream = async (options: SearchOptions): Promise<JsonObject> => {
+  const credentials = options.cookie
+    ? { cookie: options.cookie, xTtToken: options.xTtToken }
+    : getTiktokCredentials();
+  const cookie = credentials.cookie;
+  const xTtToken = credentials.xTtToken || extractXttTokenFromCookie(cookie);
+  const baseParams = getBaseMobileParams() as Record<string, string | number | boolean>;
+  const params: Record<string, string> = {
+    ...Object.fromEntries(Object.entries(baseParams).map(([k, v]) => [k, String(v)])),
+    cursor: String(options.cursor ?? 0),
+    count: String(options.count ?? 10),
+    keyword: options.keyword
+  };
 
-export const searchStream = async (options: SearchStreamOptions): Promise<SearchAwemeResult> => {
-  try {
-    const {
-      keyword, cursor = 0, count = 10, enterFrom = 'homepage_hot',
-      enableLiteWorkflow = 1, enableLiteCut = 1, backtrace = '', lastSearchId = '',
-      endToEndSearchSessionId = '', queryCorrectType = 0, searchSource = 'normal_search',
-      searchId = '', requestTagFrom = 'h5'
-    } = options
+  const signatureHeaders = createMobileHeadersSignature({
+    queryParams: qs.stringify(params),
+    cookies: cookie
+  }) as Record<string, string | undefined>;
 
-    const credentials = options.cookie
-      ? { cookie: options.cookie, xTtToken: options.xTtToken }
-      : getTiktokCredentials()
-    const cookie = credentials.cookie
-    const xTtToken = credentials.xTtToken ?? extractXttTokenFromCookie(cookie)
-
-    const baseParams = getBaseMobileParams()
-    const params: Record<string, string> = {
-      ...Object.fromEntries(Object.entries(baseParams).map(([k, v]) => [k, String(v)])),
-      cursor: cursor.toString(), enable_lite_workflow: enableLiteWorkflow.toString(),
-      enter_from: enterFrom, enable_lite_cut: enableLiteCut.toString(),
-      count: count.toString(), keyword: encodeURIComponent(keyword),
-      query_correct_type: queryCorrectType.toString(),
-      search_source: searchSource, request_tag_from: requestTagFrom
-    }
-
-    if (backtrace !== undefined) params.backtrace = backtrace || ''
-    if (lastSearchId) params.last_search_id = lastSearchId
-    if (endToEndSearchSessionId) params.end_to_end_search_session_id = endToEndSearchSessionId
-    if (searchId) params.search_id = searchId
-
-    const queryString = qs.stringify(params)
-    const signatureHeaders = createMobileHeadersSignature({ queryParams: queryString, cookies: cookie })
-    const headers = buildSearchHeaders(cookie, xTtToken)
-    Object.entries(signatureHeaders).forEach(([k, v]) => { if (v) headers[k] = v })
-
-    const { data: rawResponse } = await axios.get(TIKTOK_API_URL.SEARCH_STREAM, {
-      params, headers, paramsSerializer: (p) => qs.stringify(p, { encode: true })
-    })
-    const responseData = tiktokUtils.parseTiktokResponse(rawResponse) as TikTokApiResponse
-
-    if (responseData.status_code !== undefined && responseData.status_code !== 0) {
-      throw new Error(
-        `TikTok API error: ${responseData.status_msg ?? 'Unknown error'} (code: ${responseData.status_code})`
-      )
-    }
-
-    let awemeList: TikTokAwemeRaw[] = []
-    if (responseData.data && Array.isArray(responseData.data)) {
-      awemeList = responseData.data
-        .filter((item) => item.type === 1 && item.aweme_info)
-        .map((item) => item.aweme_info!)
-    } else if (responseData.aweme_list) {
-      awemeList = responseData.aweme_list
-    }
-
-    const hasMore = responseData.has_more === 1 || responseData.has_more === true
-    const total = responseData.total ?? awemeList.length
-    const nextCursor = responseData.cursor ?? cursor
-    const formattedAwemeList = awemeList.map((item) => tiktokUtils.formatAwemeItemResponse(item))
-
-    return { awemeList: formattedAwemeList, cursor: nextCursor, hasMore, total }
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.status) {
-      throw new Error(
-        `Failed to search stream: HTTP ${error.response.status} - ${error.response.statusText ?? error.message}. Response: ${JSON.stringify(error.response?.data ?? {}).substring(0, 200)}`
-      )
-    }
-    if (error instanceof Error) throw new Error(`Failed to search stream: ${error.message}`)
-    throw new Error('Failed to search stream')
+  const { data: rawResponse } = await axios.get(TIKTOK_API_URL.SEARCH_STREAM, {
+    params,
+    headers: buildHeaders(cookie, xTtToken, signatureHeaders),
+    paramsSerializer: (inputParams) => qs.stringify(inputParams)
+  });
+  const responseData = tiktokUtils.parseTiktokResponse(rawResponse) as JsonObject;
+  if (typeof responseData.status_code === 'number' && responseData.status_code !== 0) {
+    throw new Error(`TikTok API error: ${String(responseData.status_msg || 'Unknown error')} (code: ${responseData.status_code})`);
   }
-}
-
-interface SearchSingleResult {
-  awemeList: TikTokAwemeRaw[]
-  cursor: number | string
-  hasMore: boolean
-  total: number
-}
-
-export const searchSingle = async (options: SearchSingleOptions): Promise<SearchSingleResult> => {
-  try {
-    const {
-      keyword, cursor = 0, count = 10, enterFrom = 'homepage_hot',
-      enableLiteWorkflow = 1, enableLiteCut = 1, backtrace = '', lastSearchId = '',
-      endToEndSearchSessionId = '', queryCorrectType = 0, searchSource = 'normal_search',
-      searchId = '', requestTagFrom = 'h5', beforeSetStateTime, isNonPersonalizedSearch = 0
-    } = options
-
-    const credentials = options.cookie
-      ? { cookie: options.cookie, xTtToken: options.xTtToken }
-      : getTiktokCredentials()
-    const cookie = credentials.cookie
-    const xTtToken = credentials.xTtToken ?? extractXttTokenFromCookie(cookie)
-
-    const baseParams = getBaseMobileParams()
-    const params: Record<string, string> = {
-      ...Object.fromEntries(Object.entries(baseParams).map(([k, v]) => [k, String(v)])),
-      cursor: cursor.toString(), enter_from: enterFrom,
-      enable_lite_workflow: enableLiteWorkflow.toString(),
-      enable_lite_cut: enableLiteCut.toString(), count: count.toString(), keyword,
-      query_correct_type: queryCorrectType.toString(), search_source: searchSource,
-      request_tag_from: requestTagFrom,
-      is_non_personalized_search: isNonPersonalizedSearch.toString()
-    }
-
-    params.backtrace = backtrace !== undefined ? backtrace : ''
-    if (lastSearchId) params.last_search_id = lastSearchId
-    if (searchId) params.search_id = searchId
-    if (endToEndSearchSessionId) params.end_to_end_search_session_id = endToEndSearchSessionId
-    if (beforeSetStateTime !== undefined) params.beforeSetStateTime = beforeSetStateTime.toString()
-
-    const queryString = qs.stringify(params)
-    const signatureHeaders = createMobileHeadersSignature({ queryParams: queryString, cookies: cookie })
-    const headers = buildSearchHeaders(cookie, xTtToken)
-    Object.entries(signatureHeaders).forEach(([k, v]) => { if (v) headers[k] = v })
-
-    const { data: rawResponse } = await axios.get(TIKTOK_API_URL.SEARCH_SINGLE, {
-      params, headers, paramsSerializer: (p) => qs.stringify(p, { encode: true })
-    })
-    const responseData = tiktokUtils.parseTiktokResponse(rawResponse) as TikTokApiResponse
-
-    if (responseData.status_code !== undefined && responseData.status_code !== 0) {
-      throw new Error(
-        `TikTok API error: ${responseData.status_msg ?? 'Unknown error'} (code: ${responseData.status_code})`
-      )
-    }
-
-    let awemeList: TikTokAwemeRaw[] = []
-    if (responseData.data && Array.isArray(responseData.data)) {
-      awemeList = responseData.data
-        .filter((item) => item.type === 1 && item.aweme_info)
-        .map((item) => item.aweme_info!)
-    } else if (responseData.aweme_list) {
-      awemeList = responseData.aweme_list
-    }
-
-    const hasMore = responseData.has_more === 1 || responseData.has_more === true
-    const total = responseData.total ?? awemeList.length
-    const nextCursor = responseData.cursor ?? cursor
-
-    return { awemeList, cursor: nextCursor, hasMore, total }
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.status) {
-      throw new Error(
-        `Failed to search single: HTTP ${error.response.status} - ${error.response.statusText ?? error.message}. Response: ${JSON.stringify(error.response?.data ?? {}).substring(0, 200)}`
-      )
-    }
-    if (error instanceof Error) throw new Error(`Failed to search single: ${error.message}`)
-    throw new Error('Failed to search single')
+  let awemeList: JsonObject[] = [];
+  if (Array.isArray(responseData.data)) {
+    awemeList = responseData.data
+      .map((item) => item as JsonObject)
+      .filter((item) => Number(item.type || 0) === 1 && Boolean(item.aweme_info))
+      .map((item) => item.aweme_info as JsonObject);
+  } else if (Array.isArray(responseData.aweme_list)) {
+    awemeList = responseData.aweme_list as JsonObject[];
   }
-}
+  return {
+    awemeList: awemeList.map((item) => tiktokUtils.formatAwemeItemResponse(item)),
+    cursor: Number(responseData.cursor || options.cursor || 0),
+    hasMore: Number(responseData.has_more || 0) === 1 || responseData.has_more === true,
+    total: Number(responseData.total || awemeList.length)
+  };
+};
 
-interface SearchItemResult {
-  awemeList: ParsedAwemeItem[]
-  cursor: number | string
-  hasMore: boolean
-  total: number
-}
-
-export const searchItem = async (options: SearchItemOptions): Promise<SearchItemResult> => {
-  try {
-    const {
-      keyword, cursor = 0, count = 10, enterFrom = 'homepage_hot',
-      source = 'video_search', queryCorrectType = 0, searchSource = 'switch_tab',
-      searchId = '', requestTagFrom = 'h5'
-    } = options
-
-    const credentials = options.cookie
-      ? { cookie: options.cookie, xTtToken: options.xTtToken }
-      : getTiktokCredentials()
-    const cookie = credentials.cookie
-    const xTtToken = credentials.xTtToken ?? extractXttTokenFromCookie(cookie)
-
-    const baseParams = getBaseMobileParams()
-    const params: Record<string, string> = {
-      ...Object.fromEntries(Object.entries(baseParams).map(([k, v]) => [k, String(v)])),
-      cursor: cursor.toString(), enter_from: enterFrom, count: count.toString(),
-      source, keyword, query_correct_type: queryCorrectType.toString(),
-      search_source: searchSource, request_tag_from: requestTagFrom
-    }
-    if (searchId) params.search_id = searchId
-
-    const queryString = qs.stringify(params)
-    const signatureHeaders = createMobileHeadersSignature({ queryParams: queryString, cookies: cookie })
-    const headers = buildSearchHeaders(cookie, xTtToken)
-    Object.entries(signatureHeaders).forEach(([k, v]) => { if (v) headers[k] = v })
-
-    const { data: responseData } = await axios.get<TikTokApiResponse>(TIKTOK_API_URL.SEARCH_ITEM, {
-      params, headers, paramsSerializer: (p) => qs.stringify(p, { encode: true })
-    })
-
-    if (responseData.status_code !== undefined && responseData.status_code !== 0) {
-      throw new Error(
-        `TikTok API error: ${responseData.status_msg ?? 'Unknown error'} (code: ${responseData.status_code})`
-      )
-    }
-
-    const awemeListRaw = Array.isArray(responseData.aweme_list) ? responseData.aweme_list : []
-    const awemeList = parseTikTokData(awemeListRaw)
-    const hasMore = responseData.has_more === 1 || responseData.has_more === true
-    const total = responseData.total ?? awemeList.length
-    const nextCursor = responseData.cursor ?? cursor
-
-    return { awemeList, cursor: nextCursor, hasMore, total }
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.status) {
-      throw new Error(
-        `Failed to search item: HTTP ${error.response.status} - ${error.response.statusText ?? error.message}. Response: ${JSON.stringify(error.response?.data ?? {}).substring(0, 200)}`
-      )
-    }
-    if (error instanceof Error) throw new Error(`Failed to search item: ${error.message}`)
-    throw new Error('Failed to search item')
+const searchSingle = async (options: SearchOptions): Promise<JsonObject> => {
+  const credentials = options.cookie
+    ? { cookie: options.cookie, xTtToken: options.xTtToken }
+    : getTiktokCredentials();
+  const cookie = credentials.cookie;
+  const xTtToken = credentials.xTtToken || extractXttTokenFromCookie(cookie);
+  const baseParams = getBaseMobileParams() as Record<string, string | number | boolean>;
+  const params: Record<string, string> = {
+    ...Object.fromEntries(Object.entries(baseParams).map(([k, v]) => [k, String(v)])),
+    cursor: String(options.cursor ?? 0),
+    count: String(options.count ?? 10),
+    keyword: options.keyword
+  };
+  const signatureHeaders = createMobileHeadersSignature({
+    queryParams: qs.stringify(params),
+    cookies: cookie
+  }) as Record<string, string | undefined>;
+  const { data: rawResponse } = await axios.get(TIKTOK_API_URL.SEARCH_SINGLE, {
+    params,
+    headers: buildHeaders(cookie, xTtToken, signatureHeaders),
+    paramsSerializer: (inputParams) => qs.stringify(inputParams)
+  });
+  const responseData = tiktokUtils.parseTiktokResponse(rawResponse) as JsonObject;
+  let awemeList: JsonObject[] = [];
+  if (Array.isArray(responseData.data)) {
+    awemeList = responseData.data
+      .map((item) => item as JsonObject)
+      .filter((item) => Number(item.type || 0) === 1 && Boolean(item.aweme_info))
+      .map((item) => item.aweme_info as JsonObject);
+  } else if (Array.isArray(responseData.aweme_list)) {
+    awemeList = responseData.aweme_list as JsonObject[];
   }
-}
+  return {
+    awemeList,
+    cursor: Number(responseData.cursor || options.cursor || 0),
+    hasMore: Number(responseData.has_more || 0) === 1 || responseData.has_more === true,
+    total: Number(responseData.total || awemeList.length)
+  };
+};
 
-export default { searchMusic, searchStream, searchSingle, searchItem }
+const searchItem = async (options: SearchOptions): Promise<JsonObject> => {
+  const credentials = options.cookie
+    ? { cookie: options.cookie, xTtToken: options.xTtToken }
+    : getTiktokCredentials();
+  const cookie = credentials.cookie;
+  const xTtToken = credentials.xTtToken || extractXttTokenFromCookie(cookie);
+  const baseParams = getBaseMobileParams() as Record<string, string | number | boolean>;
+  const params: Record<string, string> = {
+    ...Object.fromEntries(Object.entries(baseParams).map(([k, v]) => [k, String(v)])),
+    cursor: String(options.cursor ?? 0),
+    count: String(options.count ?? 10),
+    keyword: options.keyword
+  };
+  const signatureHeaders = createMobileHeadersSignature({
+    queryParams: qs.stringify(params),
+    cookies: cookie
+  }) as Record<string, string | undefined>;
+  const { data: responseData } = await axios.get(TIKTOK_API_URL.SEARCH_ITEM, {
+    params,
+    headers: buildHeaders(cookie, xTtToken, signatureHeaders),
+    paramsSerializer: (inputParams) => qs.stringify(inputParams)
+  });
+  const response = responseData as JsonObject;
+  const rawAwemeList = Array.isArray(response.aweme_list) ? response.aweme_list : [];
+  const awemeList = parseTikTokData(rawAwemeList as JsonObject[]);
+  return {
+    awemeList,
+    cursor: Number(response.cursor || options.cursor || 0),
+    hasMore: Number(response.has_more || 0) === 1 || response.has_more === true,
+    total: Number(response.total || awemeList.length)
+  };
+};
+
+export {
+  searchMusic,
+  searchStream,
+  searchSingle,
+  searchItem
+};
+
+export default {
+  searchMusic,
+  searchStream,
+  searchSingle,
+  searchItem
+};

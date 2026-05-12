@@ -1,3 +1,3 @@
-import TiktokService from './index.js'
+import TiktokService from './index.js';
 
-export default TiktokService
+export default TiktokService;

@@ -561,10 +561,11 @@ const atd = {
         if (trackInfo.attachments && trackInfo.attachments.length > 0) {
           const audioAttachment = trackInfo.attachments.find((att: any) => att.type === "Audio");
           const audioUrl = audioAttachment ? audioAttachment.url : null;
-          if (!audioUrl) return;
+          const localFilePath = trackInfo.localFilePath || audioAttachment?.localFilePath || null;
+          if (!audioUrl && !localFilePath) return;
           reply({
             body: `SOUNDCLOUD: ${trackInfo.title}\nTác giả: ${trackInfo.author}\n👀 ${trackInfo.playback} | ❤️ ${trackInfo.likes} | 💬 ${trackInfo.comment}`,
-            attachment: await utils.stream(audioUrl, "mp3"),
+            attachment: localFilePath ? fs.createReadStream(localFilePath) : await utils.stream(String(audioUrl), "mp3"),
           });
         }
       }

@@ -1,6 +1,6 @@
 "use strict";
 import axios from "axios";
-import * as cheerio from "cheerio";
+import cheerio from "cheerio";
 import FormData from "form-data";
 
 export interface MakerResult {
