@@ -1,5 +1,9 @@
 import log from "@log";
 import type { Context, GlobalOptions } from "../../types/request.js";
+import {
+  CheckpointRequiredError,
+  isCheckpointManualRequired,
+} from "./checkpointCooldown.js";
 
 let lastGuardLogAt = 0;
 
@@ -32,6 +36,27 @@ function effectiveCooldownUntil(
   );
 }
 
+function effectiveManualCheckpointRequired(
+  ctx: Context | null | undefined,
+  options: GlobalOptions | null | undefined
+): boolean {
+  return (
+    isCheckpointManualRequired(ctx ?? undefined) ||
+    isCheckpointManualRequired(options ?? undefined)
+  );
+}
+
+function effectiveCheckpointReason(
+  ctx: Context | null | undefined,
+  options: GlobalOptions | null | undefined
+): string {
+  return String(
+    ctx?._checkpointCooldownReason ||
+      options?._checkpointCooldownReason ||
+      "manual checkpoint review required"
+  );
+}
+
 export class ApiCooldownError extends Error {
   readonly code = "API_COOLDOWN" as const;
   constructor(message: string) {
@@ -53,6 +78,26 @@ export async function gateRequest<T>(
 ): Promise<T> {
   const now = Date.now();
   const until = effectiveCooldownUntil(ctx ?? undefined, options ?? undefined);
+  const manualRequired = effectiveManualCheckpointRequired(
+    ctx ?? undefined,
+    options ?? undefined
+  );
+
+  if (
+    manualRequired &&
+    !isBypassUrl(url) &&
+    !ctx?._autoLoginRequestInFlight
+  ) {
+    const reason = effectiveCheckpointReason(ctx ?? undefined, options ?? undefined);
+    const e = new CheckpointRequiredError(
+      `Tai khoan dang bi checkpoint/warning va can xu ly thu cong - ${label}`
+    );
+    guardLogOncePer(
+      30_000,
+      `[RequestGuard] manual checkpoint required -> block ${label} ${String(url).slice(0, 120)} (${reason})`
+    );
+    throw e;
+  }
 
   if (
     until > now &&

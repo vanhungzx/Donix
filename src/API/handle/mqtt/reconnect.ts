@@ -5,9 +5,14 @@ import {
   isCheckpoint282Signal,
 } from "./checkpointSignals";
 import { reloadConfig } from "../../../core/configManager";
-import { saveCookies } from "../../request/clients.js";
+import {
+  clearCheckpointManualRequired,
+  isCheckpointManualRequired,
+  setCheckpointManualRequired,
+} from "../../request/checkpointCooldown.js";
+import { bypassScrapingWarning } from "../../login/bypassScrapingWarning.js";
 import { parseAndCheckLogin } from "../../request/formatters/helpers";
-import { get, post } from "../../request/index";
+import { get } from "../../request/index";
 import { maxReconnectAttempts, reconnectBackoff, topics } from "./constants";
 import { buildQuery, type GetSeqIdResult } from "./sequenceId";
 
@@ -114,6 +119,16 @@ function isMqttClientReadyForTraffic(ctx: any, mqttClient: any): boolean {
   );
 }
 
+function markManualCheckpointRequired(ctx: any, reason: string): void {
+  setCheckpointManualRequired(ctx, { ms: 15 * 60_000, reason });
+  if (ctx?.options && ctx.options !== ctx) {
+    setCheckpointManualRequired(ctx.options, { ms: 15 * 60_000, reason });
+  }
+  if (ctx?.globalOptions && ctx.globalOptions !== ctx.options) {
+    setCheckpointManualRequired(ctx.globalOptions, { ms: 15 * 60_000, reason });
+  }
+}
+
 /**
  * Main reconnect handler for MQTT with improved logic
  */
@@ -160,75 +175,26 @@ export async function reconnectMqttHandler(
   ctx.isReconnecting = true;
   const skipLoginCheck = forceReconnect === true;
 
-  // Helper function để bypass checkpoint
+  // Helper function để bypass checkpoint — dùng native fetch, không qua requestGuard
   const bypassCheckpoint = async (html: string): Promise<boolean> => {
+    log.warn("Phat hien checkpoint scraping warning 049. Dang thu bypass bang FBScrapingWarningMutation...");
     try {
-      const getFrom = (str: string, start: string, end: string): string | null => {
-        const startIdx = str.indexOf(start);
-        if (startIdx === -1) return null;
-        const endIdx = str.indexOf(end, startIdx + start.length);
-        if (endIdx === -1) return null;
-        return str.substring(startIdx + start.length, endIdx);
-      };
-
-      const cookieUID = async (): Promise<string | undefined> => {
-        try {
-          const cookies = typeof ctx.jar?.getCookies === "function"
-            ? await ctx.jar.getCookies("https://www.facebook.com")
-            : [];
-          return cookies.find((c: any) => c.key === "i_user")?.value ||
-            cookies.find((c: any) => c.key === "c_user")?.value;
-        } catch {
-          return undefined;
-        }
-      };
-
-      const htmlUID = (body: string): string | null => {
-        const match = body.match(/"USER_ID"\s*:\s*"(\d+)"/) ||
-          body.match(/\["CurrentUserInitialData",\[\],\{.*?"USER_ID":"(\d+)".*?\},\d+\]/);
-        return match?.[1] || null;
-      };
-
-      const UID = (await cookieUID()) || htmlUID(html);
-      if (!UID) {
-        log.warn("Không tìm thấy UID để bypass checkpoint");
-        return false;
+      const ok = await bypassScrapingWarning(ctx.jar, html);
+      if (ok) {
+        log.success("Bypass scraping warning thanh cong trong reconnect!");
+        clearCheckpointManualRequired(ctx);
+        if (ctx?.options) clearCheckpointManualRequired(ctx.options);
+        if (ctx?.globalOptions) clearCheckpointManualRequired(ctx.globalOptions);
+        if (ctx._checkpointCooldownUntil) ctx._checkpointCooldownUntil = 0;
+        if (ctx._autoLoginCooldownUntil) ctx._autoLoginCooldownUntil = 0;
+        return true;
       }
-
-      const fb_dtsg = getFrom(html, '"DTSGInitData",[],{"token":"', '",') ||
-        html.match(/name="fb_dtsg"\s+value="([^"]+)"/)?.[1];
-      const jazoest = getFrom(html, 'name="jazoest" value="', '"') ||
-        getFrom(html, "jazoest=", '",') ||
-        html.match(/name="jazoest"\s+value="([^"]+)"/)?.[1];
-      const lsd = getFrom(html, '["LSD",[],{"token":"', '"}') ||
-        html.match(/name="lsd"\s+value="([^"]+)"/)?.[1];
-
-      if (!fb_dtsg || !jazoest || !lsd) {
-        log.warn("Không tìm thấy đủ thông tin để bypass checkpoint");
-        return false;
-      }
-
-      const form = {
-        av: UID,
-        fb_dtsg,
-        jazoest,
-        lsd,
-        fb_api_caller_class: "RelayModern",
-        fb_api_req_friendly_name: "FBScrapingWarningMutation",
-        variables: "{}",
-        server_timestamps: true,
-        doc_id: 6339492849481770,
-      };
-
-      await post("https://www.facebook.com/api/graphqlbatch/", ctx.jar, form, ctx)
-        .then(saveCookies(ctx.jar));
-
-      log.warn("Đã thử bypass checkpoint automation của Facebook...");
-      return true;
     } catch (e: any) {
-      log.error(`Lỗi khi bypass checkpoint: ${e?.message || e}`);
-      return false;
+      log.warn(`Bypass scraping warning that bai: ${e?.message || e}`);
     }
+    markManualCheckpointRequired(ctx, "checkpoint scraping warning");
+    log.error("Bypass khong thanh cong. Yeu cau xu ly checkpoint thu cong.");
+    return false;
   };
 
   if (!skipLoginCheck) {
@@ -279,7 +245,7 @@ export async function reconnectMqttHandler(
     if (resStr.includes("XCheckpointFBScrapingWarningController") ||
       resStr.includes("601051028565049") ||
       url.includes("checkpoint/601051028565049")) {
-      log.warn("Phát hiện checkpoint scraping warning, đang thử bypass...");
+      log.warn("Phat hien checkpoint scraping warning, dung reconnect va yeu cau xu ly thu cong...");
       const bypassed = await bypassCheckpoint(resStr);
 
       if (bypassed) {
@@ -544,6 +510,21 @@ export async function reconnectMqttHandler(
               });
           }, retryDelay);
 
+          resolve(false);
+          return;
+        }
+        if (
+          seqResult === "fatal" &&
+          (
+            isCheckpointManualRequired(ctx) ||
+            isCheckpointManualRequired(ctx?.options) ||
+            isCheckpointManualRequired(ctx?.globalOptions)
+          )
+        ) {
+          log.error("MQTT reconnect dung lai: tai khoan dang can xu ly checkpoint thu cong.");
+          isReconnecting = false;
+          ctx.isReconnecting = false;
+          reconnectPromise = null;
           resolve(false);
           return;
         }

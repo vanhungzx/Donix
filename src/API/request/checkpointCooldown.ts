@@ -8,6 +8,15 @@ function normalizeReason(reason: unknown): string {
   return String(reason ?? "").trim();
 }
 
+export class CheckpointRequiredError extends Error {
+  readonly code = "CHECKPOINT_REQUIRED" as const;
+
+  constructor(message: string) {
+    super(message);
+    this.name = "CheckpointRequiredError";
+  }
+}
+
 export function isCheckpointLikeError(error: unknown): boolean {
   const message = normalizeReason(
     error instanceof Error ? error.message : error
@@ -24,6 +33,12 @@ export function getCheckpointCooldownRemaining(
 ): number {
   const until = Number(ctxOrOpts?._checkpointCooldownUntil ?? 0);
   return until > Date.now() ? until - Date.now() : 0;
+}
+
+export function isCheckpointManualRequired(
+  target: RequestCooldownState | null | undefined
+): boolean {
+  return target?._checkpointManualRequired === true;
 }
 
 /**
@@ -52,6 +67,29 @@ export function setCheckpointCooldown(
   target._autoLoginCooldownUntil = Math.max(currentAuto, Number(target._checkpointCooldownUntil));
 
   return getCheckpointCooldownRemaining(target);
+}
+
+export function setCheckpointManualRequired(
+  target: RequestCooldownState | null | undefined,
+  options: { ms?: number; reason?: string } = {}
+): number {
+  const remaining = setCheckpointCooldown(target, options);
+  if (!target) {
+    return remaining;
+  }
+  target._checkpointManualRequired = true;
+  target._checkpointDetectedAt = Date.now();
+  return remaining;
+}
+
+export function clearCheckpointManualRequired(
+  target: RequestCooldownState | null | undefined
+): void {
+  if (!target) {
+    return;
+  }
+  target._checkpointManualRequired = false;
+  target._checkpointDetectedAt = undefined;
 }
 
 export function logCheckpointCooldown(

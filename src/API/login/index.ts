@@ -102,7 +102,11 @@ export default function login(
         }
         globalDonix.Donix.api = client as unknown as DonixGlobalState["api"];
         (callback as LoginCallback)(null, client);
-      }).catch((callback as LoginCallback));
+      }).catch((err: unknown) => {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        log.error(errorMessage);
+        (callback as LoginCallback)(errorMessage);
+      });
   } catch (e: Error | unknown) {
     const errorMessage = e instanceof Error ? e.message : String(e);
     log.error(`CookieStr không hợp lệ: ${errorMessage}`);

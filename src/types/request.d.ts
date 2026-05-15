@@ -56,6 +56,8 @@ export interface RequestCooldownState {
   _checkpointCooldownUntil?: number;
   _checkpointCooldownReason?: string;
   _checkpointCooldownLogMap?: Map<string, number>;
+  _checkpointManualRequired?: boolean;
+  _checkpointDetectedAt?: number;
   _autoLoginCooldownUntil?: number;
 }
 

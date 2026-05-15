@@ -1,8 +1,11 @@
 import log from "@log";
 import utils, { get } from "../../request/index";
+import { clearCheckpointManualRequired, setCheckpointManualRequired } from "../../request/checkpointCooldown.js";
+import { bypassScrapingWarning } from "../../login/bypassScrapingWarning.js";
 import { GRAPHQL_DOC_ID } from "./constants";
 import { isCheckpoint282Signal, isCheckpoint956Signal } from "./checkpointSignals";
 import { getSequenceIdFromHtml } from "./htmlSequenceId";
+
 const { parseAndCheckLogin } = utils;
 
 export type GetSeqIdResult = "started" | "retry" | "fatal";
@@ -52,18 +55,22 @@ function formatSignalForLog(input: unknown): string {
   return text.length > 280 ? `${text.slice(0, 277)}...` : text;
 }
 
-export async function handleAutoLogin(ctx: any, resData: any, retry = true, _defaultFuncs: any): Promise<void> {
+export async function handleAutoLogin(
+  ctx: any,
+  resData: any,
+  retry = true,
+  _defaultFuncs: any
+): Promise<void> {
   const resStr = signalText(resData);
   if (isLoggedOutSignal(resStr)) {
     if (!ctx.auto_login && retry) {
       ctx.auto_login = true;
-      console.error("Phiên đăng nhập hết hạn");
+      console.error("Phien dang nhap het han");
     }
   }
 
-  // Xử lý checkpoint 282 - tự động đổi acc
   if (isCheckpoint282Signal(resStr)) {
-    log.error("Bot bị checkpoint 282, đang tự động đổi tài khoản...");
+    log.error("Bot bi checkpoint 282, dang tu dong doi tai khoan...");
     try {
       const { default: autoRelogin } = await import("../../../core/auth_login/auto_relogin");
       const { reloadConfig } = await import("../../../core/configManager");
@@ -71,24 +78,23 @@ export async function handleAutoLogin(ctx: any, resData: any, retry = true, _def
       if (ok) {
         const reloadResult = await reloadConfig();
         if (!reloadResult.success) {
-          log.warn(`Không thể reload config sau auto login: ${reloadResult.error || "Unknown error"}`);
+          log.warn(`Khong the reload config sau auto login: ${reloadResult.error || "Unknown error"}`);
         }
-        log.success("AUTO-LOGIN thành công sau checkpoint 282! Đang khởi động lại...");
+        log.success("AUTO-LOGIN thanh cong sau checkpoint 282! Dang khoi dong lai...");
         process.exit(1);
       } else {
-        log.error("AUTO-LOGIN thất bại sau checkpoint 282. Vui lòng kiểm tra lại thông tin đăng nhập!");
+        log.error("AUTO-LOGIN that bai sau checkpoint 282. Vui long kiem tra lai thong tin dang nhap!");
         process.exit(0);
       }
     } catch (autoErr: any) {
-      log.error(`Lỗi khi thực hiện AUTO-LOGIN sau checkpoint 282: ${autoErr?.message || autoErr}`);
+      log.error(`Loi khi thuc hien AUTO-LOGIN sau checkpoint 282: ${autoErr?.message || autoErr}`);
       process.exit(0);
     }
     return;
   }
 
-  // Xử lý checkpoint 956 - tự động đổi acc
   if (isCheckpoint956Signal(resStr)) {
-    log.error("Bot bị checkpoint 956, đang tự động đổi tài khoản...");
+    log.error("Bot bi checkpoint 956, dang tu dong doi tai khoan...");
     try {
       const { default: autoRelogin } = await import("../../../core/auth_login/auto_relogin");
       const { reloadConfig } = await import("../../../core/configManager");
@@ -96,16 +102,16 @@ export async function handleAutoLogin(ctx: any, resData: any, retry = true, _def
       if (ok) {
         const reloadResult = await reloadConfig();
         if (!reloadResult.success) {
-          log.warn(`Không thể reload config sau auto login: ${reloadResult.error || "Unknown error"}`);
+          log.warn(`Khong the reload config sau auto login: ${reloadResult.error || "Unknown error"}`);
         }
-        log.success("AUTO-LOGIN thành công sau checkpoint 956! Đang khởi động lại...");
+        log.success("AUTO-LOGIN thanh cong sau checkpoint 956! Dang khoi dong lai...");
         process.exit(1);
       } else {
-        log.error("AUTO-LOGIN thất bại sau checkpoint 956. Vui lòng kiểm tra lại thông tin đăng nhập!");
+        log.error("AUTO-LOGIN that bai sau checkpoint 956. Vui long kiem tra lai thong tin dang nhap!");
         process.exit(0);
       }
     } catch (autoErr: any) {
-      log.error(`Lỗi khi thực hiện AUTO-LOGIN sau checkpoint 956: ${autoErr?.message || autoErr}`);
+      log.error(`Loi khi thuc hien AUTO-LOGIN sau checkpoint 956: ${autoErr?.message || autoErr}`);
       process.exit(0);
     }
     return;
@@ -119,7 +125,11 @@ export async function handleAutoLogin(ctx: any, resData: any, retry = true, _def
   }
 }
 
-export function buildQuery(limit = 50, tags = ["INBOX", "ARCHIVED", "PENDING", "OTHER"], includeReceipts = true): any {
+export function buildQuery(
+  limit = 50,
+  tags = ["INBOX", "ARCHIVED", "PENDING", "OTHER"],
+  includeReceipts = true
+): any {
   return {
     o0: {
       doc_id: GRAPHQL_DOC_ID,
@@ -128,39 +138,45 @@ export function buildQuery(limit = 50, tags = ["INBOX", "ARCHIVED", "PENDING", "
         before: null,
         tags,
         includeDeliveryReceipts: includeReceipts,
-        includeSeqID: true
-      }
-    }
+        includeSeqID: true,
+      },
+    },
   };
 }
 
-export async function getSequenceIdFromHtmlOrGraphQL(ctx: any, defaultFuncs: any): Promise<string | null> {
+export async function getSequenceIdFromHtmlOrGraphQL(
+  ctx: any,
+  defaultFuncs: any
+): Promise<string | null> {
   try {
-    // Ưu tiên lấy từ HTML trước
-    log.system("Đang lấy sequence ID từ HTML...");
+    log.system("Dang lay sequence ID tu HTML...");
     const htmlRes = await get("https://www.facebook.com/", ctx.jar, undefined, ctx);
     const html = typeof htmlRes?.data === "string" ? htmlRes.data : String(htmlRes?.data ?? "");
     let newSeqId = getSequenceIdFromHtml(html);
 
     if (newSeqId) {
-      log.success(`Đã lấy sequence ID từ HTML: ${newSeqId}`);
+      log.success(`Da lay sequence ID tu HTML: ${newSeqId}`);
       return newSeqId;
     }
 
-    // Nếu không lấy được từ HTML, thử lấy từ GraphQL
-    log.warn("Không tìm thấy sequence ID từ HTML, đang thử lấy từ GraphQL...");
+    log.warn("Khong tim thay sequence ID tu HTML, dang thu lay tu GraphQL...");
     if (defaultFuncs) {
       try {
         const postData = {
           av: ctx.userID,
-          queries: JSON.stringify(buildQuery(1, ["INBOX"], true))
+          queries: JSON.stringify(buildQuery(1, ["INBOX"], true)),
         };
 
-        const rawRes = await defaultFuncs.post("https://www.facebook.com/api/graphqlbatch/", ctx.jar, postData, ctx);
+        const rawRes = await defaultFuncs.post(
+          "https://www.facebook.com/api/graphqlbatch/",
+          ctx.jar,
+          postData,
+          ctx
+        );
         const resData = await parseAndCheckLogin(ctx, defaultFuncs)(rawRes);
 
         if (isScrapingWarningSignal(resData)) {
-          log.warn("GraphQL trả về scraping warning 049 khi lấy sequence ID, sẽ xử lý ở vòng retry.");
+          log.warn("GraphQL tra ve scraping warning 049 khi lay sequence ID.");
           return null;
         }
 
@@ -168,23 +184,23 @@ export async function getSequenceIdFromHtmlOrGraphQL(ctx: any, defaultFuncs: any
           const syncSeqId = resData[0]?.o0?.data?.viewer?.message_threads?.sync_sequence_id;
           if (syncSeqId) {
             newSeqId = typeof syncSeqId === "string" ? syncSeqId : String(syncSeqId);
-            log.success(`Đã lấy sequence ID từ GraphQL: ${newSeqId}`);
+            log.success(`Da lay sequence ID tu GraphQL: ${newSeqId}`);
             return newSeqId;
           }
         }
       } catch (error: any) {
         if (isScrapingWarningSignal(error)) {
-          log.warn("GraphQL trả về scraping warning 049 khi lấy sequence ID, sẽ xử lý ở fallback.");
+          log.warn("GraphQL tra ve scraping warning 049 khi lay sequence ID.");
         } else {
-          log.warn(`Lỗi khi lấy sequence ID từ GraphQL: ${formatSignalForLog(error)}`);
+          log.warn(`Loi khi lay sequence ID tu GraphQL: ${formatSignalForLog(error)}`);
         }
       }
     }
 
-    log.warn("Không thể lấy sequence ID từ cả HTML và GraphQL");
+    log.warn("Khong the lay sequence ID tu ca HTML va GraphQL");
     return null;
   } catch (error: any) {
-    log.error(`Lỗi khi lấy sequence ID: ${error?.message || error}`);
+    log.error(`Loi khi lay sequence ID: ${error?.message || error}`);
     return null;
   }
 }
@@ -200,7 +216,6 @@ export function createGetSeqID(
   return async () => {
     ctx.t_mqttCalled = false;
 
-    // Ưu tiên lấy từ HTML trước
     const seqIdFromHtml = await getSequenceIdFromHtmlOrGraphQL(ctx, defaultFuncs);
     if (seqIdFromHtml) {
       ctx.lastSeqId = seqIdFromHtml;
@@ -208,11 +223,11 @@ export function createGetSeqID(
       return "started";
     }
 
-    // Fallback về GraphQL như cũ
     const postData = {
       av: ctx.userID,
-      queries: JSON.stringify(buildQuery(1, ["INBOX"], false))
+      queries: JSON.stringify(buildQuery(1, ["INBOX"], false)),
     };
+
     return defaultFuncs
       .post("https://www.facebook.com/api/graphqlbatch/", ctx.jar, postData)
       .then(parseAndCheckLogin(ctx, defaultFuncs))
@@ -223,15 +238,15 @@ export function createGetSeqID(
         }
         await handleAutoLogin(ctx, resData, false, defaultFuncs);
         if (!Array.isArray(resData) || !resData.length) {
-          log.warn("getSeqID: Không có dữ liệu GraphQL để khởi động lại MQTT");
+          log.warn("getSeqID: Khong co du lieu GraphQL de khoi dong lai MQTT");
           return "retry" as const;
         }
         const lastRes = resData[resData.length - 1];
         if (lastRes?.error_results > 0) {
-          console.warn("getSeqID: Có lỗi trong kết quả", resData[0]?.o0?.errors);
+          console.warn("getSeqID: Co loi trong ket qua", resData[0]?.o0?.errors);
         }
         if (lastRes?.successful_results === 0) {
-          console.warn("getSeqID: Không có kết quả thành công", resData);
+          console.warn("getSeqID: Khong co ket qua thanh cong", resData);
           return "retry" as const;
         }
         const syncSeqId = resData[0]?.o0?.data?.viewer?.message_threads?.sync_sequence_id;
@@ -239,57 +254,48 @@ export function createGetSeqID(
           ctx.lastSeqId = syncSeqId;
           listenMqtt(defaultFuncs, api, ctx, globalCallback);
           return "started" as const;
-        } else {
-          console.warn("getSeqID: Không tìm thấy sync_sequence_id", resData);
-          return "retry" as const;
         }
+        console.warn("getSeqID: Khong tim thay sync_sequence_id", resData);
+        return "retry" as const;
       })
-      .catch((err: any) => handleGetSeqIDError(err, ctx, api, globalCallback, messageCleanupInterval));
+      .catch((err: any) =>
+        handleGetSeqIDError(err, ctx, api, globalCallback, messageCleanupInterval)
+      );
   };
 }
 
-export function handleFBWarning(api: any, _ctx: any, _messageCleanupInterval: NodeJS.Timeout | null): Promise<boolean> {
-  log.warn("Phát hiện scraping warning 049, đang thử clear mềm trước khi retry MQTT...");
-  return new Promise<boolean>((resolve) => {
-    api.httpPost(
-      "https://www.facebook.com/api/graphql/",
-      {
-        av: api.getCurrentUserID(),
-        fb_api_caller_class: "RelayModern",
-        fb_api_req_friendly_name: "FBScrapingWarningMutation",
-        variables: "{}",
-        server_timestamps: "true",
-        doc_id: "6339492849481770"
-      },
-      (err: any, response: any) => {
-        if (err) {
-          log.error(`HTTP error khi clear FB warning 049: ${formatSignalForLog(err)}`);
-          resolve(false);
-          return;
-        }
-        let result;
-        try {
-          result = JSON.parse(response);
-        } catch (e: any) {
-          log.error(`Invalid JSON khi clear FB warning 049: ${e.message}`);
-          resolve(false);
-          return;
-        }
-        if (result.errors) {
-          log.error(`FB API error khi clear warning 049: ${result.errors[0]?.message || "Unknown"}`);
-          resolve(false);
-          return;
-        }
-        if (result.data?.fb_scraping_warning_clear?.success) {
-          log.success("FB warning 049 cleared");
-          resolve(true);
-        } else {
-          log.error("Failed to clear FB warning 049");
-          resolve(false);
-        }
-      }
-    );
-  });
+export async function handleFBWarning(
+  _api: any,
+  ctx: any,
+  _messageCleanupInterval: NodeJS.Timeout | null
+): Promise<boolean> {
+  log.warn("Phat hien scraping warning 049. Dang thu bypass bang FBScrapingWarningMutation...");
+  try {
+    const ok = await bypassScrapingWarning(ctx.jar);
+    if (ok) {
+      log.success("Bypass scraping warning thanh cong trong getSeqID!");
+      clearCheckpointManualRequired(ctx);
+      if (ctx?.options) clearCheckpointManualRequired(ctx.options);
+      if (ctx?.globalOptions) clearCheckpointManualRequired(ctx.globalOptions);
+      if (ctx._checkpointCooldownUntil) ctx._checkpointCooldownUntil = 0;
+      if (ctx._autoLoginCooldownUntil) ctx._autoLoginCooldownUntil = 0;
+      return true;
+    }
+  } catch (e: any) {
+    log.warn(`Bypass scraping warning that bai: ${e?.message || e}`);
+  }
+  const reason = "checkpoint scraping warning";
+  setCheckpointManualRequired(ctx, { ms: 15 * 60_000, reason });
+  if (ctx?.options && ctx.options !== ctx) {
+    setCheckpointManualRequired(ctx.options, { ms: 15 * 60_000, reason });
+  }
+  if (ctx?.globalOptions && ctx.globalOptions !== ctx.options) {
+    setCheckpointManualRequired(ctx.globalOptions, { ms: 15 * 60_000, reason });
+  }
+  log.error(
+    "Phat hien scraping warning 049. Bypass khong thanh cong, yeu cau xu ly checkpoint thu cong."
+  );
+  return false;
 }
 
 export async function handleGetSeqIDError(
@@ -299,22 +305,20 @@ export async function handleGetSeqIDError(
   globalCallback: any,
   messageCleanupInterval: NodeJS.Timeout | null
 ): Promise<GetSeqIdResult> {
-  const errCode = err?.code || err?.errno || '';
-  const errMessage = String(err?.message || err || '').toLowerCase();
+  const errCode = err?.code || err?.errno || "";
+  const errMessage = String(err?.message || err || "").toLowerCase();
   const isNetworkErr =
-    errCode === 'ENOTFOUND' ||
-    errCode === 'ECONNRESET' ||
-    errCode === 'ECONNREFUSED' ||
-    errCode === 'ETIMEDOUT' ||
-    errMessage.includes('getaddrinfo enotfound') ||
-    errMessage.includes('econnreset') ||
-    errMessage.includes('connection reset') ||
-    errMessage.includes('network');
+    errCode === "ENOTFOUND" ||
+    errCode === "ECONNRESET" ||
+    errCode === "ECONNREFUSED" ||
+    errCode === "ETIMEDOUT" ||
+    errMessage.includes("getaddrinfo enotfound") ||
+    errMessage.includes("econnreset") ||
+    errMessage.includes("connection reset") ||
+    errMessage.includes("network");
 
   if (isNetworkErr) {
-    log.warn(`getSeqID error (lỗi mạng): ${err?.message || err}. Sẽ tự động thử lại khi có mạng...`);
-    // Đối với lỗi mạng, không gọi globalCallback với error để tránh trigger các handlers khác
-    // Reconnect logic sẽ tự động retry
+    log.warn(`getSeqID error (loi mang): ${err?.message || err}. Se tu dong thu lai khi co mang...`);
     return "retry";
   }
 
@@ -322,10 +326,11 @@ export async function handleGetSeqIDError(
     const cleared = await handleFBWarning(api, ctx, messageCleanupInterval);
     return cleared ? "retry" : "fatal";
   }
+
   log.error(`getSeqID error: ${formatSignalForLog(err)}`);
   const errStr = signalText(err);
   if (errStr.includes("https://www.facebook.com/login.php?")) {
-    console.error("Phiên đăng nhập hết hạn");
+    console.error("Phien dang nhap het han");
   }
   if (isLoggedOutSignal(err) && !isScrapingWarningSignal((err as any)?.res)) {
     ctx.loggedIn = false;
