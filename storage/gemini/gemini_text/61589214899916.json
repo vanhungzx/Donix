@@ -32,6 +32,22 @@
           "text": "Bạn muốn biết gì về Gemini? Gemini là gì hay bạn muốn biết thông tin cụ thể nào khác?\n\nTôi là một mô hình ngôn ngữ lớn, được đào tạo bởi Google."
         }
       ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "đồg ncc"
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Bạn có thể vui lòng làm rõ \"đồg ncc\" nghĩa là gì không? Tôi chưa hiểu rõ từ viết tắt hoặc cụm từ này.\n\nNếu bạn đang cố gắng tìm kiếm thông tin về một địa điểm hoặc một khái niệm cụ thể, vui lòng cung cấp thêm chi tiết để tôi có thể hỗ trợ bạn tốt hơn."
+        }
+      ]
     }
   ]
 }

@@ -15,9 +15,9 @@
     "61589214899916"
   ],
   "token": {
-    "EAAAAU": "EAAAAUaZA8jlABRb07M97xFmovYFD8gU8e7ADcHxAfWAha1NJwn5Qkt44fjhQOfhZC5AbJDPDXLGqroy5a8uLnAFBXHeZAAPKkEZCSo5PrsY1WyrT4bsBUOjTeaXT5A8axuk5jkqMGLHbH7Fy11sxLhGTHGLXFPjmhnm2aMPb1L8MuRUbEEUFNoFIwuBBcsQ9Lp54EL46zFJJ4UEeYQZDZD",
-    "EAAD6V7": "EAAD6V7os0gcBRRsSimfLZA2kducpeZA3cGs3LZAfVw8F5oZBs48QGMUIvKqw81Xs2oAMdL3LQB5W0gItvnHCTfxHtKQfTfqY5Svr6FFWbmFL7gqZC0ZBtY3P7G24iAvpmZBEmlZB8ss0ZBieS1RhbqPf7jhkuxVMATZAS0sr7gQ6vGjd9rsZAwXJOwNp3YiszkIZBoXeJqRCQRZBLMMI52gZDZD",
-    "EAAD": "EAADo1TDZCuu8BRYxZB2QJ6FZB1YzzkTU4J3c07b5UJe1vlEFA0khhesRhzQg6AUxz7GFWrVUfgHRVgGAhBmu3XEII5uOefgKK0MfKuG7qMY1EmLxSKBOF7NyWxYnBDZCesNBHZAYhtH9fy5zQzFpgzVz5z5t208JHZChagX7R0FXlLX3dcZAhjRnphbmnFZAGxxeXBzOsBWCbwZDZD"
+    "EAAAAU": "EAAAAUaZA8jlABRbS79MhIJgubSVpKy4ZBj0yZBQAtyNlzrHGZBGtZAEEhfIyK10TMjmzgsUXAtGduUBKgnu4oqV2Oja17ietNZAn5RAeQv1NuQTvA7MhyqtQ8mK6JfKZArxUpHNpitv51QPXejpz3NaAU4hpEg1ZBq4Glq4BpZCAg7gUijRlZB3XQ7xvoa8s1ShEqTqZBK3TNguR1ZC4uimnTgZDZD",
+    "EAAD6V7": "EAAD6V7os0gcBRWPyxkRBGujp39FjF2ghAczz3EsftkZAHALq25yECvCfLdflCZBkcTLHPgMO6kqTIsGYiAt3d5mjXjtnu2bP53k2sSkUbSFvfhJbUCebpQIZC5ej5rYNpdfqvJIW5gPSVMJy4WsEeDgxwn642Jmajc4yZB9EpL8tvoQtl6EFfZBzyoj29xsGCBzmnkbRU5IDAM6ZBYbAZDZD",
+    "EAAD": "EAADo1TDZCuu8BRTv2s2riboLpCMMNikrkRTCpPXjDyiueORTZCrFLJ36O6K8hEJ8WLlPWENORlWSOVbB8gEyIepKI5psGUSIFZA1QhzV8TLGWLodCyl7OKDLao4x49ZC6Kcm1kZCeBOQ4ChrVYoOdW9huszxhZA8m7skWU2HZBuLeUxqyj1owQTuYGJIDKHaihcEdkUjfpGmxQTi72ain45ZCgZDZD"
   },
   "OWNER_NOPREFIX": {
     "all": false,
@@ -50,14 +50,14 @@
       "email": "subaki3215@gmail.com",
       "password": "Longdz123@",
       "twofactor": "BZGE M74N XE3E BSTB BAOS MJD4 WNRM IYVE",
-      "cookie": "",
+      "cookie": "c_user=61589110242114; xs=4:bC2lJTfkd03OpQ:2:1778984886:-1:-1; fr=0LXiWyazL4AA28Ydv.AWe5njXQylrbtPKrRWINcvwwLqaGLQMTZlON7JmK-2srO9i1xbM.BqCSe1..AAA.0.0.BqCSe1.AWe2RI0DXhLtwpoDxY4kTOp8wZc; datr=QkQjaaPYXqr7elYbhXm9k25K",
       "disabled": false
     },
     {
       "email": "ngvthanhthaoj770@gmail.com",
       "password": "Longdz123@",
       "twofactor": "X5DX ZANQ ONGG Y2SN CMPB O6PM BURG HOKV",
-      "cookie": "",
+      "cookie": "c_user=61589210258627; xs=3:WT8F7S2OdvWnWA:2:1779015436:-1:-1; fr=0bDO8EZQyDnEcW37I.AWdXkp9DtqBZ0hkZoZQ7XBJffFZNtkpRQtRW15ArbIez3H1iNDo.BqCZ8I..AAA.0.0.BqCZ8I.AWdWa63hUpLzjmCpq6Td4t5PAb0; datr=QkQjaaPYXqr7elYbhXm9k25K",
       "disabled": false
     }
   ],
