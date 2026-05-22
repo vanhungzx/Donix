@@ -393,48 +393,76 @@ const atd = {
           }
         }
       }
-      if (/tiktok.com/.test(url)) {
-        if (!(await isPlatformEnabled("tiktok", threadData, threadID))) return;
-        const res = await api.tiktok.download(url);
-        if (!res) return;
-        const attachments: any[] = [];
-        if (res.attachments && res.attachments.length > 0) {
-          for (const attachment of res.attachments) {
-            if (attachment.type === "Video") {
-              if (attachment.buffer) {
-                const uuid = utils.getGUID();
-                const filePath = tempPath(`tiktok_video_${uuid}.mp4`);
-                fs.writeFileSync(filePath, attachment.buffer);
-                attachments.push(fs.createReadStream(filePath));
-              } else if (attachment.url) {
-                attachments.push(await utils.stream(attachment.url, "mp4"));
-              }
-            } else if (attachment.type === "Photo" && attachment.url) {
-              attachments.push(await utils.stream(attachment.url, "jpg"));
-            }
+    if (/tiktok.com/.test(url)) {
+  if (!(await isPlatformEnabled("tiktok", threadData, threadID))) return;
+
+  const res = await api.tiktok.download(url);
+  if (!res) return;
+
+  const attachments: any[] = [];
+
+  // ================= ATTACHMENTS =================
+  if (res.attachments && res.attachments.length > 0) {
+    for (const attachment of res.attachments) {
+      try {
+        if (attachment.type === "Video") {
+          if (attachment.buffer) {
+            const uuid = utils.getGUID();
+            const filePath = tempPath(`tiktok_video_${uuid}.mp4`);
+            fs.writeFileSync(filePath, attachment.buffer);
+            attachments.push(fs.createReadStream(filePath));
+          } else if (attachment.url) {
+            attachments.push(await utils.stream(attachment.url, "mp4"));
           }
+        } else if (attachment.type === "Photo" && attachment.url) {
+          attachments.push(await utils.stream(attachment.url, "jpg"));
         }
-        if (attachments.length > 0) {
-          client.sendMessage(
-            {
-              body: `TIKTOK: ${res.message}\n👤 ${res.author?.name} (@${res.author.username})\n🎵 ${res.music?.title || "Không có nhạc"}`,
-              attachment: attachments,
-            },
-            event.threadID,
-            (_err: any, dataMsg: any) => {
-              main.onReact.set(dataMsg.messageID, {
-                commandName,
-                messageID: dataMsg.messageID,
-                title: res.music?.title || "",
-                url: res.music?.url,
-                type: "TIKTOK",
-              });
-              musicSent = false;
-            },
-            event.messageID
-          );
-        }
+      } catch (e) {
+        console.log("Attachment error:", e);
       }
+    }
+  }
+
+  // ================= AUTHOR FIX =================
+  const rawAuthor = res.awemeDetail?.author;
+  const author = rawAuthor || res.author || {};
+
+  const authorName =
+    rawAuthor?.nickname ||
+    res.author?.name ||
+    "Không rõ";
+
+  const authorUsername =
+    rawAuthor?.unique_id ||
+    res.author?.username ||
+    "unknown";
+
+  // ================= SEND =================
+  if (attachments.length > 0) {
+    client.sendMessage(
+      {
+        body: `TIKTOK: ${res.message || ""}
+👤 ${authorName} (@${authorUsername})
+🎵 ${res.music?.title || "Không có nhạc"}`,
+        attachment: attachments,
+      },
+      event.threadID,
+      (_err: any, dataMsg: any) => {
+        if (dataMsg?.messageID) {
+          main.onReact.set(dataMsg.messageID, {
+            commandName,
+            messageID: dataMsg.messageID,
+            title: res.music?.title || "",
+            url: res.music?.url,
+            type: "TIKTOK",
+          });
+        }
+        musicSent = false;
+      },
+      event.messageID
+    );
+  }
+}
       if (/youtube\.com/.test(url) || /youtu\.be/.test(url)) {
         if (!(await isPlatformEnabled("youtube", threadData, threadID))) return;
 

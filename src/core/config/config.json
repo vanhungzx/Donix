@@ -3,7 +3,7 @@
   "BOTNAME": "Obito",
   "DevMode": false,
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
-  "OWNER": "61586845605819",
+  "OWNER": "61589777248114",
   "ADMIN": [
     "",
     "502275138",
@@ -12,12 +12,14 @@
     "100076714908217",
     "61566316212795",
     "1631016269",
-    "61589214899916"
+    "100074278195157",
+    "61589000468435",
+    "100090458979503"
   ],
   "token": {
-    "EAAAAU": "EAAAAUaZA8jlABRbS79MhIJgubSVpKy4ZBj0yZBQAtyNlzrHGZBGtZAEEhfIyK10TMjmzgsUXAtGduUBKgnu4oqV2Oja17ietNZAn5RAeQv1NuQTvA7MhyqtQ8mK6JfKZArxUpHNpitv51QPXejpz3NaAU4hpEg1ZBq4Glq4BpZCAg7gUijRlZB3XQ7xvoa8s1ShEqTqZBK3TNguR1ZC4uimnTgZDZD",
-    "EAAD6V7": "EAAD6V7os0gcBRWPyxkRBGujp39FjF2ghAczz3EsftkZAHALq25yECvCfLdflCZBkcTLHPgMO6kqTIsGYiAt3d5mjXjtnu2bP53k2sSkUbSFvfhJbUCebpQIZC5ej5rYNpdfqvJIW5gPSVMJy4WsEeDgxwn642Jmajc4yZB9EpL8tvoQtl6EFfZBzyoj29xsGCBzmnkbRU5IDAM6ZBYbAZDZD",
-    "EAAD": "EAADo1TDZCuu8BRTv2s2riboLpCMMNikrkRTCpPXjDyiueORTZCrFLJ36O6K8hEJ8WLlPWENORlWSOVbB8gEyIepKI5psGUSIFZA1QhzV8TLGWLodCyl7OKDLao4x49ZC6Kcm1kZCeBOQ4ChrVYoOdW9huszxhZA8m7skWU2HZBuLeUxqyj1owQTuYGJIDKHaihcEdkUjfpGmxQTi72ain45ZCgZDZD"
+    "EAAAAU": "EAAAAUaZA8jlABRraOw6TIVTa8E1EXqyKRyODZA8ZCp3dyrarBykegtGxJ9t2xvM5aw9nPPtBP67l219jc2HhnM4R0ZBXloRdPIkCe6aEUYowcf8CuPeYNtaKtltESllUN7dDMUkXOzNfijbr9pb3O6Pzzx3GFFRSDfZAZAo53qywJHaEZATZAgmrJJZAAXsVEnGUlQhozWmgZCZCOLhCa9IiAZDZD",
+    "EAAD6V7": "EAAD6V7os0gcBRpkcfP4t0pAd9Bj7f9hw2J1on2tYBvHopTOcBbRxZAqWtZCuliOcpCWPF5K1qY4aPCq3mZCozjCTZAhmAB5G7k3actZCZBERA9sSrmgIjsr3b6jyLFIEC3LZAN44wPqOQ86nFLU6bNWdvdAjYZCuCZArFpeAhcquUgvzBVsxlZBNgEMS43pU8pXTr4q5MPxcumLDZCE7AZDZD",
+    "EAAD": "EAADo1TDZCuu8BRuaFGFHaoRCnaTc2K7bAM9eSbePFHFhWuAZBvnQEZBBSjCF6ASnCC2OIYrhHKZBsRZAbaGUt1FcRM1v7OLL4tCx1rYH0SBfKLjfaomc7td1pKtf3ZADRC7Nfa1GbXNq98MsgbHOcoX1yhOX7OO1wC3TRfA1kpp41vm1Kwq0RTG7UZBHfOtXRxKv7PBEN25wmoNpeN1m8hZCcwZDZD"
   },
   "OWNER_NOPREFIX": {
     "all": false,
@@ -47,9 +49,9 @@
   },
   "fbAccounts": [
     {
-      "email": "subaki3215@gmail.com",
-      "password": "Longdz123@",
-      "twofactor": "BZGE M74N XE3E BSTB BAOS MJD4 WNRM IYVE",
+      "email": "dangthuylinnn337@gmail.com",
+      "password": "quocduy@1436",
+      "twofactor": "GQFU V7S2 PEOH D3P5 KTNL A2DP XKA6 V2CW",
       "cookie": "c_user=61589110242114; xs=4:bC2lJTfkd03OpQ:2:1778984886:-1:-1; fr=0LXiWyazL4AA28Ydv.AWe5njXQylrbtPKrRWINcvwwLqaGLQMTZlON7JmK-2srO9i1xbM.BqCSe1..AAA.0.0.BqCSe1.AWe2RI0DXhLtwpoDxY4kTOp8wZc; datr=QkQjaaPYXqr7elYbhXm9k25K",
       "disabled": false
     },

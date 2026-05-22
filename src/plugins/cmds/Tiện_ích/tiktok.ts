@@ -110,46 +110,46 @@ export default {
         return reply(msg);
       }
       case "-s":
-      case "search": {
-        try {
-          const keyword = args.slice(1).join(" ");
-          const data = await api.tiktok.search(keyword, 9);
-          if (!data || data.length === 0) {
-            client.sendMessage("❎ Không tìm thấy kết quả!", tid, mid);
-            return;
-          }
-          const img = data.map((result: any) => result.video.cover);
-          const listMessage = data
-            .map(
-              (result: any, index: number) =>
-                `${index + 1}. Title: ${result.desc
-                }\n⏳ Thời lượng: ${result.video.duration} giây`,
-            )
-            .join("\n\n");
-          reply(
-            {
-              body: `${listMessage}\n\n📌 Reply (phản hồi) STT để tải video`,
-              attachment: await Promise.all(
-                img.map((url: string) => utils.stream(url, "jpg")),
-              ),
-            },
-            (error: any, info: any) => {
-              if (error) return console.error("Error sending message:", error);
-              main.onReply.set(info.messageID, {
-                type: "search",
-                commandName,
-                author: sid,
-                messageID: info.messageID,
-                result: data,
-              });
-            },
-          );
-        } catch (error: any) {
-          console.error("Error:", error.message);
-          client.sendMessage("❎ Đã xảy ra lỗi, vui lòng thử lại sau!", tid, mid);
-        }
-        break;
-      }
+case "search": {
+  try {
+    const keyword = args.slice(1).join(" ");
+    const data = await api.tiktok.search(keyword, 9);
+
+    if (!data || data.length === 0) {
+      client.sendMessage("❎ Không tìm thấy kết quả!", tid, mid);
+      return;
+    }
+
+    const listMessage = data
+      .map(
+        (result: any, index: number) =>
+          `${index + 1}. Title: ${result.desc}\n⏳ Thời lượng: ${result.video.duration} giây`,
+      )
+      .join("\n\n");
+
+    // ✅ CHỈ TEXT - KHÔNG ẢNH
+    reply(
+      {
+        body: `${listMessage}\n\n📌 Reply (phản hồi) STT để tải video`,
+      },
+      (error: any, info: any) => {
+        if (error) return console.error("Error sending message:", error);
+
+        main.onReply.set(info.messageID, {
+          type: "search",
+          commandName,
+          author: sid,
+          messageID: info.messageID,
+          result: data,
+        });
+      },
+    );
+  } catch (error: any) {
+    console.error("Error:", error.message);
+    client.sendMessage("❎ Đã xảy ra lỗi, vui lòng thử lại sau!", tid, mid);
+  }
+  break;
+}
       case "trend":
       case "trending": {
         const dataTrend = await api.tiktok.trend();
@@ -262,48 +262,58 @@ export default {
     const { threadID: tid, messageID: mid, body } = event;
     const choose = parseInt(body);
     switch (Reply.type) {
-      case "search": {
-        client.unsendMessage(Reply.messageID, tid);
-        if (isNaN(choose)) {
-          return client.sendMessage("⚠️ Vui lòng nhập 1 con số", tid, mid);
-        }
-        if (choose > 9 || choose < 1) {
-          return client.sendMessage(
-            "❎ Lựa chọn không nằm trong danh sách",
-            tid,
-            mid,
-          );
-        }
-        try {
-          const chosenVideo = Reply.result[choose - 1];
-          const attachments: any[] = [];
-          const res = await api.tiktok.down2(chosenVideo.id);
-          if (res.attachments && res.attachments.length > 0) {
-            for (const at of res.attachments) {
-              if (at.type === "Video") {
-                attachments.push(await utils.stream(at.url, "mp4"));
-              } else if (at.type === "Photo") {
-                attachments.push(await utils.stream(at.url, "jpg"));
-              }
-            }
-          }
-          reply({
-            body:
-              `📝 Description: ${chosenVideo.desc}\n` +
-              `⏰ Created: ${convertTime(chosenVideo.createTime)}\n` +
-              `❤️ Likes: ${chosenVideo.stats.diggCount.toLocaleString()}\n` +
-              `💬 Comments: ${chosenVideo.stats.commentCount.toLocaleString()}\n` +
-              `🔄 Shares: ${chosenVideo.stats.shareCount.toLocaleString()}\n` +
-              `👀 Views: ${chosenVideo.stats.playCount.toLocaleString()}\n` +
-              `📑 Saved: ${chosenVideo.stats.collectCount.toLocaleString()}`,
-            attachment: attachments,
-          });
-        } catch (error) {
-          console.error("Error:", error);
-          reply("❎ Đã xảy ra lỗi khi tải video!");
-        }
-        break;
+ case "search": {
+  client.unsendMessage(Reply.messageID, tid);
+
+  if (isNaN(choose)) {
+    return client.sendMessage("⚠️ Vui lòng nhập 1 con số", tid, mid);
+  }
+
+  if (choose > 9 || choose < 1) {
+    return client.sendMessage(
+      "❎ Lựa chọn không nằm trong danh sách",
+      tid,
+      mid,
+    );
+  }
+
+  try {
+    const chosenVideo = Reply.result[choose - 1];
+
+    // ❌ KHÔNG dùng attachments nữa
+    let videoStream: any = null;
+
+    const res = await api.tiktok.down2(chosenVideo.id);
+
+    // ✅ CHỈ lấy 1 video (nếu có)
+    if (res.attachments && res.attachments.length > 0) {
+      const video = res.attachments.find((at: any) => at.type === "Video");
+      if (video) {
+        videoStream = await utils.stream(video.url, "mp4");
       }
+    }
+
+    reply({
+      body:
+        `📝 Description: ${chosenVideo.desc}\n` +
+        `⏰ Created: ${convertTime(chosenVideo.createTime)}\n` +
+        `❤️ Likes: ${chosenVideo.stats.diggCount.toLocaleString()}\n` +
+        `💬 Comments: ${chosenVideo.stats.commentCount.toLocaleString()}\n` +
+        `🔄 Shares: ${chosenVideo.stats.shareCount.toLocaleString()}\n` +
+        `👀 Views: ${chosenVideo.stats.playCount.toLocaleString()}\n` +
+        `📑 Saved: ${chosenVideo.stats.collectCount.toLocaleString()}`,
+      
+      // ✅ chỉ gửi video nếu có, không có thì chỉ text
+      attachment: videoStream || undefined,
+    });
+
+  } catch (error) {
+    console.error("Error:", error);
+    reply("❎ Đã xảy ra lỗi khi tải video!");
+  }
+
+  break;
+}
       case "trending": {
         client.unsendMessage(Reply.messageID, tid);
         if (isNaN(choose)) {
