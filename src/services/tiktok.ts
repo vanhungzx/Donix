@@ -47,6 +47,7 @@ type TikTokMusic = {
 type TikTokAwemeDetail = TikTokAweme & {
   author?: TikTokAuthor
   music?: TikTokMusic
+  attachments?: { type: string; url: string }[]
 }
 
 function extractTikTokVideoId(inputUrl: string): string | null {
@@ -310,10 +311,10 @@ class TikTokMobileClient {
         throw new Error('Could not extract video ID from URL')
       }
 
-      const awemeDetail = await TiktokService.getAwemeDetails(videoId)
+      const awemeDetail = (await TiktokService.getAwemeDetails(videoId)) as TikTokAwemeDetail
 
       const attachments: { type: string; url: string; buffer?: Buffer }[] = []
-      for (const at of awemeDetail.attachments) {
+      for (const at of awemeDetail.attachments || []) {
         if (at.type === 'Video' && at.url) {
           const buffer = await downloadBuffer(at.url)
           attachments.push({

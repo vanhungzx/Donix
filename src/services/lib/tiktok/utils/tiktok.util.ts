@@ -152,6 +152,12 @@ const parseTikTokData = (awemeList: unknown): JsonObject[] => {
       video: videoOutput,
       stats,
       attachments,
+      author: {
+        uid: String(author.uid || author.id || ''),
+        nickname: String(author.nickname || author.nick_name || ''),
+        uniqueId: String(author.unique_id || author.uniqueId || ''),
+        secUid: String(author.sec_uid || author.secUid || '')
+      },
       music: musicDetail
     };
   });

@@ -1,4 +1,5 @@
 import fs from "fs";
+import axios from "axios";
 import { getConfig } from "../../../core/configManager";
 import { tempPath } from "../../../core/storagePath";
 import { downloadYoutubeVideo } from "./sing";
@@ -16,7 +17,7 @@ function urlify(text: unknown): string[] {
 let musicSent = false;
 
 interface DouyinAttachment {
-  type?: "Video" | "Photo" | string;
+  type?: "Video" | "Photo" | "Audio" | string;
   url?: string;
 }
 
@@ -38,11 +39,118 @@ interface DouyinMusic {
 }
 
 interface DouyinDownResult {
+  id?: string;
   attachments?: DouyinAttachment[];
   statistics?: DouyinStatistics;
-  author?: DouyinAuthor;
+  author?: DouyinAuthor | string;
+  username?: string;
   message?: string;
+  duration?: string;
   music?: DouyinMusic;
+}
+
+interface GenviralDouyinMedia {
+  type?: string;
+  quality?: string;
+  url?: string;
+}
+
+interface GenviralDouyinResponse {
+  error?: unknown;
+  id?: string;
+  unique_id?: string;
+  author?: string | DouyinAuthor;
+  title?: string;
+  duration?: number;
+  medias?: GenviralDouyinMedia[];
+}
+
+function formatDurationMs(durationMs = 0): string {
+  const seconds = Math.floor(durationMs / 1000);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+
+  return `${hours.toString().padStart(2, "0")}:${minutes
+    .toString()
+    .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+}
+
+async function downloadDouyinViaGenviral(url: string): Promise<DouyinDownResult | null> {
+  const { data } = await axios.request<GenviralDouyinResponse>({
+    method: "POST",
+    url: "https://www.genviral.io/api/tools/social-downloader",
+    timeout: 30000,
+    headers: {
+      authority: "www.genviral.io",
+      accept: "*/*",
+      "accept-encoding": "gzip, deflate, br",
+      "accept-language": "vi-VN,vi;q=0.9,fr-FR;q=0.8,fr;q=0.7,en-US;q=0.6,en;q=0.5",
+      "content-type": "application/json",
+      origin: "https://www.genviral.io",
+      referer: "https://www.genviral.io/tools/download/douyin",
+      "sec-ch-ua": '"Not-A.Brand";v="99", "Chromium";v="124"',
+      "sec-ch-ua-mobile": "?1",
+      "sec-ch-ua-platform": '"Android"',
+      "sec-fetch-dest": "empty",
+      "sec-fetch-mode": "cors",
+      "sec-fetch-site": "same-origin",
+      "user-agent":
+        "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
+    },
+    data: { url },
+  });
+
+  if (!data || data.error) {
+    throw new Error("Genviral Douyin API returned an error");
+  }
+
+  const medias = Array.isArray(data.medias) ? data.medias : [];
+  const attachments: DouyinAttachment[] = [];
+  const hdNoWatermarkVideo = medias.find(
+    (media) => media.type === "video" && media.quality === "HD No Watermark" && media.url
+  );
+  const noWatermarkVideo = medias.find(
+    (media) => media.type === "video" && media.quality === "No Watermark" && media.url
+  );
+  const firstVideo = medias.find((media) => media.type === "video" && media.url);
+  const selectedVideo = hdNoWatermarkVideo || noWatermarkVideo || firstVideo;
+
+  if (selectedVideo?.url) {
+    attachments.push({
+      type: "Video",
+      url: selectedVideo.url,
+    });
+  }
+
+  const audio = medias.find((media) => media.type === "audio" && media.url);
+  if (audio?.url) {
+    attachments.push({
+      type: "Audio",
+      url: audio.url,
+    });
+  }
+
+  medias
+    .filter((media) => media.type === "image" && media.url)
+    .forEach((image) => {
+      attachments.push({
+        type: "Photo",
+        url: image.url,
+      });
+    });
+
+  if (attachments.length === 0) return null;
+
+  return {
+    id: data.id,
+    username: data.unique_id || "",
+    author: data.author || "",
+    message: data.title || "",
+    duration: formatDurationMs(data.duration || 0),
+    music: audio?.url ? { title: data.title || "Douyin audio", url: audio.url } : undefined,
+    attachments,
+  };
 }
 
 
@@ -425,7 +533,6 @@ const atd = {
 
   // ================= AUTHOR FIX =================
   const rawAuthor = res.awemeDetail?.author;
-  const author = rawAuthor || res.author || {};
 
   const authorName =
     rawAuthor?.nickname ||
@@ -720,7 +827,22 @@ const atd = {
       if (/douyin\.com/i.test(url)) {
         if (!(await isPlatformEnabled("douyin", threadData, threadID))) return;
 
-        const douyinRes = (await api.douyin.down(url)) as DouyinDownResult | null;
+        let douyinRes: DouyinDownResult | null = null;
+        try {
+          douyinRes = await downloadDouyinViaGenviral(url);
+        } catch (error) {
+          console.error("Genviral Douyin download failed:", error);
+        }
+
+        if (!douyinRes || !Array.isArray(douyinRes.attachments) || douyinRes.attachments.length === 0) {
+          try {
+            douyinRes = (await api.douyin.down(url)) as DouyinDownResult | null;
+          } catch (error) {
+            console.error("Primary Douyin API failed:", error);
+            douyinRes = null;
+          }
+        }
+
         const attachment: unknown[] = [];
         let bodyText = "";
         let musicUrl: string | undefined;
@@ -761,8 +883,13 @@ const atd = {
               .filter(Boolean)
               .join(" | ");
 
-            bodyText = `DOUYIN: ${douyinRes.message || "No title"}\n👤 ${douyinRes.author?.nickname || "Unknown"
-              } (@${douyinRes.author?.unique_id || ""})\n${stats}`;
+            const author =
+              typeof douyinRes.author === "string"
+                ? { nickname: douyinRes.author, unique_id: douyinRes.username || "" }
+                : douyinRes.author || {};
+
+            bodyText = `DOUYIN: ${douyinRes.message || "No title"}\n👤 ${author.nickname || "Unknown"
+              } (@${author.unique_id || ""})\n${stats}`;
             musicUrl = douyinRes.music?.url;
           }
         }
