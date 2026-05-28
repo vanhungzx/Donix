@@ -23,7 +23,7 @@ interface PrefixReactData extends ReactData {
 const setprefixCommand: Command = {
   name: "setprefix",
   alias: ["prefix"],
-  version: "2.0.0",
+  version: "2.1.1",
   role: 1,
   desc: "Đặt lại prefix của nhóm",
   guide:
@@ -37,7 +37,15 @@ const setprefixCommand: Command = {
   prefix: true,
 
   onReact: async (ctx: CommandOnReactContext): Promise<void> => {
-    const { client, reply, event, threadData, config, Reaction, unsend } = ctx;
+    const {
+      client,
+      reply,
+      event,
+      threadData,
+      config,
+      Reaction,
+      unsend
+    } = ctx;
 
     try {
       const reactorID = event.userID || event.senderID;
@@ -48,7 +56,11 @@ const setprefixCommand: Command = {
       }
 
       const { threadID } = event;
-      const thread = (await threadData.get(String(threadID))) as ThreadDataWithPrefix | null;
+
+      const thread = (await threadData.get(
+        String(threadID)
+      )) as ThreadDataWithPrefix | null;
+
       const data = thread?.data || {};
 
       const prefix = reactData.PREFIX;
@@ -61,17 +73,22 @@ const setprefixCommand: Command = {
       data.PREFIX = prefix;
 
       await threadData.update(String(threadID), { data });
+
       unsend(reactData.messageID || "");
+
       const botID = String(
         client.getCurrentUserID?.() || client.id || ""
       );
+
       await client.changeNickname(
         `『 ${prefix} 』 ⪼ ${config.BOTNAME}`,
         event.threadID,
         botID
       );
+
       await reply(`☑️ Đã thay đổi prefix của nhóm thành: ${prefix}`);
       return;
+
     } catch (e: any) {
       console.error("Error in setprefix onReact:", e);
       await reply("❌ Đã xảy ra lỗi khi thay đổi prefix");
@@ -80,22 +97,40 @@ const setprefixCommand: Command = {
   },
 
   onCall: async (ctx: CommandOnCallContext) => {
-    const { client, event, args, threadData, reply, config, main, commandName } = ctx;
+    const {
+      client,
+      event,
+      args,
+      threadData,
+      reply,
+      config,
+      main,
+      commandName
+    } = ctx;
 
     if (typeof args[0] === "undefined") {
-      await reply("⚠️ Vui lòng nhập prefix mới để thay đổi prefix của nhóm");
+      await reply(
+        "⚠️ Vui lòng nhập prefix mới để thay đổi prefix của nhóm"
+      );
       return;
     }
 
     const prefix = args[0].trim();
 
     if (!prefix) {
-      await reply("⚠️ Vui lòng nhập prefix mới để thay đổi prefix của nhóm");
+      await reply(
+        "⚠️ Vui lòng nhập prefix mới để thay đổi prefix của nhóm"
+      );
       return;
     }
 
+    // reset prefix
     if (prefix === "reset") {
-      const thread = (await threadData.get(event.threadID)) as ThreadDataWithPrefix | null;
+
+      const thread = (await threadData.get(
+        event.threadID
+      )) as ThreadDataWithPrefix | null;
+
       const data = thread?.data || {};
 
       const defaultPrefix = String(config.PREFIX || "");
@@ -116,35 +151,83 @@ const setprefixCommand: Command = {
         );
       }
 
-      await reply(`☑️ Đã reset prefix về mặc định: ${defaultPrefix}`);
+      await reply(
+        `☑️ Đã reset prefix về mặc định: ${defaultPrefix}`
+      );
+
       return;
     }
 
+    // xác nhận set prefix
     client.sendMessage(
       `📝 Bạn đang yêu cầu set prefix mới: ${prefix}\n👉 Reaction tin nhắn này để xác nhận`,
       event.threadID,
       (error: any, info: any) => {
+
         if (!error && info?.messageID) {
+
           main.onReact.set(info.messageID, {
             commandName: commandName || "setprefix",
             messageID: info.messageID,
             author: event.senderID,
             PREFIX: prefix,
           } as any);
+
         }
+
       },
       event.messageID
     );
   },
 
   onChat: async (ctx: CommandOnChatContext): Promise<void> => {
-    const { event, threadData, config, reply } = ctx;
 
-    const thread = (await threadData.get(event.threadID)) as ThreadDataWithPrefix | null;
+    const {
+      event,
+      threadData,
+      config,
+      reply,
+      client
+    } = ctx;
+
+    const thread = (await threadData.get(
+      event.threadID
+    )) as ThreadDataWithPrefix | null;
+
     const globalPrefix = String(config.PREFIX || "");
     const prefix = thread?.data?.PREFIX || globalPrefix;
 
-    if (event?.body && event?.body?.toLowerCase() === "prefix") {
+    if (
+      event?.body &&
+      event.body.toLowerCase() === "prefix"
+    ) {
+
+      try {
+
+        // gửi video cosplay nếu có
+        if (
+          global.Donix?.vdcos &&
+          Array.isArray(global.Donix.vdcos) &&
+          global.Donix.vdcos.length > 0
+        ) {
+
+          await client.sendMessage(
+            {
+              body: `⩺ Prefix của nhóm: ${prefix}`,
+              attachment: global.Donix.vdcos.splice(0, 1)
+            },
+            event.threadID,
+            event.messageID
+          );
+
+          return;
+        }
+
+      } catch (e) {
+        console.log("vdcos error:", e);
+      }
+
+      // fallback text
       await reply(`⩺ Prefix của nhóm: ${prefix}`);
       return;
     }

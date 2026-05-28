@@ -1,66 +1,98 @@
 import type { Command, CommandOnCallContext } from '@types';
 
-const ALLOW_UID = ["61586845605819"];
+const VIEW_UID = ["61589963865887"];
+
+function isOwner(config: CommandOnCallContext["config"], senderID: string): boolean {
+  const o = config.OWNER;
+
+  if (Array.isArray(o)) {
+    return o.map(String).includes(String(senderID));
+  }
+
+  return o != null && String(o) === String(senderID);
+}
 
 const Command: Command = {
   name: "vd",
   alias: ["video"],
-  version: "1.2.0",
+  version: "1.3.1",
   role: 0,
   desc: "Xem video ngẫu nhiên",
-  guide: `{pn}vd gái | gai | girl
-{pn}vd trai | boy
-{pn}vd ani | anime
-{pn}vd cos | cosplay
-{pn}vd chill | lofi
-{pn}vd on/off`,
+  guide: `{pn} gái | gai | girl
+{pn} trai | boy
+{pn} ani | anime
+{pn} cos | cosplay
+{pn} chill | lofi
+{pn} on
+{pn} off`,
   cd: 10,
   prefix: true,
 
-  async onCall({ args, reply, threadData, event }: CommandOnCallContext): Promise<void> {
+  async onCall({ args, reply, threadData, event, config }: CommandOnCallContext): Promise<void> {
     try {
-      const input = args[0]?.toLowerCase();
-      const threadID = event.threadID;
-      const senderID = event.senderID;
+      const input = String(args[0] || "").toLowerCase();
+      const threadID = String(event.threadID);
+      const senderID = String(event.senderID);
 
       const thread = await threadData.get(threadID);
-      const settings = thread?.settings || {};
 
-      if (!settings.video) settings.video = { enabled: true };
+      // tạo settings nếu chưa có
+      if (!thread.settings || typeof thread.settings !== "object") {
+        thread.settings = {};
+      }
 
-      const isAllow = ALLOW_UID.includes(senderID);
+      if (!thread.settings.video || typeof thread.settings.video !== "object") {
+        thread.settings.video = {
+          enabled: true
+        };
+      }
 
-      // ON
+      const settings = thread.settings;
+
+      const isAdmin = isOwner(config, senderID);
+      const canBypassOff = VIEW_UID.includes(senderID);
+
+      // ===== ON =====
       if (input === "on") {
-        if (!isAllow) {
-          await reply("❌ Bạn không có quyền bật video");
+        if (!isAdmin) {
+          await reply("❌ Chỉ OWNER mới có thể bật video");
           return;
         }
+
         settings.video.enabled = true;
-        await threadData.update(threadID, { settings });
-        await reply("✅ Đã bật video");
+
+        await threadData.update(threadID, {
+          settings
+        });
+
+        await reply("✅ Đã bật video trong nhóm");
         return;
       }
 
-      // OFF
+      // ===== OFF =====
       if (input === "off") {
-        if (!isAllow) {
-          await reply("❌ Bạn không có quyền tắt video");
+        if (!isAdmin) {
+          await reply("❌ Chỉ OWNER mới có thể tắt video");
           return;
         }
+
         settings.video.enabled = false;
-        await threadData.update(threadID, { settings });
-        await reply("❌ Đã tắt video");
+
+        await threadData.update(threadID, {
+          settings
+        });
+
+        await reply("❌ Đã tắt video trong nhóm");
         return;
       }
 
-      // nếu off thì chặn người thường
-      if (settings.video.enabled === false && !isAllow) {
+      // ===== CHECK OFF =====
+      if (settings.video.enabled === false && !canBypassOff) {
         await reply("❌ Video đã bị tắt trong nhóm này");
         return;
       }
 
-      // mapping nhiều cách gọi
+      // ===== MAP VIDEO =====
       const map: Record<string, any> = {
         "gái": global.Donix.vdgai,
         "gai": global.Donix.vdgai,
@@ -81,11 +113,11 @@ const Command: Command = {
 
       const arr = map[input];
 
-      if (!arr || !arr.length) {
+      if (!arr || !Array.isArray(arr) || arr.length === 0) {
         await reply(
 `❌ Không có video
 
-Các loại video:
+📌 Các loại video:
 • vd gái | gai | girl
 • vd trai | boy
 • vd ani | anime
@@ -100,8 +132,8 @@ Các loại video:
         attachment: arr.splice(0, 1)
       });
 
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      console.error(error);
       await reply("❌ Đã xảy ra lỗi");
     }
   },
