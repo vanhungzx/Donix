@@ -180,8 +180,7 @@ const setprefixCommand: Command = {
     );
   },
 
-  onChat: async (ctx: CommandOnChatContext): Promise<void> => {
-
+    onChat: async (ctx: CommandOnChatContext): Promise<void> => {
     const {
       event,
       threadData,
@@ -201,35 +200,57 @@ const setprefixCommand: Command = {
       event?.body &&
       event.body.toLowerCase() === "prefix"
     ) {
-
       try {
+        const threadInfo = await client.getThreadInfo(event.threadID);
 
-        // gửi video cosplay nếu có
+        const totalGroups = (
+          await threadData.getAll(null)
+        ).filter(
+          (r: any) =>
+            r?.threadID &&
+            /^\d+$/.test(String(r.threadID))
+        ).length;
+
+        const body =
+`╭─────────────⭓
+│ 🤖 Tên Bot: ${config.BOTNAME}
+│ 🏷️ Tên nhóm: ${threadInfo.threadName || "Không có tên"}
+│ ⚙️ Prefix nhóm: ${prefix}
+│ 🌐 Prefix hệ thống: ${globalPrefix}
+│ 📦 Tổng nhóm: ${totalGroups}
+╰─────────────⭓`;
+
         if (
           global.Donix?.vdcos &&
           Array.isArray(global.Donix.vdcos) &&
           global.Donix.vdcos.length > 0
         ) {
-
           await client.sendMessage(
             {
-              body: `⩺ Prefix của nhóm: ${prefix}`,
+              body,
               attachment: global.Donix.vdcos.splice(0, 1)
             },
             event.threadID,
             event.messageID
           );
-
           return;
         }
 
-      } catch (e) {
-        console.log("vdcos error:", e);
-      }
+        await reply(body);
+        return;
 
-      // fallback text
-      await reply(`⩺ Prefix của nhóm: ${prefix}`);
-      return;
+      } catch (e) {
+        console.log("prefix error:", e);
+
+        await reply(
+`╭─────────────⭓
+│ 🤖 Tên Bot: ${config.BOTNAME}
+│ ⚙️ Prefix nhóm: ${prefix}
+│ 🌐 Prefix hệ thống: ${globalPrefix}
+╰─────────────⭓`
+        );
+        return;
+      }
     }
 
     return;
