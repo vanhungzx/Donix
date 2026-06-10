@@ -304,7 +304,7 @@ if (bodyStr === pre || (isBotMentioned && !bodyWithoutBotTag)) {
   if (reply) {
     const sent = await reply({
       body: arr[Math.floor(Math.random() * arr.length)],
-      attachment: global.Donix.vdanime?.splice?.(0, 1) || [],
+      attachment: global.Donix.vdgai?.splice?.(0, 1) || [],
       effect: "fire"
     });
     if (unsend && sent?.messageID) {
