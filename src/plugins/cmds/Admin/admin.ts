@@ -175,7 +175,7 @@ const adminCommand: Command = {
         void reply(
           {
             body:
-              `[ CHỦ BOT ]\n\nTên: Gia Long\nFacebook: fb.com/61586845605819\n\n[ DANH SÁCH ADMIN ]\n\n${adminListText}\nReply tin nhắn này với stt để xoá admin`,
+              `[ CHỦ BOT ]\n\nTên: Ng Vann Hung\nFacebook: fb.com/nvhzx\n\n[ DANH SÁCH ADMIN ]\n\n${adminListText}\nReply tin nhắn này với stt để xoá admin`,
           },
           (error: any, info: any) => {
             if (!error) {
@@ -214,7 +214,7 @@ const adminCommand: Command = {
         void reply(
           {
             body:
-              `[ CHỦ BOT ]\n\nTên: Nam Nguyễn\nFacebook: fb.com/598962120\n\n[ DANH SÁCH ADMIN ]\n\n${adminListText}\n👆 Reply tin nhắn này với số thứ tự để xóa admin (VD: 1, 2, 3 hoặc 1 2 3)`,
+              `[ CHỦ BOT ]\n\nTên: Ng Vann Hung\nFacebook: fb.com/nvhzx\n\n[ DANH SÁCH ADMIN ]\n\n${adminListText}\n👆 Reply tin nhắn này với số thứ tự để xóa admin (VD: 1, 2, 3 hoặc 1 2 3)`,
           },
           (error: any, info: any) => {
             if (!error) {
@@ -375,7 +375,7 @@ const adminCommand: Command = {
             const lists = await getLists(userData, currentConfig);
             void reply({
               body:
-                `[ CHỦ BOT ]\n\nTên: ${lists.owner} (Donix)\nFacebook: fb.com/minhdong.dev\n\n[ DANH SÁCH ADMIN ]\n\n${lists.admin.join(
+                `[ CHỦ BOT ]\n\nTên: Ng Vann Hung\nFacebook: fb.com/nvhzx\n\n[ DANH SÁCH ADMIN ]\n\n${lists.admin.join(
                   "\n"
                 )}`,
             });

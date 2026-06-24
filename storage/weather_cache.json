@@ -1,0 +1,100 @@
+{
+  "lastClick": 1782273663175,
+  "lastData": {
+    "channelId": "1517390903927504906",
+    "guildId": null,
+    "id": "1519081287753662525",
+    "position": null,
+    "createdTimestamp": 1782247602166,
+    "type": "DEFAULT",
+    "system": false,
+    "content": "",
+    "authorId": "1499745559702143046",
+    "pinned": false,
+    "tts": false,
+    "nonce": null,
+    "embeds": [],
+    "components": [
+      {
+        "type": 17,
+        "components": [
+          {
+            "type": 10,
+            "content": "### <a:weather_machine:1493972429410668744> DỰ BÁO THỜI TIẾT"
+          },
+          {
+            "type": 9,
+            "components": [
+              {
+                "type": 10,
+                "content": "-# Tôi đã già nhưng kinh nghiệm dự báo thời tiết thì tự tin không thua ai ở [KAIA ISLAND](https://discord.gg/KaiaIsland) này hô hô hô"
+              }
+            ],
+            "accessory": {
+              "type": 11,
+              "media": {
+                "id": "1519081287753662524",
+                "url": "https://cdn.discordapp.com/attachments/1494798485092962314/1495834229039435908/Dr_Brown_Portrait.gif?ex=6a3c0faf&is=6a3abe2f&hm=5ff08c1167d42d818aebc9b21fe030209b78a7285fdc4030f04c0c0df1e8b4e9&",
+                "proxy_url": "https://media.discordapp.net/attachments/1494798485092962314/1495834229039435908/Dr_Brown_Portrait.gif?ex=6a3c0faf&is=6a3abe2f&hm=5ff08c1167d42d818aebc9b21fe030209b78a7285fdc4030f04c0c0df1e8b4e9&",
+                "width": 720,
+                "height": 720,
+                "placeholder": "LAmCDQJGeaVgjHM8hYiAd9oKCoWHiHZodw==",
+                "placeholder_version": 1,
+                "content_scan_metadata": {
+                  "version": 4,
+                  "flags": 0
+                },
+                "content_type": "image/gif",
+                "loading_state": 2,
+                "flags": 1
+              },
+              "description": null,
+              "spoiler": false
+            }
+          },
+          {
+            "type": 14,
+            "spacing": 1,
+            "divider": true
+          },
+          {
+            "type": 10,
+            "content": "**<a:place_Hometown:1517058858781249556> THỊ TRẤN** tới <t:1782280800:s>"
+          },
+          {
+            "type": 10,
+            "content": ">>> <:sandstorms:1457797399404875807> **Gió Cát** - <t:1782247800:t>\n\n<:snowy:1457797320677527623> **Tuyết** - <t:1782249300:t>\n\n<:heatwave:1457797441544786164> **Nắng Nóng** - <t:1782251100:t>\n\n<:blizzard:1514586085852840067> **Bão Tuyết** - <t:1782252300:t>\n\n<:heatwave:1457797441544786164> **Nắng Nóng** - <t:1782254700:t>\n\n<:morningmist:1457797587536183589> **Sương Sớm** - <t:1782255900:t>\n\n<:windy:1457797234547494942> **Gió** - <t:1782258600:t>\n\n<:snowy:1457797320677527623> **Tuyết** - <t:1782259800:t>\n\n<:foggy:1457797085826121748> **Sương Mù** - <t:1782261300:t>\n\n<:blizzard:1514586085852840067> **Bão Tuyết** - <t:1782263400:t>\n\n<:foggy:1457797085826121748> **Sương Mù** - <t:1782264600:t>\n\n<:snowy:1457797320677527623> **Tuyết** - <t:1782266400:t>\n\n<:sandstorms:1457797399404875807> **Gió Cát** - <t:1782269400:t>\n\n<:morningmist:1457797587536183589> **Sương Sớm** - <t:1782270300:t>\n\n<:rainy:1457797505994457344> **Mưa Rào** - <t:1782271800:t>\n\n<:rainy:1457797505994457344> **Mưa Rào** - <t:1782274500:t>\n\n<:rainy:1457797505994457344> **Mưa Rào** - <t:1782276300:t>\n\n<:blizzard:1514586085852840067> **Bão Tuyết** - <t:1782278400:t>\n\n<:snowy:1457797320677527623> **Tuyết** - <t:1782278700:t>\n\n<:rainy:1457797505994457344> **Mưa Rào** - <t:1782280500:t>"
+          },
+          {
+            "type": 10,
+            "content": "Đang hiển thị: 20/20 thời tiết"
+          }
+        ],
+        "spoiler": false
+      }
+    ],
+    "attachments": [],
+    "stickers": [],
+    "editedTimestamp": null,
+    "mentions": {
+      "everyone": false,
+      "users": [],
+      "roles": [],
+      "crosspostedChannels": [],
+      "repliedUser": null,
+      "members": null,
+      "channels": []
+    },
+    "webhookId": null,
+    "poll": null,
+    "groupActivityApplicationId": null,
+    "applicationId": null,
+    "activity": null,
+    "flags": 32768,
+    "reference": null,
+    "interaction": null,
+    "messageSnapshots": [],
+    "call": null,
+    "cleanContent": ""
+  }
+}

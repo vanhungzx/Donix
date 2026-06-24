@@ -518,5 +518,113 @@
       "allowToxic": true
     },
     "timestamp": "2026-05-23T09:51:13.004Z"
+  },
+  {
+    "_id": "1577029660497037",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2026-06-10T05:44:51.107Z"
+  },
+  {
+    "_id": "1568100897616712",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2026-06-11T04:22:16.415Z"
+  },
+  {
+    "_id": "2347932892283802",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2026-06-11T06:33:22.128Z"
+  },
+  {
+    "_id": "1705526830900313",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2026-06-11T07:34:36.276Z"
+  },
+  {
+    "_id": "1763818725062267",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2026-06-11T07:35:31.279Z"
+  },
+  {
+    "_id": "1025400793242495",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2026-06-23T19:16:33.032Z"
+  },
+  {
+    "_id": "1849264349093189",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2026-06-23T19:27:18.497Z"
+  },
+  {
+    "_id": "1699680207705641",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2026-06-23T19:34:39.630Z"
+  },
+  {
+    "_id": "957968793635656",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2026-06-23T19:48:24.429Z"
+  },
+  {
+    "_id": "23914881844817944",
+    "data": {
+      "eventsEnabled": false,
+      "repliesEnabled": false,
+      "allowToxic": true
+    },
+    "timestamp": "2026-06-23T19:49:26.671Z"
+  },
+  {
+    "_id": "2751424718575525",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2026-06-24T03:02:01.645Z"
+  },
+  {
+    "_id": "986904540554734",
+    "data": {
+      "eventsEnabled": true,
+      "repliesEnabled": true,
+      "allowToxic": true
+    },
+    "timestamp": "2026-06-24T03:14:08.945Z"
   }
 ]

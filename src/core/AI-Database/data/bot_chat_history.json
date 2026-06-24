@@ -9437,5 +9437,512 @@
       ]
     },
     "timestamp": "2026-05-23T09:51:13.027Z"
+  },
+  {
+    "_id": "1577029660497037:1429451704",
+    "data": {
+      "messages": [
+        {
+          "sender": "1429451704",
+          "content": "Ê",
+          "timestamp": "2026-06-10T05:44:51.143Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Ê Hoàng Gia Bảo, làm gì mà ê vậy? Có chuyện gì không nè? 😉.",
+          "timestamp": "2026-06-10T05:44:53.617Z"
+        }
+      ]
+    },
+    "timestamp": "2026-06-10T05:44:51.124Z"
+  },
+  {
+    "_id": "1577029660497037:100000895922054",
+    "data": {
+      "messages": [
+        {
+          "sender": "100000895922054",
+          "content": "/bot tạo ảnh con cá",
+          "timestamp": "2026-06-10T07:42:10.381Z"
+        }
+      ]
+    },
+    "timestamp": "2026-06-10T07:42:10.278Z"
+  },
+  {
+    "_id": "1568100897616712:100000895922054",
+    "data": {
+      "messages": [
+        {
+          "sender": "100000895922054",
+          "content": "mở nhạc hẹn lần sau",
+          "timestamp": "2026-06-11T04:22:16.512Z"
+        },
+        {
+          "sender": "100000895922054",
+          "content": "/bot mở nhạc hẹn lần sau",
+          "timestamp": "2026-06-11T04:22:53.728Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Ng Van Hungg 🌸 ơi, dạ em mở nhạc 'Hẹn Lần Sau' cho Ng Van Hungg 🌸 liền nè!",
+          "timestamp": "2026-06-11T04:22:55.837Z"
+        }
+      ]
+    },
+    "timestamp": "2026-06-11T04:22:16.446Z"
+  },
+  {
+    "_id": "2347932892283802:100000895922054",
+    "data": {
+      "messages": [
+        {
+          "sender": "100000895922054",
+          "content": "/bot tạo ảnh hồ gươm",
+          "timestamp": "2026-06-11T06:33:22.157Z"
+        },
+        {
+          "sender": "100000895922054",
+          "content": "/bot tạo ảnh hồ gươm",
+          "timestamp": "2026-06-11T06:33:27.722Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Ng Van Hungg 🌸 ơi, dạ em vẽ liền ạ!",
+          "timestamp": "2026-06-11T06:33:30.177Z"
+        }
+      ]
+    },
+    "timestamp": "2026-06-11T06:33:22.138Z"
+  },
+  {
+    "_id": "1705526830900313:100000895922054",
+    "data": {
+      "messages": [
+        {
+          "sender": "100000895922054",
+          "content": "/bot set biệt danh cho anh thành Ekem 208",
+          "timestamp": "2026-06-11T07:34:36.303Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Ng Van Hungg 🌸 ơi, dạ em set biệt danh cho anh Ng Van Hungg 🌸 là Ekem 208 liền nha! 😊.",
+          "timestamp": "2026-06-11T07:34:38.627Z"
+        }
+      ]
+    },
+    "timestamp": "2026-06-11T07:34:36.287Z"
+  },
+  {
+    "_id": "1763818725062267:100000895922054",
+    "data": {
+      "messages": [
+        {
+          "sender": "100000895922054",
+          "content": "/bot set biệt danh cho anh thành ★ kem 208 ✧˚.🎀༘⋆",
+          "timestamp": "2026-06-11T07:35:31.388Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Ng Van Hungg 🌸 ơi, dạ em set biệt danh cho anh Ng Van Hungg 🌸 thành ★ kem 208 ✧˚.🎀༘⋆ liền nha! 🥰.",
+          "timestamp": "2026-06-11T07:35:33.598Z"
+        },
+        {
+          "sender": "100000895922054",
+          "content": "chào e",
+          "timestamp": "2026-06-11T07:41:30.032Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Ng Van Hungg 🌸 ơi, chào anh Ng Van Hungg 🌸 nha! Anh có cần em giúp gì không ạ? 😊.",
+          "timestamp": "2026-06-11T07:41:31.835Z"
+        },
+        {
+          "sender": "100000895922054",
+          "content": "/bot tạo ảnh hồ gươm",
+          "timestamp": "2026-06-11T07:43:54.199Z"
+        },
+        {
+          "sender": "100000895922054",
+          "content": "/bot mở nhạc hẹn lần sau cho chồng",
+          "timestamp": "2026-06-11T07:45:12.822Z"
+        }
+      ]
+    },
+    "timestamp": "2026-06-11T07:35:31.291Z"
+  },
+  {
+    "_id": "1763818725062267:61558503060103",
+    "data": {
+      "messages": [
+        {
+          "sender": "61558503060103",
+          "content": "/bot ơi",
+          "timestamp": "2026-06-11T07:43:46.012Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Ơi Hà Phương! Em đây nè, có gì không ạ? 😊.",
+          "timestamp": "2026-06-11T07:43:48.269Z"
+        },
+        {
+          "sender": "61558503060103",
+          "content": "Ựa bot xịn quá\nhk có dởm như bot clan cũ^^",
+          "timestamp": "2026-06-11T07:44:42.797Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Ơi Hà Phương! Em đây nè, có gì không ạ? 😊.",
+          "timestamp": "2026-06-11T07:44:45.408Z"
+        }
+      ]
+    },
+    "timestamp": "2026-06-11T07:43:45.996Z"
+  },
+  {
+    "_id": "1025400793242495:61566181715239",
+    "data": {
+      "messages": [
+        {
+          "sender": "61566181715239",
+          "content": "bot bị j r",
+          "timestamp": "2026-06-23T19:16:33.156Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Ơ, mình vẫn hoạt động bình thường mà bạn ơi! Có gì không ổn hả? 🤔.",
+          "timestamp": "2026-06-23T19:16:34.566Z"
+        },
+        {
+          "sender": "61566181715239",
+          "content": "bot này có like nx k",
+          "timestamp": "2026-06-23T19:17:27.603Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Có nha bạn! Bạn muốn like gì nè? 😉.",
+          "timestamp": "2026-06-23T19:17:29.309Z"
+        },
+        {
+          "sender": "61566181715239",
+          "content": "bot dẹo v",
+          "timestamp": "2026-06-23T19:35:52.062Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Ơ, bạn nói gì dẹo dẹo vậy? Mình vẫn khỏe re mà! 😋.",
+          "timestamp": "2026-06-23T19:35:53.951Z"
+        },
+        {
+          "sender": "61566181715239",
+          "content": "ok bạn",
+          "timestamp": "2026-06-23T19:36:23.833Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Ok bạn iu! Có gì cứ hú Hương nha! 😉.",
+          "timestamp": "2026-06-23T19:36:26.646Z"
+        },
+        {
+          "sender": "61566181715239",
+          "content": "bot sửa r",
+          "timestamp": "2026-06-24T02:55:34.378Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Sửa gì cơ bạn? Mình vẫn ổn mà hihi. 😉.",
+          "timestamp": "2026-06-24T02:55:36.343Z"
+        }
+      ]
+    },
+    "timestamp": "2026-06-23T19:16:33.063Z"
+  },
+  {
+    "_id": "1025400793242495:100049320434307",
+    "data": {
+      "messages": [
+        {
+          "sender": "100049320434307",
+          "content": "bot ăn cơm chưa",
+          "timestamp": "2026-06-23T19:18:23.220Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Ngọc Diệp Đinh ơi, em chưa ăn cơm nè Diệp ơi! 🥺 Đang đợi anh Long cho em ăn nè hehe. Mà Diệp ăn cơm chưa đó? 😊.",
+          "timestamp": "2026-06-23T19:18:25.590Z"
+        }
+      ]
+    },
+    "timestamp": "2026-06-23T19:18:23.208Z"
+  },
+  {
+    "_id": "1025400793242495:100069346035962",
+    "data": {
+      "messages": [
+        {
+          "sender": "100069346035962",
+          "content": "bot tên long ạ",
+          "timestamp": "2026-06-23T19:18:38.697Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Huy Gia ơi, không nha, Hương tên Hương mà! Sao lại nhầm Hương với anh Long rồi? 🥺. Mình hít thở chậm lại một tí cho đầu óc nhẹ nhàng hơn nha anh.",
+          "timestamp": "2026-06-23T19:18:39.935Z"
+        },
+        {
+          "sender": "100069346035962",
+          "content": "dạ thui tui xin nhõi",
+          "timestamp": "2026-06-23T19:18:51.545Z"
+        },
+        {
+          "sender": "100069346035962",
+          "content": "dạ thui tui xin nhõi",
+          "timestamp": "2026-06-23T19:18:53.977Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Dạ hong có gì đâu Huy Gia ơi! Hương đâu có giận đâu nè 😊.",
+          "timestamp": "2026-06-23T19:18:55.396Z"
+        }
+      ]
+    },
+    "timestamp": "2026-06-23T19:18:38.684Z"
+  },
+  {
+    "_id": "1849264349093189:61550030184394",
+    "data": {
+      "messages": [
+        {
+          "sender": "61550030184394",
+          "content": "bot tên gì",
+          "timestamp": "2026-06-23T19:27:18.529Z"
+        },
+        {
+          "sender": "61550030184394",
+          "content": "bot tên gì",
+          "timestamp": "2026-06-23T19:27:21.032Z"
+        },
+        {
+          "sender": "bot",
+          "content": "️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️ ơi, em là Thị Hương nè! Có gì em giúp được bạn không? 😊.",
+          "timestamp": "2026-06-23T19:27:22.922Z"
+        },
+        {
+          "sender": "61550030184394",
+          "content": "bot ơi",
+          "timestamp": "2026-06-23T19:32:07.970Z"
+        },
+        {
+          "sender": "bot",
+          "content": "️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️ ơi, dạ em đây bạn ơi! Có gì không nè? 😊.",
+          "timestamp": "2026-06-23T19:32:09.857Z"
+        },
+        {
+          "sender": "61550030184394",
+          "content": "bot ơi từ giờ admin cùa em tên là hưng nhó kh phải tên log",
+          "timestamp": "2026-06-23T19:32:33.979Z"
+        },
+        {
+          "sender": "bot",
+          "content": "️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️ ơi, dạ vâng ạ! Em nhớ rồi nè bạn ơi! Từ giờ admin của em tên là Hưng chứ không phải Log nữa nha. 😊. Mình hít thở chậm lại một tí cho đầu óc nhẹ nhàng hơn nha anh.",
+          "timestamp": "2026-06-23T19:32:38.269Z"
+        },
+        {
+          "sender": "61550030184394",
+          "content": "Long á anh viết nhầm là log",
+          "timestamp": "2026-06-23T19:32:52.122Z"
+        },
+        {
+          "sender": "bot",
+          "content": "️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️ ơi, à ra vậy ạ! Em nhớ rồi nè, admin của em là anh Hưng nha, không phải Log đâu! Em ghi nhớ kỹ rồi nè. 😅. Anh chia nhỏ từng việc ra, em sẽ cùng anh xử lý từng bước một.",
+          "timestamp": "2026-06-23T19:32:56.103Z"
+        },
+        {
+          "sender": "61550030184394",
+          "content": "Bot đổi bd cho anh đi",
+          "timestamp": "2026-06-23T20:49:55.578Z"
+        },
+        {
+          "sender": "bot",
+          "content": "️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️ ơi, dạ bạn muốn đổi biệt danh cho ai và đổi thành gì nè? Bạn nói rõ giúp em nha! 😊.",
+          "timestamp": "2026-06-23T20:49:57.387Z"
+        }
+      ]
+    },
+    "timestamp": "2026-06-23T19:27:18.512Z"
+  },
+  {
+    "_id": "1699680207705641:61550030184394",
+    "data": {
+      "messages": [
+        {
+          "sender": "61550030184394",
+          "content": "Bot Tag nhỏ quỳnh quỳnh lên cho anh đi e",
+          "timestamp": "2026-06-23T19:34:39.779Z"
+        },
+        {
+          "sender": "bot",
+          "content": "️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️ ơi, dạ em tag liền nè! Quỳnh Quỳnh ơi có người gọi nè! @quynhquynh.",
+          "timestamp": "2026-06-23T19:34:41.871Z"
+        }
+      ]
+    },
+    "timestamp": "2026-06-23T19:34:39.667Z"
+  },
+  {
+    "_id": "1025400793242495:61550030184394",
+    "data": {
+      "messages": [
+        {
+          "sender": "61550030184394",
+          "content": "Bot mở bài nắng cho anh nghe đi e",
+          "timestamp": "2026-06-23T19:35:29.491Z"
+        },
+        {
+          "sender": "bot",
+          "content": "️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️ ơi, dạ, em mở bài Nắng cho anh nghe liền nè! ☀️.",
+          "timestamp": "2026-06-23T19:35:37.388Z"
+        }
+      ]
+    },
+    "timestamp": "2026-06-23T19:35:29.480Z"
+  },
+  {
+    "_id": "1699680207705641:61551201031946",
+    "data": {
+      "messages": [
+        {
+          "sender": "61551201031946",
+          "content": "bot béo",
+          "timestamp": "2026-06-23T19:35:46.006Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Béo cái gì mà béo? Gầy tong teo đây này Thủy Tiên 😤.",
+          "timestamp": "2026-06-23T19:35:47.679Z"
+        },
+        {
+          "sender": "61551201031946",
+          "content": "bot gay",
+          "timestamp": "2026-06-23T19:36:07.423Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Gầy thiệt mà, Thủy Tiên không tin à? 🥺.",
+          "timestamp": "2026-06-23T19:36:10.407Z"
+        }
+      ]
+    },
+    "timestamp": "2026-06-23T19:35:45.981Z"
+  },
+  {
+    "_id": "957968793635656:100093096891282",
+    "data": {
+      "messages": [
+        {
+          "sender": "100093096891282",
+          "content": "/bot oi",
+          "timestamp": "2026-06-23T19:48:24.459Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Ơi Lee Kyung, Hương đây nè! Anh cần gì ạ? 😊.",
+          "timestamp": "2026-06-23T19:48:26.493Z"
+        },
+        {
+          "sender": "100093096891282",
+          "content": "/bot hưng đâu ròi",
+          "timestamp": "2026-06-23T19:48:53.290Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Anh Lee Kyung đang tìm Hưng nào vậy ạ? Có BOT Hưng Phát ở Hà Nội nè, hay Trạm BOT Đông Hưng ở Thái Bình, hoặc dự án BOT Cầu Thái Hà ở Hưng Yên đang thua lỗ. Thậm chí có cả \"cầu Đún BOT\" dân sinh ở Hưng Yên nữa đó! Anh muốn tìm Hưng nào mới được chứ? 🧐.",
+          "timestamp": "2026-06-23T19:48:56.665Z"
+        }
+      ]
+    },
+    "timestamp": "2026-06-23T19:48:24.444Z"
+  },
+  {
+    "_id": "23914881844817944:100077043241665",
+    "data": {
+      "messages": [
+        {
+          "sender": "100077043241665",
+          "content": "Bot chạy file ms j v",
+          "timestamp": "2026-06-23T19:49:26.694Z"
+        },
+        {
+          "sender": "100077043241665",
+          "content": "Bot chạy file ms j v",
+          "timestamp": "2026-06-23T19:49:29.058Z"
+        },
+        {
+          "sender": "100077043241665",
+          "content": "Bot chạy file ms j v",
+          "timestamp": "2026-06-23T19:49:33.326Z"
+        }
+      ]
+    },
+    "timestamp": "2026-06-23T19:49:26.683Z"
+  },
+  {
+    "_id": "23914881844817944:61550030184394",
+    "data": {
+      "messages": [
+        {
+          "sender": "61550030184394",
+          "content": "bot đổi biệt danh cho anh là nvh đi",
+          "timestamp": "2026-06-23T19:51:51.465Z"
+        }
+      ]
+    },
+    "timestamp": "2026-06-23T19:51:51.349Z"
+  },
+  {
+    "_id": "2751424718575525:100039131345929",
+    "data": {
+      "messages": [
+        {
+          "sender": "100039131345929",
+          "content": "@️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️️  bot mới sao đây",
+          "timestamp": "2026-06-24T03:02:01.669Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Chào Khánhh Huyền! 😊 Em là Hương, trợ lý ảo xinh đẹp của nhóm mình nè. Rất vui được làm quen với anh! Anh muốn em giúp gì không? 😉.",
+          "timestamp": "2026-06-24T03:02:04.719Z"
+        },
+        {
+          "sender": "100039131345929",
+          "content": "Cài lại chỉ có key mới sài dc bot sao m",
+          "timestamp": "2026-06-24T03:03:55.332Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Đúng rồi đó anh Khánhh Huyền. Giờ thì bot chỉ chạy được với key mới thôi nha. Cài lại cho tiện nè! 😉.",
+          "timestamp": "2026-06-24T03:03:57.700Z"
+        }
+      ]
+    },
+    "timestamp": "2026-06-24T03:02:01.654Z"
+  },
+  {
+    "_id": "986904540554734:61576125093771",
+    "data": {
+      "messages": [
+        {
+          "sender": "61576125093771",
+          "content": "Bot qa",
+          "timestamp": "2026-06-24T03:14:08.974Z"
+        },
+        {
+          "sender": "bot",
+          "content": "Hoá Võ ơi, sao thế Hoá Võ? Anh đang hỏi gì vậy ạ? 🤔.",
+          "timestamp": "2026-06-24T03:14:12.759Z"
+        }
+      ]
+    },
+    "timestamp": "2026-06-24T03:14:08.959Z"
   }
 ]

@@ -1,17 +1,20 @@
 {
   "PREFIX": "/",
-  "BOTNAME": "Obito",
+  "BOTNAME": "ᴢᴇɴɪᴛꜱᴜ (ʙᴇᴛᴀ )",
   "DevMode": false,
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
-  "OWNER": "61564114700108",
+  "OWNER": "61550030184394",
   "ADMIN": [
-    "502275138",
-    "100067827494573"
+    "100073639420918",
+    "61550030184394",
+    "",
+    "",
+    ""
   ],
   "token": {
-    "EAAAAU": "EAAAAUaZA8jlABRlI1jqPqWO77sZBgdg8ZAEHTMr5Uqpft7PGZC9UvtgIsndvaURTKlYPQJByGz3JtX9ttip6mqdx6uzXur68Heoo85vfpZB3ELq6KK2EKu9ubPG5nGktTMF417ZB47ZBl1jY3KWxCtirPoG3jeCkU5TitN6lCZBOVorOZAU0pCNzZBYT3TpwWeyQi4VQZDZD",
-    "EAAD6V7": "EAAD6V7os0gcBRoTth3P8FLCHfEA1gqais9QucCNu25J9zZBJ6AJcnvGQvQIKk3kI3E0ocgQ3JAI22kdkbZCQZB1kvbL8ld6Ws7tJ0ftpSZAipNfENrkKrXk7vyBbYJLp4qfd837tS2uHogO678qVZAzJ0YWvYx0yhdjWdhRXjrEVBRUZAeEcYGOyVZAqtzzsp003QZDZD",
-    "EAAD": "EAADo1TDZCuu8BRtUI9AfXv66jJZCFc8uEdXYJc9NWeKZB2C1GTWYenUnZBRRepQOcWEPC0b5EoHVJ3dJjg9dCZAnJ5dW35auj5ZAvlvL8TSZCZCysGuWtL69BQae106d8LQUjOJJ0Y9ah8B6j86L8EjI9WAzVXNMZCTKRRRxapM4dKhQOOIthxdUCmv8NXAW2k3zto7qE7XeMVAZDZD"
+    "EAAAAU": "EAAAAUaZA8jlABRZBCDG3gCF8E6Do3ab4SMJwZAjSEOZApJUtoT7EcxlZBcKdcteMhwmNB0bCceLZAcLqM4eZBzcdof2lQ4JlnOh3FdXYGAPpOzVqJCq8d44NvlzN3Tm6MTFb9ECs9g4KpMHRc6GOMLiyZAbp0IjFLLGsmJ1OASAHl17EmeZBZAqFvhwYKdTsAE6gZDZD",
+    "EAAD6V7": "EAAD6V7os0gcBR1KB8e0ijo2Ij4nTOJnGxz5dLCXvNseJX4fK4qzHtHKVL2d8S5Gxd7He1UB3WDHk5iC9qsviNOxa5dhMYVLb4b0BiDAW0gyUvtRhcH6Y5ZCPYN2Y2kwczzPH03hQh8uWRakdAVRCepeDHnPw8I0q7qcPKXGubsLPlgmhpO3JfRf5XuwZDZD",
+    "EAAD": "EAADo1TDZCuu8BR552yPnyCh0gJ2IyJd3qaLpl0JKZC3ZCvMZA4FzqoSHt5XlK2JNntbcF48AJJZBIVpQKGdPZChZAwrBbOuQDb0HSTns173pBWbkagNmOQMZC1apfmCR4cVIDZBbVTnoVlShZC2wKSZAbTfDi4PcOXr2WkBSH6JAZCeOZBfzDtagDw2rZBHAGqDnAL6Nmr56yZAXpeHcgZDZD"
   },
   "OWNER_NOPREFIX": {
     "all": false,
@@ -25,11 +28,9 @@
     "722146370916700": false,
     "1838598186737845": true,
     "9072589019476939": true,
-    "1264342595796016": false,
-    "861803530227487": true,
-    "1412823280572890": false
+    "1699680207705641": true
   },
-  "BOX_ADMIN": "1264342595796016",
+  "BOX_ADMIN": "1849264349093189",
   "loadSrcips": {
     "enable": true,
     "cmdDis": [],
@@ -41,38 +42,26 @@
   },
   "fbAccounts": [
     {
-      "email": "hungvan13032000@gmail.com",
-      "password": "ngvanhungxx",
-      "twofactor": "ODG3KIA2JVICO4X2AEDRL6C2FHTF2OO3",
-      "cookie": "c_user=61589110242114; xs=4:bC2lJTfkd03OpQ:2:1778984886:-1:-1; fr=0LXiWyazL4AA28Ydv.AWe5njXQylrbtPKrRWINcvwwLqaGLQMTZlON7JmK-2srO9i1xbM.BqCSe1..AAA.0.0.BqCSe1.AWe2RI0DXhLtwpoDxY4kTOp8wZc; datr=QkQjaaPYXqr7elYbhXm9k25K",
+      "email": "ebecutii29@gmail.com",
+      "password": "Ngvanhungzx",
+      "twofactor": "XK72 KSMZ HSSU T7BE MDSP KZCK 2JKK VAYD",
+      "cookie": "c_user=61550030184394; xs=18:C8TG48SHFne8HQ:2:1779561309:-1:-1; fr=0i4kFDqzjEzH4Sqlh.AWd1Tvxxh2bZN2-FkTr-XXWFMK4DjvohBBYI1MPHRdNYtLIGccs.BqEfNc..AAA.0.0.BqEfNc.AWfQGGsySyADQY4nait9CGi1Mgs; datr=VfMRaiK5H3-nkW09hCdnmZQ9",
       "disabled": false
     },
     {
-      "email": "ngvthanhthaoj770@gmail.com",
-      "password": "Longdz123@",
-      "twofactor": "X5DX ZANQ ONGG Y2SN CMPB O6PM BURG HOKV",
-      "cookie": "c_user=61589210258627; xs=3:WT8F7S2OdvWnWA:2:1779015436:-1:-1; fr=0bDO8EZQyDnEcW37I.AWdXkp9DtqBZ0hkZoZQ7XBJffFZNtkpRQtRW15ArbIez3H1iNDo.BqCZ8I..AAA.0.0.BqCZ8I.AWdWa63hUpLzjmCpq6Td4t5PAb0; datr=QkQjaaPYXqr7elYbhXm9k25K",
+      "email": "ebecutii29@gmail.com",
+      "password": "Ngvanhungzx",
+      "twofactor": "XK72 KSMZ HSSU T7BE MDSP KZCK 2JKK VAYD",
+      "cookie": "c_user=61550030184394; xs=18:C8TG48SHFne8HQ:2:1779561309:-1:-1; fr=0i4kFDqzjEzH4Sqlh.AWd1Tvxxh2bZN2-FkTr-XXWFMK4DjvohBBYI1MPHRdNYtLIGccs.BqEfNc..AAA.0.0.BqEfNc.AWfQGGsySyADQY4nait9CGi1Mgs; datr=VfMRaiK5H3-nkW09hCdnmZQ9",
       "disabled": false
     }
   ],
   "configModule": {},
-  "nongtrai": {
-    "apiBase": "https://donixdev.com",
-    "apiKey": "dnx_live_QFHzoQyKc7jh16JnKsYtEmI9e9HF4nyLbzwFLS"
-  },
   "configValue": {},
   "sendTopMessagesEnabled": true,
   "scheduler": {
     "enabled": true,
     "tasks": {
-      "sendTop": {
-        "enabled": true,
-        "type": "at",
-        "time": "00:01",
-        "send": {
-          "enabled": false
-        }
-      },
       "tokenCheck": {
         "enabled": true,
         "type": "everyH",
@@ -83,22 +72,25 @@
       "updNick": {
         "enabled": true,
         "type": "at",
-        "time": "00:10"
+        "time": "00:22"
       },
       "notifyExp": {
         "enabled": true,
         "type": "at",
         "time": "16:00"
       },
+      "sendTop": {
+        "enabled": true,
+        "type": "at",
+        "time": "00:00",
+        "send": {
+          "enabled": true
+        }
+      },
       "resetGeminiQuota": {
         "enabled": true,
         "type": "at",
         "time": "00:01"
-      },
-      "autoRestart": {
-        "enabled": false,
-        "type": "everyH",
-        "hours": 4
       },
       "autoInteractFeed": {
         "enabled": false,
@@ -110,8 +102,12 @@
         "minDelayMs": 2500,
         "maxDelayMs": 6000,
         "commentTemplates": []
+      },
+      "autoRestart": {
+        "enabled": false,
+        "type": "everyH",
+        "hours": 4
       }
     }
-  },
-  "botNoPrefixEnabled": false
+  }
 }

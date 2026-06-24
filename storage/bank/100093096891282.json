@@ -1,0 +1,39 @@
+{
+  "money": "82019",
+  "loan": "0",
+  "isLocked": false,
+  "lockReason": "",
+  "loanDate": null,
+  "lastLoanTs": null,
+  "lastDepositCredit": 1782259200000,
+  "creditScore": 100,
+  "transactions": [
+    {
+      "type": "deposit",
+      "amount": "23130",
+      "timestamp": 1782244570689
+    },
+    {
+      "type": "withdraw",
+      "amount": "5000",
+      "timestamp": 1782244678376
+    },
+    {
+      "type": "deposit",
+      "amount": "63808",
+      "timestamp": 1782245058429
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "81",
+      "timestamp": 1782259200000
+    }
+  ],
+  "accountCreated": 1782244015255,
+  "lastDaily": 0,
+  "dailyStreak": 0,
+  "terms": [],
+  "goals": [],
+  "requestsIncoming": [],
+  "requestsOutgoing": []
+}

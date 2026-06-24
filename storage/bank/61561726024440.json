@@ -1,11 +1,11 @@
 {
-  "money": "52332",
+  "money": "53379",
   "loan": "0",
   "isLocked": false,
   "lockReason": "",
   "loanDate": null,
   "lastLoanTs": null,
-  "lastDepositCredit": 1780531200000,
+  "lastDepositCredit": 1782259200000,
   "creditScore": 100,
   "transactions": [
     {
@@ -242,6 +242,106 @@
       "type": "interest_deposit_daily",
       "amount": "52",
       "timestamp": 1780531200000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "52",
+      "timestamp": 1780617600000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "52",
+      "timestamp": 1780704000000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "52",
+      "timestamp": 1780790400000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "52",
+      "timestamp": 1780876800000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "52",
+      "timestamp": 1780963200000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "52",
+      "timestamp": 1781049600000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "52",
+      "timestamp": 1781136000000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "52",
+      "timestamp": 1781222400000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "52",
+      "timestamp": 1781308800000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "52",
+      "timestamp": 1781395200000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "52",
+      "timestamp": 1781481600000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "52",
+      "timestamp": 1781568000000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "52",
+      "timestamp": 1781654400000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "53",
+      "timestamp": 1781740800000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "53",
+      "timestamp": 1781827200000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "53",
+      "timestamp": 1781913600000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "53",
+      "timestamp": 1782000000000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "53",
+      "timestamp": 1782086400000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "53",
+      "timestamp": 1782172800000
+    },
+    {
+      "type": "interest_deposit_daily",
+      "amount": "53",
+      "timestamp": 1782259200000
     }
   ],
   "accountCreated": 1776600505881,
