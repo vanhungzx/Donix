@@ -11,6 +11,20 @@ interface ThreadInfo {
   [key: string]: any;
 }
 
+interface ThreadListItem {
+  threadID?: string | number | null;
+  name?: string | null;
+  threadName?: string | null;
+  participants?: Array<{ userID?: string | number; id?: string | number; name?: string; gender?: string | null }>;
+  participantIDs?: Array<string | number>;
+  adminIDs?: Array<string | number | { id?: string | number; userID?: string | number }>;
+  isGroup?: boolean;
+  threadType?: number;
+  timestamp?: string | number | null;
+  lastMessageTimestamp?: string | number | null;
+  [key: string]: any;
+}
+
 interface UserStats {
   created: number;
   updated: number;
@@ -59,6 +73,7 @@ export async function createSmartThreadUpdater(
   const MAX_QUEUE_SIZE = 200;
   const SCAN_BATCH_SIZE = 25;
   const USER_BATCH_SIZE = 5;
+  const THREAD_LIST_LIMIT = 100;
 
   const API_TIMEOUT = 30_000;
 
@@ -142,6 +157,46 @@ export async function createSmartThreadUpdater(
   function computeCooldownMs(failCount: number) {
     const ms = BASE_COOLDOWN_ON_FAIL * Math.pow(2, Math.max(0, failCount - 1));
     return Math.min(ms, MAX_COOLDOWN);
+  }
+
+  function getThreadListID(item: ThreadListItem): string {
+    return String(item.threadID ?? item.thread_fbid ?? item.id ?? "");
+  }
+
+  function isActiveGroupThread(item: ThreadListItem): boolean {
+    const tid = getThreadListID(item);
+    if (!tid) return false;
+    if (item.isGroup === true) return true;
+    return Number(item.threadType) === 2;
+  }
+
+  function toThreadInfoFromList(item: ThreadListItem): ThreadInfo {
+    const tid = getThreadListID(item);
+    const participants = Array.isArray(item.participants) ? item.participants : [];
+    const userInfo = participants
+      .map((p) => {
+        const id = String(p.userID ?? p.id ?? "");
+        return id ? { id, name: p.name, gender: p.gender ?? null } : null;
+      })
+      .filter(Boolean) as Array<{ id: string; name?: string; gender?: string | null }>;
+    const participantIDs = Array.isArray(item.participantIDs) && item.participantIDs.length
+      ? item.participantIDs.map(String)
+      : userInfo.map((u) => u.id);
+    const adminIDs = Array.isArray(item.adminIDs)
+      ? item.adminIDs
+        .map((admin) => typeof admin === "object" ? String(admin.id ?? admin.userID ?? "") : String(admin))
+        .filter(Boolean)
+        .map((id) => ({ id }))
+      : [];
+
+    return {
+      ...item,
+      threadID: tid,
+      threadName: item.threadName || item.name || "Unknown Group",
+      participantIDs,
+      userInfo,
+      adminIDs,
+    };
   }
 
   async function upsertUsers(info: ThreadInfo): Promise<UserStats> {
@@ -265,30 +320,48 @@ export async function createSmartThreadUpdater(
     scanRunning = true;
 
     try {
+      if (typeof client.getThreadList !== "function") {
+        log.warn?.("Không có getThreadList, bỏ qua auto-refresh nhóm active");
+        return;
+      }
+
       const t = now();
-      const allThreads = (await withTimeout(
-        (threadData.getAll as any)(["threadID", "lastActive"]),
-        API_TIMEOUT * 2,
-        "Timeout getAll threads"
-      ).catch(() => [])) as Array<{ threadID: string; lastActive?: number | null }>;
+      const liveThreads = (await withTimeout(
+        client.getThreadList(THREAD_LIST_LIMIT, null, ["INBOX"]),
+        API_TIMEOUT,
+        "Timeout getThreadList active groups"
+      ).catch((e: any) => {
+        log.warn?.(`Không lấy được danh sách nhóm active: ${e?.message || e}`);
+        return [];
+      })) as ThreadListItem[];
 
-      let need = 0;
+      const activeGroups = liveThreads.filter(isActiveGroupThread);
+      let updated = 0;
 
-      for (let i = 0; i < allThreads.length; i += SCAN_BATCH_SIZE) {
-        const batch = allThreads.slice(i, i + SCAN_BATCH_SIZE);
+      for (let i = 0; i < activeGroups.length; i += SCAN_BATCH_SIZE) {
+        const batch = activeGroups.slice(i, i + SCAN_BATCH_SIZE);
 
         for (const row of batch) {
-          const tid = String(row.threadID || "");
+          const tid = getThreadListID(row);
           if (!tid) continue;
 
           const s = getState(tid);
           if (s.inflight) continue;
           if (s.cooldownUntil > t) continue;
 
-          const last = Number(row.lastActive) || 0;
+          const cached = await withTimeout(
+            threadData.get(tid),
+            API_TIMEOUT,
+            `Timeout get cached active thread ${tid}`
+          ).catch(() => null);
+          const last = Number(cached?.lastActive) || 0;
+
           if (t - last > UPDATE_THRESHOLD) {
-            enqueue(tid, 1);
-            need++;
+            const info = toThreadInfoFromList(row);
+            await withTimeout(upsertUsers(info), API_TIMEOUT, `Timeout upsert list users ${tid}`)
+              .catch(() => ({ created: 0, updated: 0, total: 0 }));
+            await upsertThread(tid, info);
+            updated++;
           }
         }
 
@@ -296,8 +369,7 @@ export async function createSmartThreadUpdater(
         if (SCAN_YIELD_MS > 0) await sleep(SCAN_YIELD_MS);
       }
 
-      if (need) log.info?.(`Cần cập nhật ~${need} nhóm (queue=${qSize()}, running=${running})`);
-      setImmediate(runWorkerLoop);
+      if (updated) log.info?.(`Đã đồng bộ ${updated} nhóm active từ getThreadList`);
     } catch (e: any) {
       log.error?.(`scanAndEnqueue error: ${e?.message || e}`);
     } finally {

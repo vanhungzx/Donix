@@ -6,6 +6,7 @@ import {
     DefaultFuncs,
     getType
 } from "../../request/formatters/helpers";
+import threadInfoHtml from "./threadInfoHtml";
 
 const CONSTANTS = Object.freeze({
     THREAD_TYPE_GROUP: "GROUP",
@@ -39,6 +40,29 @@ const Utils = {
             return body;
         }
     }
+};
+
+const stringifyGraphQLError = (value: any): string | null => {
+    if (!value) return null;
+    if (typeof value === "string") return value;
+    if (Array.isArray(value)) {
+        const messages = value
+            .map((item) => stringifyGraphQLError(item))
+            .filter(Boolean);
+        return messages.length ? messages.join("; ") : null;
+    }
+    if (typeof value === "object") {
+        return value.message || value.description || value.summary || value.debug_info || null;
+    }
+    return String(value);
+};
+
+const getGraphQLBatchData = (head: any): any => {
+    return head?.o0?.data || head?.data || null;
+};
+
+const getGraphQLBatchError = (head: any): string | null => {
+    return stringifyGraphQLError(head?.o0?.errors || head?.errors || head?.error || head?.o0?.error);
 };
 
 interface EventReminder {
@@ -414,15 +438,25 @@ export default function getThreadInfoGraphQL(
                 
                 const parsed = Utils.parseFromBody(String(raw));
                 const head = Array.isArray(parsed) ? parsed[0] : parsed;
-                const data = head && head.o0 && head.o0.data ? head.o0.data : null;
+                const data = getGraphQLBatchData(head);
 
-                if (!data) throw new Error("No data field in response");
+                if (!data) {
+                    const graphQLError = getGraphQLBatchError(head);
+                    logger.warn(`getThreadInfoGraphQL missing data for ${ids[0]}${graphQLError ? `: ${graphQLError}` : ""}; falling back to HTML parser`);
+                    return threadInfoHtml(_defaultFuncs, api, _ctx)(ids[0], callback as any);
+                }
                 
                 const info = formatThreadGraphQLResponse(data);
+                if (!info) throw new Error("Unable to parse thread info from GraphQL response");
                 callback!(null, info!);
             })
             .catch((err: any) => {
-                logger.error(`getThreadInfoGraphQL error: ${err.message}`);
+                const message = err?.message || String(err);
+                if (message === "Empty response") {
+                    logger.warn(`getThreadInfoGraphQL empty response for ${ids[0]}; falling back to HTML parser`);
+                    return threadInfoHtml(_defaultFuncs, api, _ctx)(ids[0], callback as any);
+                }
+                logger.warn(`getThreadInfoGraphQL error for ${ids[0]}: ${message}`);
                 callback!(err);
             });
 

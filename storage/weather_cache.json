@@ -1,11 +1,11 @@
 {
-  "lastClick": 1782273663175,
+  "lastClick": 1782313763424,
   "lastData": {
     "channelId": "1517390903927504906",
     "guildId": null,
-    "id": "1519081287753662525",
+    "id": "1519219545183621202",
     "position": null,
-    "createdTimestamp": 1782247602166,
+    "createdTimestamp": 1782280565306,
     "type": "DEFAULT",
     "system": false,
     "content": "",
@@ -33,9 +33,9 @@
             "accessory": {
               "type": 11,
               "media": {
-                "id": "1519081287753662524",
-                "url": "https://cdn.discordapp.com/attachments/1494798485092962314/1495834229039435908/Dr_Brown_Portrait.gif?ex=6a3c0faf&is=6a3abe2f&hm=5ff08c1167d42d818aebc9b21fe030209b78a7285fdc4030f04c0c0df1e8b4e9&",
-                "proxy_url": "https://media.discordapp.net/attachments/1494798485092962314/1495834229039435908/Dr_Brown_Portrait.gif?ex=6a3c0faf&is=6a3abe2f&hm=5ff08c1167d42d818aebc9b21fe030209b78a7285fdc4030f04c0c0df1e8b4e9&",
+                "id": "1519219545183621201",
+                "url": "https://cdn.discordapp.com/attachments/1494798485092962314/1495834229039435908/Dr_Brown_Portrait.gif?ex=6a3cb86f&is=6a3b66ef&hm=fa2473913a3f0f8a6a61907ddf9ffdb518ea5c559a55f68e4d568acf18177218&",
+                "proxy_url": "https://media.discordapp.net/attachments/1494798485092962314/1495834229039435908/Dr_Brown_Portrait.gif?ex=6a3cb86f&is=6a3b66ef&hm=fa2473913a3f0f8a6a61907ddf9ffdb518ea5c559a55f68e4d568acf18177218&",
                 "width": 720,
                 "height": 720,
                 "placeholder": "LAmCDQJGeaVgjHM8hYiAd9oKCoWHiHZodw==",
@@ -59,11 +59,11 @@
           },
           {
             "type": 10,
-            "content": "**<a:place_Hometown:1517058858781249556> THỊ TRẤN** tới <t:1782280800:s>"
+            "content": "**<a:place_Hometown:1517058858781249556> THỊ TRẤN** tới <t:1782313500:s>"
           },
           {
             "type": 10,
-            "content": ">>> <:sandstorms:1457797399404875807> **Gió Cát** - <t:1782247800:t>\n\n<:snowy:1457797320677527623> **Tuyết** - <t:1782249300:t>\n\n<:heatwave:1457797441544786164> **Nắng Nóng** - <t:1782251100:t>\n\n<:blizzard:1514586085852840067> **Bão Tuyết** - <t:1782252300:t>\n\n<:heatwave:1457797441544786164> **Nắng Nóng** - <t:1782254700:t>\n\n<:morningmist:1457797587536183589> **Sương Sớm** - <t:1782255900:t>\n\n<:windy:1457797234547494942> **Gió** - <t:1782258600:t>\n\n<:snowy:1457797320677527623> **Tuyết** - <t:1782259800:t>\n\n<:foggy:1457797085826121748> **Sương Mù** - <t:1782261300:t>\n\n<:blizzard:1514586085852840067> **Bão Tuyết** - <t:1782263400:t>\n\n<:foggy:1457797085826121748> **Sương Mù** - <t:1782264600:t>\n\n<:snowy:1457797320677527623> **Tuyết** - <t:1782266400:t>\n\n<:sandstorms:1457797399404875807> **Gió Cát** - <t:1782269400:t>\n\n<:morningmist:1457797587536183589> **Sương Sớm** - <t:1782270300:t>\n\n<:rainy:1457797505994457344> **Mưa Rào** - <t:1782271800:t>\n\n<:rainy:1457797505994457344> **Mưa Rào** - <t:1782274500:t>\n\n<:rainy:1457797505994457344> **Mưa Rào** - <t:1782276300:t>\n\n<:blizzard:1514586085852840067> **Bão Tuyết** - <t:1782278400:t>\n\n<:snowy:1457797320677527623> **Tuyết** - <t:1782278700:t>\n\n<:rainy:1457797505994457344> **Mưa Rào** - <t:1782280500:t>"
+            "content": ">>> <:rainy:1457797505994457344> **Mưa Rào** - <t:1782280500:t>\n\n<:thunderstorms:1457796947313164330> **Mưa Bão** - <t:1782281400:t>\n\n<:aurora:1457797135117455529> **Cực Quang** - <t:1782284100:t>\n\n<:snowy:1457797320677527623> **Tuyết** - <t:1782285900:t>\n\n<:snowy:1457797320677527623> **Tuyết** - <t:1782287100:t>\n\n<:blizzard:1514586085852840067> **Bão Tuyết** - <t:1782288300:t>\n\n<:moonlight:1457797017710628925> **Ánh Trăng** - <t:1782291300:t>\n\n<:blizzard:1514586085852840067> **Bão Tuyết** - <t:1782292500:t>\n\n<:snowy:1457797320677527623> **Tuyết** - <t:1782294300:t>\n\n<:foggy:1457797085826121748> **Sương Mù** - <t:1782295500:t>\n\n<:snowy:1457797320677527623> **Tuyết** - <t:1782297300:t>\n\n<:morningmist:1457797587536183589> **Sương Sớm** - <t:1782299400:t>\n\n<:snowy:1457797320677527623> **Tuyết** - <t:1782300900:t>\n\n<:snowy:1457797320677527623> **Tuyết** - <t:1782303600:t>\n\n<:windy:1457797234547494942> **Gió** - <t:1782305400:t>\n\n<:snowy:1457797320677527623> **Tuyết** - <t:1782306300:t>\n\n<:snowy:1457797320677527623> **Tuyết** - <t:1782308400:t>\n\n<:aurora:1457797135117455529> **Cực Quang** - <t:1782309600:t>\n\n<:snowy:1457797320677527623> **Tuyết** - <t:1782312000:t>\n\n<:moonlight:1457797017710628925> **Ánh Trăng** - <t:1782313200:t>"
           },
           {
             "type": 10,

@@ -167,8 +167,12 @@ export const decodeGroupInviteFromLsResp = (raw: string): GroupInviteJson => {
  * Default export để bot có thể nạp API thành công.
  */
 export default function (defaultFuncs: any, api: any, ctx: any) {
-    return {
+    const decodeLsRespBinary = (raw: string): DecodedLsResp => decodeLsRespBinaryToJson(raw);
+
+    Object.assign(decodeLsRespBinary, {
         decodeLsRespBinaryToJson,
         decodeGroupInviteFromLsResp
-    };
+    });
+
+    return decodeLsRespBinary;
 }

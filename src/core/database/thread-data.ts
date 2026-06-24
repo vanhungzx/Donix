@@ -356,6 +356,11 @@ class ThreadDataModel {
 
   async info(threadID: string | number): Promise<any> {
     try {
+      const cached = await this.get(threadID).catch(() => null);
+      if (cached?.threadInfo && typeof cached.threadInfo === "object" && Object.keys(cached.threadInfo).length > 0) {
+        return cached.threadInfo;
+      }
+
       if (!this.bot) {
         log.warn("ThreadData.info: Bot instance not set");
         return null;
@@ -368,7 +373,7 @@ class ThreadDataModel {
 
       return await this.bot.getThreadInfo(validateThreadID(threadID));
     } catch (error: any) {
-      log.error(`ThreadData.info failed for ${threadID}: ${error.message}`);
+      log.warn(`ThreadData.info failed for ${threadID}: ${error.message}`);
       return null;
     }
   }

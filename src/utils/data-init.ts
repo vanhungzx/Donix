@@ -29,21 +29,15 @@ export async function dataInit(
     let info: Record<string, unknown> | null = null;
 
     if (needCreate) {
-      try {
-        const threadInfo = await threadData.info(tid).catch(() => null);
-        info = threadInfo && typeof threadInfo === 'object' ? threadInfo as Record<string, unknown> : null;
-      } catch (e: unknown) {
-        const error = e instanceof Error ? e : new Error(String(e));
-        logger.warn(`THREAD: Failed to get thread info for ${tid}: ${error.message}`);
-        info = null;
-      }
-
-      if (!info) {
-        logger.warn(`THREAD: No thread info for ${tid}, creating with basic data`);
+      {
         const threadName = typeof ev.threadName === 'string' ? ev.threadName : "Unknown Group";
         const basicPayload = {
           threadName,
-          threadInfo: {},
+          threadInfo: {
+            threadID: tid,
+            threadName,
+            participantIDs: Array.isArray(ev.participantIDs) ? ev.participantIDs.map(String) : [],
+          },
           banned: {},
           settings: {},
           data: {},
@@ -66,14 +60,13 @@ export async function dataInit(
       const needFix = !hasThreadInfo || !nameFromEx;
 
       if (needFix) {
-        try {
-          const threadInfo = await threadData.info(tid).catch(() => null);
-          info = threadInfo && typeof threadInfo === 'object' ? threadInfo as Record<string, unknown> : null;
-        } catch (e: unknown) {
-          const error = e instanceof Error ? e : new Error(String(e));
-          logger.warn(`THREAD: Failed to get thread info for ${tid}: ${error.message}`);
-          info = null;
-        }
+        const threadName = ex.threadName || (typeof ev.threadName === 'string' ? ev.threadName : "Unknown Group");
+        info = {
+          ...(typeof ex.threadInfo === "object" && ex.threadInfo ? ex.threadInfo : {}),
+          threadID: tid,
+          threadName,
+          participantIDs: Array.isArray(ev.participantIDs) ? ev.participantIDs.map(String) : [],
+        };
       }
     }
 
